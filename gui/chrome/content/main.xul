@@ -11,27 +11,39 @@
 	<script type="application/javascript" src="chrome://pyxul/content/main.js"/>
 	<script type="application/javascript" src="chrome://pyxul/content/jquery-1.4.2.min.js"/>
 
+	<commandset>
+		<command id="cmd_exitApp" oncommand="closeApp();"/>
+		<command id="cmd_about" oncommand="showAboutInfo();"/>
+		<command id="cmd_model_run" oncommand="runModel();"/>
+		<command id="cmd_model_pause" oncommand="pauseModel();"/>
+	</commandset>
+
 	<toolbox>
 		<menubar id="main-menu">
 			<menu id="file-menu" label="&file-menu.label;">
 				<menupopup id="file-menu-opup">
-					<menuitem label="&menu-exit.label;" oncommand="closeApp();"/>
+					<menuitem label="&menu-exit.label;" command="cmd_exitApp"/>
 				</menupopup>
 			</menu>
 			<menu id="help-menu" label="&help-menu.label;">
 				<menupopup id="help-menu-opup">
-					<menuitem label="&menu-about.label;" oncommand="showAboutInfo();"/>
+					<menuitem label="&menu-about.label;" command="cmd_about"/>
 				</menupopup>
 			</menu>
 		</menubar>
 	</toolbox>
 	
 	<separator/>
-	<box>
+	<hbox>
 		<!-- AK: Need to place it in the box, so it will not be stretched to window size.
 			 For whatever reason canvas stretches even with flex=0.
 			 Maybe this is for every element that is in the root of window?
 		-->
 		<html:canvas id="road-canvas" width="600" height="400" style="border: 1px dotted #666666;" />
-	</box>
+		
+		<vbox>
+			<button label="&control-run;" command="cmd_model_run"/>
+			<button label="&control-pause;" command="cmd_model_pause"/>
+		</vbox>
+	</hbox>
 </window>

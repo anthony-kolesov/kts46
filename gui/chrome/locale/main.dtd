@@ -2,3 +2,6 @@
 <!ENTITY menu-exit.label "Exit">
 <!ENTITY help-menu.label "Help">
 <!ENTITY menu-about.label "About">
+
+<!ENTITY control-run "Run">
+<!ENTITY control-pause "Pause">
