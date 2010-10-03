@@ -1,0 +1,1 @@
+﻿pref("toolkit.defaultChromeURI", "chrome://pyxul/content/main.xul");
