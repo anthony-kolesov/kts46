@@ -27,29 +27,9 @@ function updateRoadState() {
 	var c = $("#road-canvas");
 	var dc = c.get(0).getContext("2d");
 	
-	// var road = c.data("road").draw(dc);
-	// var car = c.data("car").draw(dc);
 	var model = c.data("model");
-	model.runStep(1.0);
-	for (var i in model.cars){
-		if (!model.cars[i]) continue;
-		
-		var car = model.cars[i];
-		car.position += 1.0;
-		
-		if (car.position+car.length >= model.road.length){
-			model.cars[i] = undefined;
-		}
-	}
+	model.runStep(0.04);
 	model.draw(dc);
-	
-	/*if (car.y + car.height < road.height + road.y) {
-		car.y += 1;
-	} else {
-		clearInterval(c.data("modelTimerId"));
-		c.removeData("modelTimerId");
-	}
-	*/
 }
 
 
@@ -67,7 +47,7 @@ function drawInitialCanvas() {
 	$(c).data("model", model);
 	
 	updateRoadState();
-	var timerId = setInterval("updateRoadState()", 10);
+	var timerId = setInterval("updateRoadState()", 40);
 	$(c).data("modelTimerId", timerId);
 }
 

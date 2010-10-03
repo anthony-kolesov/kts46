@@ -15,10 +15,11 @@ defaults = {
 		"color": "#0000dd",
 		"length": 4.5,
 		"width": 1.5,
-		"position": 0.0
+		"position": 0.0,
+		"speed": 15.0 // [m/s]
 	},
 	"SimpleTrafficLight": {
-		"interval": 30, // [s]
+		"interval": 5, // [s]
 		"position": 100, // [m] from start
 		"state": "g"
 	}
@@ -62,20 +63,23 @@ SimpleTrafficLight.prototype.switch = function () {
 Model.prototype.draw = function(dc) {
 	var margin = 5; // [px]
 	var roadMargin = 3; // [px] - margin between car and road.
-	var lightHeight = 3; // [px]
+	var lightHeight = 1.0; // [m]
 	var lightGreenColor = "#00ff00";
 	var lightRedColor = "#ff0000";
 	var scale = (dc.canvas.height - margin * 2) / this.road.length;
 	
 	var r = this.road;
 	
+	// Clear canvas.
 	dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
 	
+	// Draw road.
 	dc.strokeStyle = r.borderColor;
 	dc.fillStyle = r.color;
 	dc.fillRect(margin, margin, r.width * scale, r.length * scale);
 	dc.strokeRect(margin, margin, r.width * scale, r.length * scale);
 	
+	// Draw cars.
 	for (var i in this.cars) {
 		if (!this.cars[i]) continue;
 		
@@ -100,13 +104,14 @@ Model.prototype.draw = function(dc) {
 		dc.strokeRect(x, y, width, height);
 	}
 	
+	// Draw traffic lights.
 	for (var i in this.lights) {
 		var tl = this.lights[i];
 		
 		var x = margin;
 		var y = margin + tl.position * scale + lightHeight;
 		var width = r.width * scale;
-		var height = lightHeight;
+		var height = lightHeight * scale;
 		
 		dc.fillStyle = tl.state === "g" ? lightGreenColor : lightRedColor;
 		dc.fillRect(x, y, width, height);
@@ -124,6 +129,18 @@ Model.prototype.runStep = function(timeStep) {
 		if (newTime - tl.lastStateSwitchTime > tl.interval) {
 			tl.switch();
 			tl.lastStateSwitchTime = newTime;
+		}
+	}
+	
+	for (var i in this.cars) {
+		if (!this.cars[i]) continue;
+		
+		var car = this.cars[i];
+		var distanceToMove = car.speed * timeStep;
+		car.position += distanceToMove;
+		
+		if (this.road.length < car.position) {
+			this.cars[i] = undefined;
 		}
 	}
 	
