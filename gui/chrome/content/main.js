@@ -29,14 +29,19 @@ function closeApp(){
 }
 
 
+function drawModel(aModel, aDc) {
+	var c = (aDc && aModel) || $(dom.roadCanvas);
+	var dc = aDc || c.get(0).getContext("2d");
+	var model = aModel || c.data("model");
+	model.draw(dc);
+}
+
+
 // Move cars and redraws canvas.
 function updateRoadState() {
-	var c = $("#road-canvas");
-	var dc = c.get(0).getContext("2d");
-	
-	var model = c.data("model");
+	var model = $(dom.roadCanvas).data("model");
 	model.runStep(0.04);
-	model.draw(dc);
+	drawModel(model)
 }
 
 
@@ -48,12 +53,12 @@ function drawInitialCanvas() {
 	var dc = c.get(0).getContext("2d");
 	
 	var r = new Road({"length": 300});
-	var car = new Car({"position": 40});
+	var car = new Car();
 	var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
 	
 	c.data("model", model);
 	
-	runModel();
+	drawModel(model);
 }
 
 

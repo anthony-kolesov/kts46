@@ -88,12 +88,13 @@ Model.prototype.draw = function(dc) {
 		dc.fillStyle = c.color;
 		
 		var x = margin + roadMargin;
-		var y = margin + (c.position + c.length) * scale;
+		var y = margin + (c.position - c.length) * scale;
 		
 		var width = c.drawWidth || (c.drawWidth = c.width * scale);
 		var height = c.drawHeight || (c.drawHeight = c.length * scale);
-		if (y - height < margin) { // Car is at top and its end out of road.
-			height = y - margin;
+		if (y < margin) { // Car is at top and its end out of road.
+			height = y - margin + c.length*scale;
+			y = margin;
 		} else if (y > dc.canvas.height - margin) { // Car is at bottom.
 			var newY = dc.canvas.height.margin;
 			height = height - (y - newY);
