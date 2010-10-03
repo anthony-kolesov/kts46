@@ -49,6 +49,9 @@ function updateRoadState() {
  * Draws initial view of canvas.
  */
 function drawInitialCanvas() {
+	// Pause current model, so new model will not be runned by old interval timer.
+	pauseModel();
+	
 	var c = $(dom.roadCanvas);
 	var dc = c.get(0).getContext("2d");
 	
