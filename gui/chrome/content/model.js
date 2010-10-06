@@ -1,9 +1,5 @@
 defaults = {
-	"Model": {
-		"cars": [],
-		"lights": []
-		// "time": 0.0 // [s]
-	},
+	"Model": {},
 	"Road": {
 		"borderColor": "#666666",
 		"color": "#eeeeee",
@@ -22,7 +18,9 @@ defaults = {
 		"interval": 5, // [s]
 		"position": 100, // [m] from start
 		"state": "g"
-	}
+	},
+	"stopDistance": 2, // [m]
+	"newCarGenRate": 3 // [s]
 };
 
 
@@ -42,7 +40,10 @@ function Car(options){
 
 // Model of road network.
 function Model(options) {
-	this.time = 0.0;
+	this.time = 0.0; // [s]
+	this.cars = [];
+	this.lights = [];
+	this.newCarGenTime = 0.0; // [s]
 	$.extend(this, defaults.Model);
 	if (options) $.extend(this, options);
 }
@@ -138,12 +139,64 @@ Model.prototype.runStep = function(timeStep) {
 		
 		var car = this.cars[i];
 		var distanceToMove = car.speed * timeStep;
-		car.position += distanceToMove;
 		
+		// Check for red traffic light.
+		var nearestTL = this.getNearestTLight(car.position);
+		if(nearestTL && nearestTL.state === "r" &&
+		   (nearestTL.position - car.position - defaults.stopDistance) < distanceToMove ) {
+			distanceToMove = (nearestTL.position - car.position) - defaults.stopDistance; // Default distance to light or car. temporary.
+			if (distanceToMove < 0) distanceToMove = 0;
+		}
+		
+		// Check for leading car.
+		var nearestCar = this.getNearestCar(car.position);
+		if(nearestCar &&
+		   (nearestCar.position - nearestCar.length - car.position - defaults.stopDistance) < distanceToMove ) {
+			distanceToMove = (nearestCar.position - nearestCar.length - car.position) - defaults.stopDistance; // Default distance to light or car. temporary.
+			if (distanceToMove < 0) distanceToMove = 0;
+		}
+		
+		car.position += distanceToMove;
 		if (this.road.length < car.position) {
 			this.cars[i] = undefined;
 		}
 	}
 	
+	// Generate new car
+	if (this.newCarGenTime + defaults.newCarGenRate <= newTime) {
+		var speed = Math.floor(Math.random() * 10) + 10;
+		var car = new Car({"speed": speed});
+		document.getElementById("log-box").value += "Generated car with speed: " + speed + "\n"; 
+		this.cars.push(car);
+		this.newCarGenTime = newTime;
+	}
+	
 	this.time = newTime;
+};
+
+
+// Gets the nearest traffic light to specified position.
+Model.prototype.getNearestTLight = function(position){
+	return this.getNearestObjectInArray(this.lights, position);
+};
+
+
+Model.prototype.getNearestCar = function(position){
+	return this.getNearestObjectInArray(this.cars, position);
+};
+
+
+Model.prototype.getNearestObjectInArray = function(list, position){
+	var cur = undefined;
+	for (var i in list){
+		if (!list[i]) continue;
+		var t = list[i];
+		var tpos = t.position;
+		if (t.length) { tpos -= t.length; }
+		// Still not passed and there is no current or is closer than current.
+		if (tpos > position && (!cur || cur.position > tpos) ) {
+			cur = t;
+		}
+	}
+	return cur;
 };

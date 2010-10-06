@@ -42,10 +42,12 @@
 		-->
 		<html:canvas id="road-canvas" width="600" height="400" style="border: 1px dotted #666666;" />
 		
-		<vbox>
+		<vbox flex="1">
 			<button label="&model-run;" command="cmd_model_run"/>
 			<button label="&model-pause;" command="cmd_model_pause"/>
 			<button label="&model-reset;" command="cmd_model_reset"/>
+			
+			<textbox id="log-box" readonly="true" multiline="true" flex="1"/>
 		</vbox>
 	</hbox>
 </window>
