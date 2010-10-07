@@ -45,8 +45,8 @@
 		<vbox flex="1">
 			<menulist id="model-type">
 				<menupopup>
-					<menuitem label="JavaScript model" selected="true" value="js"/>
-					<menuitem label="Python model" value="py"/>
+					<menuitem label="JavaScript model" value="js"/>
+					<menuitem label="Python model" value="py" selected="true"/>
 				</menupopup>
 			</menulist>
 			<button label="&model-run;" command="cmd_model_run"/>
