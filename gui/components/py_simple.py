@@ -9,10 +9,10 @@ class PySimple: #PythonTestComponent
 
     def __del__(self):
         if verbose:
-            print "PySimple: __del__ method called - object is destructing"
+            print("PySimple: __del__ method called - object is destructing")
 
     def write(self):
-        print self.yourName
+        print(self.yourName)
 
     def change(self, newName):
         self.yourName = newName

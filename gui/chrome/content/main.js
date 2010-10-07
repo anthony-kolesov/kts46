@@ -1,7 +1,8 @@
 ﻿var dom = {
 	"roadCanvas": "#road-canvas",
 	"cmdPause": "#cmd_model_pause",
-	"cmdRun": "#cmd_model_run"
+	"cmdRun": "#cmd_model_run",
+	"modelType": "#model-type"
 };
 
 
@@ -17,7 +18,7 @@ function runQuery() {
  * Shows window with information about application.
  */
 function showAboutInfo() {
-	alert('(C)2010 Anthony Kolesov\nanthony.kolesov -at- gmail.com');   
+	alert('(C)2010 Anthony Kolesov\nanthony.kolesov -at- gmail.com');
 }
 
 
@@ -51,17 +52,44 @@ function updateRoadState() {
 function drawInitialCanvas() {
 	// Pause current model, so new model will not be runned by old interval timer.
 	pauseModel();
-	
+
 	var c = $(dom.roadCanvas);
 	var dc = c.get(0).getContext("2d");
-	
-	var r = new Road({"length": 300});
-	var car = new Car();
-	var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
-	
-	c.data("model", model);
-	
-	drawModel(model);
+
+	if ( $(dom.modelType).attr('value') === "js" ) {
+		var r = new Road({"length": 300});
+		var car = new Car();
+		var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
+
+		c.data("model", model);
+
+		drawModel(model);
+	} else {
+		alert('py1');
+		const PySimple = new Components.Constructor(
+			"@mozilla.org/PySimple;1",
+			"nsISimple");
+		alert('have simple');
+		const PyModel = new Components.Constructor(
+			"@kolesov.blogspot.com/RoadNetworkModel;1",
+			"nsIRoadNetworkModel");
+		alert('have constructor');
+		var model = new PyModel();
+		c.data("model", model);
+		logmsg(model.get_current_state());
+	}
+}
+
+function openJavaScriptConsole() {
+   var wwatch = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
+                         .getService(Components.interfaces.nsIWindowWatcher);
+   wwatch.openWindow(null, "chrome://global/content/console.xul", "_blank",
+                    "chrome,dialog=no,all", null);
+}
+function logmsg(str){
+	Components.classes['@mozilla.org/consoleservice;1']
+        .getService(Components.interfaces.nsIConsoleService)
+        .logStringMessage(str);
 }
 
 
@@ -71,10 +99,11 @@ function pauseModel(){
 	var timerId = c.data("modelTimerId");
 	clearInterval(timerId);
 	c.removeData("modelTimerId");
-	
+
 	// UI modification.
 	$(dom.cmdPause).attr('disabled', true);
 	$(dom.cmdRun).removeAttr('disabled');
+	$(dom.modelType).removeAttr('disabled');
 }
 
 
@@ -87,9 +116,9 @@ function runModel(){
 	updateRoadState();
 	var timerId = setInterval("updateRoadState();", 40);
 	$(dom.roadCanvas).data("modelTimerId", timerId);
-	
+
 	// UI modification.
 	$(dom.cmdPause).removeAttr('disabled');
 	$(dom.cmdRun).attr('disabled', true);
+	$(dom.modelType).attr('disabled', true);
 }
-

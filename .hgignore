@@ -1,1 +1,3 @@
 glob:*.pyo
+glob:*.lnk
+glob:*.xpt
