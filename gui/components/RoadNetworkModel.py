@@ -16,8 +16,10 @@ class RoadNetworkModel:
         self._lights = []
         self._road = Road(length=300)
         self._lastCarGenerationTime = datetime.timedelta()
+        self._log = components.classes['@mozilla.org/consoleservice;1'].getService(components.interfaces.nsIConsoleService)
+        self._log.logStringMessage("Log is configured.")
         # config default model
-        self._lights.append(SimpleSemaphore(id=1, position=100))
+        self._lights.append(SimpleSemaphore(id=1, position=30))
 
     def __del__(self):
         if verbose:
@@ -41,21 +43,25 @@ class RoadNetworkModel:
 
             # Check for red traffic light.
             nearestTL = self.get_nearest_traffic_light(car.get_position())
-            if nearestTL is not None and not nearestTL.is_green() and \
-                nearestTL.get_position() - car.get_position() - stopDistance < distanceToMove:
-                diatnceToMove = nearestTL.get_position() - car.get_position() - stopDistance
-                if distanceToMove < 0:
-                    distanceToMove = 0.0
+            if nearestTL is not None and not nearestTL.is_green():
+                #self._log.logStringMessage("Calculating TL effect: "+
+                #    "TL pos: %f, Car pos: %f, stop dist: %f, move dist: %f, diff: %f" % (
+                #    nearestTL.get_position(), car.get_position(),
+                #    stopDistance, distanceToMove, nearestTL.get_position() - car.get_position() - stopDistance) )
+                if nearestTL.get_position() - car.get_position() - stopDistance < distanceToMove:
+                    distanceToMove = nearestTL.get_position() - car.get_position() - stopDistance
+                    if distanceToMove < 0:
+                        distanceToMove = 0.0
 
             # Check for leading car.
-            nearestCar = self.get_nearest_car(car.get_position())
-            if nearestCar is not None and \
-              nearestCar.get_position() - nearestCar.get_length() - \
-              car.get_position() - stopDistance() < distanceToMove:
-                distanceToMove = nearestCar.get_position() - nearestCar.get_length() - \
-                    car.get_position() - stopDistance
-                if distanceToMove < 0:
-                    distanceToMove = 0
+            #nearestCar = self.get_nearest_car(car.get_position())
+            #if nearestCar is not None and \
+            #  nearestCar.get_position() - nearestCar.get_length() - \
+            #  car.get_position() - stopDistance < distanceToMove:
+            #    distanceToMove = nearestCar.get_position() - nearestCar.get_length() - \
+            #        car.get_position() - stopDistance
+            #    if distanceToMove < 0:
+            #        distanceToMove = 0
 
 
             car.move(distanceToMove)
@@ -63,7 +69,7 @@ class RoadNetworkModel:
                 self._cars.remove(car)
 
         # Generate new car
-        if self._lastCarGenerationTime + newCarGenRate <= newTime:
+        if len(self._cars) < 2 and self._lastCarGenerationTime + newCarGenRate <= newTime:
             speed = math.floor(random.random() * 10) + 10
             newCar = Car(speed=speed)
             self._cars.append(newCar)
@@ -85,9 +91,9 @@ class RoadNetworkModel:
             pos = i.get_position()
             if hasattr(i, "get_length"):
                 pos -= i.get_length()
-            if pos > position and ((current is not None) or current_pos > pos):
+            if pos > position and ((current is None) or current_pos > pos):
                 current = i
-                current_position = pos
+                current_pos = pos
         return current
 
     def get_state_data(self):

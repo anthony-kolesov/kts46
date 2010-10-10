@@ -101,10 +101,10 @@ function drawModel() {
     if (modelType === "py") {
         var dm = c.data("draw-model");
         var stateStr = model.get_state_data();
-        if (c.data("current-state") !== stateStr ){
-            logmsg("CURRENT STATE: "+stateStr);
-            c.data("current-state", stateStr);
-        }
+        //if (c.data("current-state") !== stateStr ){
+        //    logmsg("CURRENT STATE: "+stateStr);
+        //    c.data("current-state", stateStr);
+        //}
         var state = $.parseJSON(stateStr);
         for (var i in state.lights) {
             dm.lights[i].switch(state.lights[i].state);
@@ -178,13 +178,11 @@ function drawInitialCanvas() {
         var lights = {};
         for (var i in descr.lights)
             lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
-        logmsg("Creating draw model");
         var drawingModel = new Model({
             "road":road,
             "lights":lights,
             "cars": {}
         });
-        logmsg("Saving draw model to data.");
         c.data("draw-model", drawingModel);
         drawModel();
     }
