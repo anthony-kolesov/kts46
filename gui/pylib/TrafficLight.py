@@ -7,12 +7,15 @@ class SimpleSemaphore:
     __green_state = "g"
     __red_state = "r"
 
-    def __init__(self, id=uuid4(), interval=timedelta(seconds=5), position=0):
+    def __init__(self, id=None, interval=timedelta(seconds=5), position=0):
         """Creates a new simple semaphore.
 
         Interval must be time.timedelta. Position is measured in meters.
         """
-        self._id = unicode(id)
+        if id is None:
+            self._id = unicode(uuid4())
+        else:
+            self._id = unicode(id)
         self._interval = interval
         self._position = position
         self._last_switch_time = timedelta()

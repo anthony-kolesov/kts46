@@ -109,19 +109,18 @@ function drawModel() {
         for (var i in state.lights) {
             dm.lights[i].switch(state.lights[i].state);
         }
-        for (var i in state.cars) {
-            var car = state.cars[i];
+        for (var carId in state.cars) {
+            var car = state.cars[carId];
 
             if (car.action && car.action === "del") {
                 // Delete old car.
-                dm.cars[car.id] = undefined;
+                dm.cars[carId] = undefined;
             } else if (car.action && car.action === "add") {
-                // Add new car.
-                var nc = new Car(car);
-                dm.cars[car.id] = nc;
-            } else if (!car.action) {
+                // Add new car
+                dm.cars[carId] = new Car(car);
+            } else {
                 // Update existing car.
-                dm.cars[car.id].position = car.position;
+                dm.cars[carId].position = car.position;
             }
         }
     }
@@ -137,6 +136,10 @@ function updateRoadState() {
     else
         c.data("model").run_step(40);
     drawModel();
+
+    // Setup new timer.
+    var timerId = setTimeout("updateRoadState();", 40);
+    $(dom.roadCanvas).data("modelTimerId", timerId);
 }
 
 
@@ -204,7 +207,7 @@ function pauseModel(){
     // Pause model.
     var c = $(dom.roadCanvas);
     var timerId = c.data("modelTimerId");
-    clearInterval(timerId);
+    clearTimeout(timerId);
     c.removeData("modelTimerId");
 
     // UI modification.
@@ -221,8 +224,8 @@ function runModel(){
         return;
     }
     updateRoadState();
-    var timerId = setInterval("updateRoadState();", 40);
-    $(dom.roadCanvas).data("modelTimerId", timerId);
+    // var timerId = setTimeout("updateRoadState();", 40);
+    // $(dom.roadCanvas).data("modelTimerId", timerId);
 
     // UI modification.
     $(dom.cmdPause).removeAttr('disabled');

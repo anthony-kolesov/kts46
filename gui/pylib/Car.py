@@ -2,13 +2,16 @@ from uuid import uuid4
 
 class Car:
 
-    def __init__(self, id=uuid4(), speed=15, length=4.5, width=1.5, position=0):
+    def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
         width and position in metres.
         """
-        self._id = unicode(id)
+        if id is None:
+            self._id = unicode(uuid4())
+        else:
+            self._id = unicode(id)
         self._speed = speed
         self._length = length
         self._width = width

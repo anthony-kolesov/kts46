@@ -25,7 +25,7 @@ class RoadNetworkModel:
 
     def run_step(self, milliseconds):
         stopDistance = 2.0
-        newCarGenRate = datetime.timedelta(seconds=3)
+        newCarGenRate = datetime.timedelta(seconds=1)
 
         timeStep = datetime.timedelta(milliseconds=milliseconds)
         newTime = self._time + timeStep # Time after step is performed.
