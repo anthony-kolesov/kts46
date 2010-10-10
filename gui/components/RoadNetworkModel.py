@@ -1,8 +1,8 @@
-import datetime, random
+import datetime, random, json, math
 from xpcom import components, verbose
 from Car import Car
-#from TrafficLight import SimpleSemaphore
-#from Road import Road
+from TrafficLight import SimpleSemaphore
+from Road import Road
 
 class RoadNetworkModel:
     _com_interfaces_ = components.interfaces.nsIRoadNetworkModel
@@ -12,10 +12,12 @@ class RoadNetworkModel:
     def __init__(self):
         self._time = datetime.timedelta()
         self._cars = []
+        self._lastSendCars = []
         self._lights = []
-        #self._road = Road(length=300)
+        self._road = Road(length=300)
         self._lastCarGenerationTime = datetime.timedelta()
-        self._value = 0
+        # config default model
+        self._lights.append(SimpleSemaphore(id=1, position=100))
 
     def __del__(self):
         if verbose:
@@ -23,7 +25,7 @@ class RoadNetworkModel:
 
     def run_step(self, milliseconds):
         stopDistance = 2.0
-        newCarGetRate = datetime.timedelta(second=3)
+        newCarGenRate = datetime.timedelta(seconds=3)
 
         timeStep = datetime.timedelta(milliseconds=milliseconds)
         newTime = self._time + timeStep # Time after step is performed.
@@ -32,7 +34,7 @@ class RoadNetworkModel:
             if newTime - light.get_last_switch_time() > light.get_interval():
                 light.switch(newTime)
 
-        for car in sel._cars:
+        for car in self._cars:
             distanceToMove = car.get_speed() * timeStep.seconds
             distanceToMove += car.get_speed() * timeStep.microseconds * 1e-6
             distanceToMove += car.get_speed() * timeStep.days * 86400 # 3600 * 24
@@ -64,13 +66,13 @@ class RoadNetworkModel:
         if self._lastCarGenerationTime + newCarGenRate <= newTime:
             speed = math.floor(random.random() * 10) + 10
             newCar = Car(speed=speed)
-            self._cars.append(car)
+            self._cars.append(newCar)
             self._lastCarGenerationTime = newTime
 
         self._time = newTime
 
 
-    def get_nearest_traffic_lisht(self, position):
+    def get_nearest_traffic_light(self, position):
         return self.get_nearest_object_in_array(self._lights, position)
 
     def get_nearest_car(self, position):
@@ -88,8 +90,31 @@ class RoadNetworkModel:
                 current_position = pos
         return current
 
-    def get_current_state(self):
-        return "AAAA! Values is: %i" % self._value
+    def get_state_data(self):
+        # Traffic lights
+        lights = {}
+        for light in self._lights:
+            lights[light.get_id()] = light.get_state_data()
+        # Cars
+        cars = {}
+        for car in self._cars:
+            if car.get_id() in self._lastSendCars:
+                cars[car.get_id()] = car.get_state_data()
+                del self._lastSendCars[car.get_id()]
+            else:
+                state = car.get_state_data()
+                state['action'] = 'add'
+                cars[car.get_id()] = state
+        # Delete old cars.
+        for (key, oldCar) in self._lastSendCars:
+            cars[oldCar.get_id()] = {'action': 'del'} # No need to send invalid state.
+        self._lastSendCars = cars
+        # Result.
+        return json.dumps({'cars': cars, 'lights': lights})
 
-    #def run_step(self):
-    #    self._value += 1
+    def get_description_data(self):
+        lights = {}
+        for light in self._lights:
+            lights[light.get_id()] = light.get_description_data()
+        road = {'length': self._road.get_length(), 'width': self._road.get_width()}
+        return json.dumps({'lights': lights, 'road': road})

@@ -6,6 +6,8 @@
 };
 
 
+
+
 function runQuery() {
     //const SimpleConstructor = new Components.Constructor("@mozilla.org/js_simple_component;1", "nsISimple");
     var SimpleConstructor = new Components.Constructor("@mozilla.org/PySimple;1", "nsISimple");
@@ -30,19 +32,111 @@ function closeApp(){
 }
 
 
-function drawModel(aModel, aDc) {
-    var c = (aDc && aModel) || $(dom.roadCanvas);
-    var dc = aDc || c.get(0).getContext("2d");
-    var model = aModel || c.data("model");
-    model.draw(dc);
+function drawPythonModel(drawModel, modelState, dc){
+    var margin = defaults.margin; // [px]
+    var roadMargin = defaults.lightHeight; // [px] - margin between car and road.
+    var lightHeight = defaults.lightHeight; // [m]
+    var lightGreenColor = defaults.lightGreenColor;
+    var lightRedColor = defaults.lightRedColor;
+    var scale = (dc.canvas.height - margin * 2) / this.road.length;
+
+    var r = {};
+    $.extend(r, defaults.Road);
+    $.extend(r, modelDescription.road);
+
+    // Clear canvas.
+    dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
+
+    // Draw road.
+    dc.strokeStyle = r.borderColor;
+    dc.fillStyle = r.color;
+    dc.fillRect(margin, margin, r.width * scale, r.length * scale);
+    dc.strokeRect(margin, margin, r.width * scale, r.length * scale);
+
+    // Draw cars.
+    for (var i in modelState.cars) {
+        // if (!this.cars[i]) continue;
+
+        var c = this.cars[i];
+        dc.strokeStyle = c.borderColor;
+        dc.fillStyle = c.color;
+
+        var x = margin + roadMargin;
+        var y = margin + (c.position - c.length) * scale;
+
+        var width = c.drawWidth || (c.drawWidth = c.width * scale);
+        var height = c.drawHeight || (c.drawHeight = c.length * scale);
+        if (y < margin) { // Car is at top and its end out of road.
+            height = y - margin + c.length*scale;
+            y = margin;
+        } else if (y > dc.canvas.height - margin) { // Car is at bottom.
+            var newY = dc.canvas.height.margin;
+            height = height - (y - newY);
+            y = newY;
+        }
+
+        dc.fillRect(x, y, width, height);
+        dc.strokeRect(x, y, width, height);
+    }
+
+    // Draw traffic lights.
+    for (var i in modelState.lights) {
+        var tl = modelDescription.lights[i];
+
+        var x = margin;
+        var y = margin + tl.position * scale + lightHeight;
+        var width = r.width * scale;
+        var height = lightHeight * scale;
+
+        dc.fillStyle = tl.state === "g" ? lightGreenColor : lightRedColor;
+        dc.fillRect(x, y, width, height);
+    }
+}
+
+function drawModel() {
+    var c = $(dom.roadCanvas);
+    var dc = c.get(0).getContext("2d");
+    var model = c.data("model");
+    var modelType = c.data("model-type");
+    if (modelType === "py") {
+        var dm = c.data("draw-model");
+        var stateStr = model.get_state_data();
+        if (c.data("current-state") !== stateStr ){
+            logmsg("CURRENT STATE: "+stateStr);
+            c.data("current-state", stateStr);
+        }
+        var state = $.parseJSON(stateStr);
+        for (var i in state.lights) {
+            dm.lights[i].switch(state.lights[i].state);
+        }
+        for (var i in state.cars) {
+            var car = state.cars[i];
+
+            if (car.action && car.action === "del") {
+                // Delete old car.
+                dm.cars[car.id] = undefined;
+            } else if (car.action && car.action === "add") {
+                // Add new car.
+                var nc = new Car(car);
+                dm.cars[car.id] = nc;
+            } else if (!car.action) {
+                // Update existing car.
+                dm.cars[car.id].position = car.position;
+            }
+        }
+    }
+    dm.draw(dc);
 }
 
 
 // Move cars and redraws canvas.
 function updateRoadState() {
-    var model = $(dom.roadCanvas).data("model");
-    model.runStep(0.04);
-    drawModel(model)
+    var c = $(dom.roadCanvas);
+    if (c.data("model-type") === "js")
+        c.data("model").run_step(0.04);
+    else
+        c.data("model").run_step(40);
+    drawModel();
 }
 
 
@@ -62,15 +156,34 @@ function drawInitialCanvas() {
         var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
 
         c.data("model", model);
-
-        drawModel(model);
+        c.data("model-type","js");
+        drawModel();
     } else {
         const PyModel = new Components.Constructor(
             "@kolesov.blogspot.com/RoadNetworkModel;1",
             "nsIRoadNetworkModel");
         var model = new PyModel();
         c.data("model", model);
-        logmsg(model.get_current_state());
+        c.data("model-type","py");
+        var descrStr = model.get_description_data();
+        var descr = $.parseJSON(descrStr);
+        c.data("model-description", descr);
+        logmsg("NETWORK: " + descrStr);
+        logmsg("STATE: " + model.get_state_data());
+
+        var road = new Road(descr.road);
+        var lights = {};
+        for (var i in descr.lights)
+            lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
+        logmsg("Creating draw model");
+        var drawingModel = new Model({
+            "road":road,
+            "lights":lights,
+            "cars": {}
+        });
+        logmsg("Saving draw model to data.");
+        c.data("draw-model", drawingModel);
+        drawModel();
     }
 }
 
@@ -80,11 +193,12 @@ function openJavaScriptConsole() {
     wwatch.openWindow(null, "chrome://global/content/console.xul", "_blank",
                     "chrome,dialog=no,all", null);
 }
+
 function logmsg(str) {
-        Components.classes['@mozilla.org/consoleservice;1']
-            .getService(Components.interfaces.nsIConsoleService)
-            .logStringMessage(str);
-    };
+    Components.classes['@mozilla.org/consoleservice;1']
+        .getService(Components.interfaces.nsIConsoleService)
+        .logStringMessage(str);
+}
 
 function pauseModel(){
     // Pause model.
