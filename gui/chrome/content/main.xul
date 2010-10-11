@@ -14,21 +14,35 @@
 	<commandset>
 		<command id="cmd_exitApp" oncommand="closeApp();"/>
 		<command id="cmd_about" oncommand="showAboutInfo();"/>
+		<command id="cmd_console" oncommand="openJavaScriptConsole();"/>
 		<command id="cmd_model_run" oncommand="runModel();"/>
 		<command id="cmd_model_pause" oncommand="pauseModel();"/>
 		<command id="cmd_model_reset" oncommand="drawInitialCanvas();"/>
 	</commandset>
 
+	<keyset>
+		<key id="about_cmd_key" keycode="VK_F1" command="cmd_about" />
+		<key id="console_cmd_key" modifiers="control" key="E" command="cmd_console" />
+	</keyset>
+
 	<toolbox>
 		<menubar id="main-menu">
-			<menu id="file-menu" label="&file-menu.label;">
-				<menupopup id="file-menu-opup">
-					<menuitem label="&menu-exit.label;" command="cmd_exitApp"/>
+			<menu id="menu-file" label="&menu-file.label;" accesskey="&menu-file.key;">
+				<menupopup>
+					<menuitem label="&menu-exit.label;" accesskey="&menu-exit.key;"
+							  command="cmd_exitApp"/>
 				</menupopup>
 			</menu>
-			<menu id="help-menu" label="&help-menu.label;">
-				<menupopup id="help-menu-opup">
-					<menuitem label="&menu-about.label;" command="cmd_about"/>
+			<menu id="menu-tools" label="&menu-tools.label;" accesskey="&menu-tools.key;">
+				<menupopup>
+					<menuitem label="&menu-console.label;" accesskey="&menu-console.key;"
+						command="cmd_console" key="console_cmd_key"/>
+				</menupopup>
+			</menu>
+			<menu id="help-menu" label="&menu-help.label;" accesskey="&menu-help.key;">
+				<menupopup>
+					<menuitem label="&menu-about.label;" accesskey="&menu-about.key;"
+						command="cmd_about" key="about_cmd_key"/>
 				</menupopup>
 			</menu>
 		</menubar>

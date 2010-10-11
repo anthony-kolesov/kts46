@@ -1,7 +1,18 @@
-<!ENTITY file-menu.label "File">
+<!ENTITY menu-file.label "File">
+<!ENTITY menu-file.key "f">
 <!ENTITY menu-exit.label "Exit">
-<!ENTITY help-menu.label "Help">
+<!ENTITY menu-exit.key "e">
+
+<!ENTITY menu-tools.label "Tools">
+<!ENTITY menu-tools.key "t">
+<!ENTITY menu-console.label "Console">
+<!ENTITY menu-console.key "c">
+
+<!ENTITY menu-help.label "Help">
+<!ENTITY menu-help.key "h">
 <!ENTITY menu-about.label "About">
+<!ENTITY menu-about.key "a">
+
 
 <!ENTITY model-run "Run">
 <!ENTITY model-pause "Pause">

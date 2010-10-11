@@ -6,8 +6,6 @@
 };
 
 
-
-
 function runQuery() {
     //const SimpleConstructor = new Components.Constructor("@mozilla.org/js_simple_component;1", "nsISimple");
     var SimpleConstructor = new Components.Constructor("@mozilla.org/PySimple;1", "nsISimple");
@@ -101,10 +99,6 @@ function drawModel() {
     if (modelType === "py") {
         var dm = c.data("draw-model");
         var stateStr = model.get_state_data();
-        //if (c.data("current-state") !== stateStr ){
-        //    logmsg("CURRENT STATE: "+stateStr);
-        //    c.data("current-state", stateStr);
-        //}
         var state = $.parseJSON(stateStr);
         for (var i in state.lights) {
             dm.lights[i].switch(state.lights[i].state);
@@ -218,12 +212,10 @@ function pauseModel(){
 function runModel(){
     if ($(dom.roadCanvas).data("modelTimerId")) {
         // Do nothing, because model is already running.
-        // Or model will start to run faster.
+        // Without this model will start to run faster.
         return;
     }
     updateRoadState();
-    // var timerId = setTimeout("updateRoadState();", 40);
-    // $(dom.roadCanvas).data("modelTimerId", timerId);
 
     // UI modification.
     $(dom.cmdPause).removeAttr('disabled');
