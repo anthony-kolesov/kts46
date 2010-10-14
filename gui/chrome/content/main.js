@@ -5,7 +5,11 @@
     "modelType": "#model-type"
 };
 var RNS = {
-    'PREFERENCE_BRANCH': "extensions.rns."
+    "PREFERENCE_BRANCH": "extensions.rns.",
+    "DOM": {
+        "carGenIntervalBox": "#car-gen-rate-box",
+        "modelParamBoxes": "#model-params textbox, #model-params button"
+    }
 };
 
 //function runQuery() {
@@ -146,6 +150,7 @@ function pauseModel(){
     $(dom.cmdPause).attr('disabled', true);
     $(dom.cmdRun).removeAttr('disabled');
     $(dom.modelType).removeAttr('disabled');
+    $(RNS.DOM.modelParamBoxes).attr('disabled', true);
 }
 
 
@@ -161,6 +166,7 @@ function runModel(){
     $(dom.cmdPause).removeAttr('disabled');
     $(dom.cmdRun).attr('disabled', true);
     $(dom.modelType).attr('disabled', true);
+    $(RNS.DOM.modelParamBoxes).removeAttr('disabled');
 }
 
 
@@ -176,6 +182,10 @@ function getPreferences(){
  */
 function applyModelParams() {
     logmsg('Apply model params.');
+
+    var c = $(dom.roadCanvas);
+    var model = c.data("model");
+    model.params.carGenerationInterval = $(RNS.DOM.carGenIntervalBox).val();
 }
 
 

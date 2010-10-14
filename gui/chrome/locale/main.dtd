@@ -21,3 +21,5 @@
 <!ENTITY model-params-reset.label "Reset">
 <!ENTITY model-params-apply.label "Apply">
 <!ENTITY model-params.label "Model parameters">
+<!ENTITY model-params-cargenrate.label "Car gen. rate:">
+<!ENTITY model-params-cargenrate.suffix "sec">

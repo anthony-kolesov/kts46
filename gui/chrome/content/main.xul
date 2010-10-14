@@ -19,6 +19,8 @@
 		<command id="cmd_model_run" oncommand="runModel();"/>
 		<command id="cmd_model_pause" oncommand="pauseModel();"/>
 		<command id="cmd_model_reset" oncommand="drawInitialCanvas();"/>
+		<command id="cmd_model_params_apply" oncommand="applyModelParams();"/>
+		<command id="cmd_model_params_reset" oncommand="resetModelParams();"/>
 	</commandset>
 
 	<keyset>
@@ -71,9 +73,10 @@
 			<groupbox align="end" id="model-params">
 				<caption label="&model-params.label;"/>
 				<hbox>
-					<label value="Car gen. rate: " control="car-gen-rate-control"/>
-					<textbox id="car-gen-rate-box" type="number" value="3"
-						min="1" max="100"/>
+					<label value="&model-params-cargenrate.label;"
+						   control="car-gen-rate-control"/>
+					<textbox id="car-gen-rate-box" value="3"/>
+					<label value="&model-params-cargenrate.suffix;"/>
 				</hbox>
 				<hbox>
 					<label value="Light dur. green=" control="green-light-dur"/>
@@ -101,8 +104,10 @@
 						min="3" max="30"/>
 				</hbox>
 				<hbox>
-					<button label="&model-params-reset.label;"/>
-					<button label="&model-params-apply.label;"/>
+					<button label="&model-params-reset.label;"
+							command="cmd_model_params_reset"/>
+					<button label="&model-params-apply.label;"
+							command="cmd_model_params_apply"/>
 				</hbox>
 			</groupbox>
 		</vbox>
