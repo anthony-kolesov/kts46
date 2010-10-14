@@ -1,45 +1,25 @@
-defaults = {
-	"Model": {},
-	"Road": {
-		"borderColor": "#666666",
-		"color": "#eeeeee",
-		"width": 10,
-		"length": 1000
-	},
-	"Car": {
-		"borderColor": "#666666",
-		"color": "#0000dd",
-		"length": 4.5,
-		"width": 1.5,
-		"position": 0.0,
-		"speed": 15.0 // [m/s]
-	},
-	"SimpleTrafficLight": {
-		"interval": 5, // [s]
-		"position": 100, // [m] from start
-		"state": "g"
-	},
-	"stopDistance": 2, // [m]
-	"newCarGenRate": 3, // [s]
-    "margin":5, // [px]
-    "roadMargin": 3, // [px]
-    "lightHeight": 1.0, // [m]
-    "lightGreenColor": "#00ff00",
-    "lightRedColor": "#ff0000"
-
-};
-
-
 // Represents road of the network.
 function Road(options) {
-	$.extend(this, defaults.Road);
+    var p = getPreferences();
+    this.color = p.getCharPref("road-color");
+    this.borderColor = p.getCharPref("road-border-color");
+    this.width = parseFloat(p.getCharPref("road-width")); // [m]
+    this.length = parseFloat(p.getCharPref("road-length")); // [m]
+
 	if(options) $.extend(this, options);
 }
 
 
 // Represents a car on the road.
 function Car(options){
-	$.extend(this, defaults.Car);
+    var p = getPreferences();
+    this.color = p.getCharPref("car-color");
+    this.borderColor = p.getCharPref("car-border-color");
+    this.width = parseFloat(p.getCharPref("car-width")); // [m]
+    this.length = parseFloat(p.getCharPref("car-length")); // [m]
+    this.position = parseFloat(p.getCharPref("car-position")); // [m]
+    this.speed = parseFloat(p.getCharPref("car-speed")); // [m/s]
+
 	if(options) $.extend(this, options);
 }
 
@@ -50,15 +30,28 @@ function Model(options) {
 	this.cars = [];
 	this.lights = [];
 	this.newCarGenTime = 0.0; // [s]
-	$.extend(this, defaults.Model);
+
+    var p = getPreferences();
+    this.lightGreenColor = p.getCharPref("tl-green-color");
+    this.lightRedColor = p.getCharPref("tl-red-color");
+    this.lightHeight = parseFloat(p.getCharPref("tl-height"));
+    this.viewMargin = p.getIntPref("view-margin");
+    this.stopDistance = parseFloat(p.getCharPref("model-stop-distance"));
+    this.carGenRate = parseFloat(p.getCharPref("model-car-gen-rate"));
+
 	if (options) $.extend(this, options);
 }
 
 
 // Simple traffic light, that has two states: green and red.
 function SimpleTrafficLight(options) {
+    var p = getPreferences();
+    this.interval = p.getIntPref("tl-interval"); // [s]
+    this.position = parseFloat(p.getCharPref("tl-position")); // [m]
+
 	this.lastStateSwitchTime = 0.0; // [s]
-	$.extend(this, defaults.SimpleTrafficLight);
+    this.state = "g";
+
 	if (options) $.extend(this, options);
 }
 
@@ -68,11 +61,11 @@ SimpleTrafficLight.prototype.switch = function(state) {
 
 
 Model.prototype.draw = function(dc) {
-	var margin = defaults.margin; // [px]
-	var roadMargin = defaults.lightHeight; // [px] - margin between car and road.
-	var lightHeight = defaults.lightHeight; // [m]
-	var lightGreenColor = defaults.lightGreenColor;
-	var lightRedColor = defaults.lightRedColor;
+	var margin = this.viewMargin; // [px]
+	var roadMargin = this.lightHeight; // [px] - margin between car and road.
+	var lightHeight = this.lightHeight;
+	var lightGreenColor = this.lightGreenColor;
+	var lightRedColor = this.lightRedColor;
 	var scale = (dc.canvas.height - margin * 2) / this.road.length;
 
 	var r = this.road;
@@ -149,16 +142,16 @@ Model.prototype.run_step = function(timeStep) {
 		// Check for red traffic light.
 		var nearestTL = this.getNearestTLight(car.position);
 		if(nearestTL && nearestTL.state === "r" &&
-		   (nearestTL.position - car.position - defaults.stopDistance) < distanceToMove ) {
-			distanceToMove = (nearestTL.position - car.position) - defaults.stopDistance; // Default distance to light or car. temporary.
+		   (nearestTL.position - car.position - this.stopDistance) < distanceToMove ) {
+			distanceToMove = (nearestTL.position - car.position) - this.stopDistance; // Default distance to light or car. temporary.
 			if (distanceToMove < 0) distanceToMove = 0;
 		}
 
 		// Check for leading car.
 		var nearestCar = this.getNearestCar(car.position);
 		if(nearestCar &&
-		   (nearestCar.position - nearestCar.length - car.position - defaults.stopDistance) < distanceToMove ) {
-			distanceToMove = (nearestCar.position - nearestCar.length - car.position) - defaults.stopDistance; // Default distance to light or car. temporary.
+		   (nearestCar.position - nearestCar.length - car.position - this.stopDistance) < distanceToMove ) {
+			distanceToMove = (nearestCar.position - nearestCar.length - car.position) - this.stopDistance; // Default distance to light or car. temporary.
 			if (distanceToMove < 0) distanceToMove = 0;
 		}
 
@@ -169,10 +162,9 @@ Model.prototype.run_step = function(timeStep) {
 	}
 
 	// Generate new car
-	if (this.newCarGenTime + defaults.newCarGenRate <= newTime) {
+	if (this.newCarGenTime + this.carGenRate <= newTime) {
 		var speed = Math.floor(Math.random() * 10) + 10;
 		var car = new Car({"speed": speed});
-		document.getElementById("log-box").value += "Generated car with speed: " + speed + "\n";
 		this.cars.push(car);
 		this.newCarGenTime = newTime;
 	}

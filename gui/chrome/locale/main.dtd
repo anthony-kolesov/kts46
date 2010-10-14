@@ -17,3 +17,7 @@
 <!ENTITY model-run "Run">
 <!ENTITY model-pause "Pause">
 <!ENTITY model-reset "Reset">
+
+<!ENTITY model-params-reset.label "Reset">
+<!ENTITY model-params-apply.label "Apply">
+<!ENTITY model-params.label "Model parameters">

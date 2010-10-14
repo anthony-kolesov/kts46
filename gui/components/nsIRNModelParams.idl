@@ -1,0 +1,6 @@
+#include "nsISupports.idl"
+[scriptable, uuid(4c490951-fc68-4780-8102-4f42e4bf422f)]
+interface nsIRNModelParams : nsISupports
+{
+    attribute float carGenerationInterval;
+};

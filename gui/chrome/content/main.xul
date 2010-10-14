@@ -1,9 +1,10 @@
 ﻿<?xml version="1.0"?>
 
 <?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://pyxul/skin/pyxul.css" type="text/css"?>
 <!DOCTYPE window SYSTEM "chrome://pyxul/locale/main.dtd">
 
-<window id="main" title="PyXUL" width="800" height="500" onload="drawInitialCanvas();"
+<window id="main" title="PyXUL" width="900" height="500" onload="drawInitialCanvas();"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	xmlns:html="http://www.w3.org/1999/xhtml">
 
@@ -54,7 +55,7 @@
 			 For whatever reason canvas stretches even with flex=0.
 			 Maybe this is for every element that is in the root of window?
 		-->
-		<html:canvas id="road-canvas" width="600" height="400" style="border: 1px dotted #666666;" />
+		<html:canvas id="road-canvas" width="600" height="400" />
 
 		<vbox flex="1">
 			<menulist id="model-type">
@@ -66,7 +67,44 @@
 			<button label="&model-run;" command="cmd_model_run"/>
 			<button label="&model-pause;" command="cmd_model_pause"/>
 			<button label="&model-reset;" command="cmd_model_reset"/>
-			<textbox id="log-box" readonly="true" multiline="true" flex="1"/>
+
+			<groupbox align="end" id="model-params">
+				<caption label="&model-params.label;"/>
+				<hbox>
+					<label value="Car gen. rate: " control="car-gen-rate-control"/>
+					<textbox id="car-gen-rate-box" type="number" value="3"
+						min="1" max="100"/>
+				</hbox>
+				<hbox>
+					<label value="Light dur. green=" control="green-light-dur"/>
+					<textbox id="green-light-dur" type="number" value="5"
+						min="1" max="1000"/>
+					<label value="red=" control="red-light-dur"/>
+					<textbox id="red-light-dur" type="number" value="5"
+						min="1" max="1000"/>
+				</hbox>
+				<hbox>
+					<label value="Speed min=" control="car-speed-min"/>
+					<textbox id="car-speed-min" type="number" value="10"
+						min="1" max="100"/>
+					<label value="max=" control="car-speed-max"/>
+					<textbox id="car-speed-max" type="number" value="20"
+						min="1" max="100"/>
+				</hbox>
+				<hbox>
+					<spacer flex="1"/>
+					<label value="Road L=" control="road-length"/>
+					<textbox id="road-length" type="number" value="300"
+						min="10" max="100000"/>
+					<label value="W=" control="road-width"/>
+					<textbox id="road-width" type="number" value="10"
+						min="3" max="30"/>
+				</hbox>
+				<hbox>
+					<button label="&model-params-reset.label;"/>
+					<button label="&model-params-apply.label;"/>
+				</hbox>
+			</groupbox>
 		</vbox>
 	</hbox>
 </window>

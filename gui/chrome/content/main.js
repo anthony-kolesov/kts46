@@ -4,14 +4,16 @@
     "cmdRun": "#cmd_model_run",
     "modelType": "#model-type"
 };
+var RNS = {
+    'PREFERENCE_BRANCH': "extensions.rns."
+};
 
-
-function runQuery() {
-    //const SimpleConstructor = new Components.Constructor("@mozilla.org/js_simple_component;1", "nsISimple");
-    var SimpleConstructor = new Components.Constructor("@mozilla.org/PySimple;1", "nsISimple");
-    var s = new SimpleConstructor();
-    document.getElementById("query-text").value = s.yourName;
-}
+//function runQuery() {
+//    //const SimpleConstructor = new Components.Constructor("@mozilla.org/js_simple_component;1", "nsISimple");
+//    var SimpleConstructor = new Components.Constructor("@mozilla.org/PySimple;1", "nsISimple");
+//    var s = new SimpleConstructor();
+//    document.getElementById("query-text").value = s.yourName;
+//}
 
 
 /**
@@ -27,68 +29,6 @@ function showAboutInfo() {
  */
 function closeApp(){
     window.close();
-}
-
-
-function drawPythonModel(drawModel, modelState, dc){
-    var margin = defaults.margin; // [px]
-    var roadMargin = defaults.lightHeight; // [px] - margin between car and road.
-    var lightHeight = defaults.lightHeight; // [m]
-    var lightGreenColor = defaults.lightGreenColor;
-    var lightRedColor = defaults.lightRedColor;
-    var scale = (dc.canvas.height - margin * 2) / this.road.length;
-
-    var r = {};
-    $.extend(r, defaults.Road);
-    $.extend(r, modelDescription.road);
-
-    // Clear canvas.
-    dc.clearRect(0, 0, dc.canvas.width, dc.canvas.height);
-
-    // Draw road.
-    dc.strokeStyle = r.borderColor;
-    dc.fillStyle = r.color;
-    dc.fillRect(margin, margin, r.width * scale, r.length * scale);
-    dc.strokeRect(margin, margin, r.width * scale, r.length * scale);
-
-    // Draw cars.
-    for (var i in modelState.cars) {
-        // if (!this.cars[i]) continue;
-
-        var c = this.cars[i];
-        dc.strokeStyle = c.borderColor;
-        dc.fillStyle = c.color;
-
-        var x = margin + roadMargin;
-        var y = margin + (c.position - c.length) * scale;
-
-        var width = c.drawWidth || (c.drawWidth = c.width * scale);
-        var height = c.drawHeight || (c.drawHeight = c.length * scale);
-        if (y < margin) { // Car is at top and its end out of road.
-            height = y - margin + c.length*scale;
-            y = margin;
-        } else if (y > dc.canvas.height - margin) { // Car is at bottom.
-            var newY = dc.canvas.height.margin;
-            height = height - (y - newY);
-            y = newY;
-        }
-
-        dc.fillRect(x, y, width, height);
-        dc.strokeRect(x, y, width, height);
-    }
-
-    // Draw traffic lights.
-    for (var i in modelState.lights) {
-        var tl = modelDescription.lights[i];
-
-        var x = margin;
-        var y = margin + tl.position * scale + lightHeight;
-        var width = r.width * scale;
-        var height = lightHeight * scale;
-
-        dc.fillStyle = tl.state === "g" ? lightGreenColor : lightRedColor;
-        dc.fillRect(x, y, width, height);
-    }
 }
 
 function drawModel() {
@@ -148,7 +88,7 @@ function drawInitialCanvas() {
     var dc = c.get(0).getContext("2d");
 
     if ( $(dom.modelType).attr('value') === "js" ) {
-        var r = new Road({"length": 300});
+        var r = new Road({"length": 300, "width": 10});
         var car = new Car();
         var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
 
@@ -221,4 +161,27 @@ function runModel(){
     $(dom.cmdPause).removeAttr('disabled');
     $(dom.cmdRun).attr('disabled', true);
     $(dom.modelType).attr('disabled', true);
+}
+
+
+function getPreferences(){
+    return Components.classes["@mozilla.org/preferences-service;1"]
+        .getService(Components.interfaces.nsIPrefService)
+        .getBranch(RNS.PREFERENCE_BRANCH);
+}
+
+
+/**
+ * Applies changes of parameters to the model.
+ */
+function applyModelParams() {
+    logmsg('Apply model params.');
+}
+
+
+/**
+ * Reset all made, but not applied changes.
+ */
+function resetModelParams(){
+    logmsg("Reset model params.");
 }

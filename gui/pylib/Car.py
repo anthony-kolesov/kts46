@@ -2,7 +2,8 @@ from uuid import uuid4
 
 class Car:
 
-    def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0):
+    def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0,
+                linePosition=0):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
@@ -16,6 +17,7 @@ class Car:
         self._length = length
         self._width = width
         self._position = position
+        self.linePosition = linePosition
 
     def move(self, distance):
         "Moves car on specified distance forward."
@@ -37,4 +39,6 @@ class Car:
         }
 
     def get_state_data(self):
-        return {'position': self.get_position()}
+        return {'position': self.get_position(),
+                'line': self.linePosition
+        }

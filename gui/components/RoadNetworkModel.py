@@ -14,8 +14,11 @@ class RoadNetworkModel:
         self._cars = []
         self._lastSendCars = {}
         self._lights = []
-        self._road = Road(length=300)
+        self._road = Road(length=300, linesCount=2)
         self._lastCarGenerationTime = datetime.timedelta()
+        self.params = components\
+            .classes["@kolesov.blogspot.com/RoadNetworkModelParams;1"]\
+            .createInstance()
         self._log = components.classes['@mozilla.org/consoleservice;1'].getService(components.interfaces.nsIConsoleService)
         # config default model
         self._lights.append(SimpleSemaphore(id=1, position=100))
@@ -26,7 +29,7 @@ class RoadNetworkModel:
 
     def run_step(self, milliseconds):
         stopDistance = 2.0
-        newCarGenRate = datetime.timedelta(seconds=3)
+        newCarGenRate = datetime.timedelta(seconds=self.params.carGenerationInterval)
 
         timeStep = datetime.timedelta(milliseconds=milliseconds)
         newTime = self._time + timeStep # Time after step is performed.
