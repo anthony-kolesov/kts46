@@ -8,6 +8,11 @@ var RNS = {
     "PREFERENCE_BRANCH": "extensions.rns.",
     "DOM": {
         "carGenIntervalBox": "#car-gen-rate-box",
+        "safeDistanceBox": "#safedist-box",
+        "greenLightDurationBox": "#green-light-dur",
+        "redLightDurationBox": "#red-light-dur",
+        "minSpeedBox": "#car-speed-min",
+        "maxSpeedBox": "#car-speed-max",
         "modelParamBoxes": "#model-params textbox, #model-params button"
     }
 };
@@ -183,9 +188,14 @@ function getPreferences(){
 function applyModelParams() {
     logmsg('Apply model params.');
 
-    var c = $(dom.roadCanvas);
-    var model = c.data("model");
-    model.params.carGenerationInterval = $(RNS.DOM.carGenIntervalBox).val();
+    let (p = $(dom.roadCanvas).data("model").params) {
+        p.carGenerationInterval = parseFloat($(RNS.DOM.carGenIntervalBox).val());
+        p.safeDistance = parseFloat($(RNS.DOM.safeDistanceBox).val());
+        p.greenLightDuration = parseFloat($(RNS.DOM.greenLightDurationBox).val());
+        p.redLightDuration = parseFloat($(RNS.DOM.redLightDurationBox).val());
+        p.maxSpeed = parseFloat($(RNS.DOM.maxSpeedBox).val());
+        p.minSpeed = parseFloat($(RNS.DOM.minSpeedBox).val());
+    }
 }
 
 

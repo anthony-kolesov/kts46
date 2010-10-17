@@ -1,4 +1,5 @@
-import datetime, random, json, math
+import random, json, math
+from datetime import timedelta
 from xpcom import components, verbose
 from Car import Car
 from TrafficLight import SimpleSemaphore
@@ -10,12 +11,12 @@ class RoadNetworkModel:
     _reg_contractid_ = "@kolesov.blogspot.com/RoadNetworkModel;1"
 
     def __init__(self):
-        self._time = datetime.timedelta()
+        self._time = timedelta()
         self._cars = []
         self._lastSendCars = {}
         self._lights = []
         self._road = Road(length=300, linesCount=2)
-        self._lastCarGenerationTime = datetime.timedelta()
+        self._lastCarGenerationTime = timedelta()
         self.params = components\
             .classes["@kolesov.blogspot.com/RoadNetworkModelParams;1"]\
             .createInstance()
@@ -28,14 +29,20 @@ class RoadNetworkModel:
             print("RoadNetworkModel: __del__ method called - object is destructing")
 
     def run_step(self, milliseconds):
-        stopDistance = 2.0
-        newCarGenRate = datetime.timedelta(seconds=self.params.carGenerationInterval)
+        stopDistance = self.params.safeDistance
+        newCarGenRate = timedelta(seconds=self.params.carGenerationInterval)
 
-        timeStep = datetime.timedelta(milliseconds=milliseconds)
+        timeStep = timedelta(milliseconds=milliseconds)
         newTime = self._time + timeStep # Time after step is performed.
 
         for light in self._lights:
-            if newTime - light.get_last_switch_time() > light.get_interval():
+            # Update params.
+            if self.params.greenLightDuration != light.greenInterval.seconds:
+                light.greenInterval = timedelta(seconds=self.params.greenLightDuration)
+            if self.params.redLightDuration != light.redInterval.seconds:
+                light.redInterval = timedelta(seconds=self.params.redLightDuration)
+            # Update state.
+            if newTime > light.getNextSwitchTime():
                 light.switch(newTime)
 
         for car in self._cars:
@@ -68,7 +75,9 @@ class RoadNetworkModel:
 
         # Generate new car
         if self._lastCarGenerationTime + newCarGenRate <= newTime:
-            speed = math.floor(random.random() * 10) + 10
+            speedMultiplier = self.params.maxSpeed - self.params.minSpeed
+            speedAdder = self.params.minSpeed
+            speed = math.floor(random.random() * speedMultiplier) + speedAdder
             newCar = Car(speed=speed)
             self._cars.append(newCar)
             self._lastCarGenerationTime = newTime
@@ -93,6 +102,12 @@ class RoadNetworkModel:
                 current = i
                 current_pos = pos
         return current
+
+    def canCreateNewCar(self, newTime):
+        newCarGenRate = timedelta(seconds=self.params.carGenerationInterval)
+        lastCar = get_nearest_car(0.0)
+        # if lastCar.get_position - lastCar.get_length() < stopDistance.
+        return self._lastCarGenerationTime + newCarGenRate <= newTime
 
     def get_state_data(self):
         # Traffic lights

@@ -6,7 +6,7 @@
 
 <window id="main" title="PyXUL" width="900" height="500" onload="drawInitialCanvas();"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
-	xmlns:html="http://www.w3.org/1999/xhtml">
+	xmlns:html="http://www.w3.org/1999/xhtml" sizemode="maximized">
 
 	<script type="application/javascript" src="chrome://pyxul/content/model.js"/>
 	<script type="application/javascript" src="chrome://pyxul/content/main.js"/>
@@ -79,29 +79,30 @@
 					<label value="&model-params-cargenrate.suffix;"/>
 				</hbox>
 				<hbox>
-					<label value="Light dur. green=" control="green-light-dur"/>
+					<label value="&model-params-safedist.label;"
+						   control="safedist-control"/>
+					<textbox id="safedist-box" value="5.0"/>
+					<label value="&model-params-safedist.suffix;"/>
+				</hbox>
+				<hbox>
+					<label value="&model-params-tlgreen.label;" control="green-light-dur"/>
 					<textbox id="green-light-dur" type="number" value="5"
 						min="1" max="1000"/>
-					<label value="red=" control="red-light-dur"/>
+					<label value="&model-params-tlgreen.suffix;"/>
+					<label value="&model-params-tlred.label;" control="red-light-dur"/>
 					<textbox id="red-light-dur" type="number" value="5"
 						min="1" max="1000"/>
+					<label value="&model-params-tlred.suffix;"/>
 				</hbox>
 				<hbox>
-					<label value="Speed min=" control="car-speed-min"/>
+					<label value="&model-params-speedmin.label;" control="car-speed-min"/>
 					<textbox id="car-speed-min" type="number" value="10"
 						min="1" max="100"/>
-					<label value="max=" control="car-speed-max"/>
+					<label value="&model-params-speedmin.suffix;"/>
+					<label value="&model-params-speedmax.label;" control="car-speed-max"/>
 					<textbox id="car-speed-max" type="number" value="20"
 						min="1" max="100"/>
-				</hbox>
-				<hbox>
-					<spacer flex="1"/>
-					<label value="Road L=" control="road-length"/>
-					<textbox id="road-length" type="number" value="300"
-						min="10" max="100000"/>
-					<label value="W=" control="road-width"/>
-					<textbox id="road-width" type="number" value="10"
-						min="3" max="30"/>
+					<label value="&model-params-speedmax.suffix;"/>
 				</hbox>
 				<hbox>
 					<button label="&model-params-reset.label;"

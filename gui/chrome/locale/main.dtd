@@ -23,3 +23,13 @@
 <!ENTITY model-params.label "Model parameters">
 <!ENTITY model-params-cargenrate.label "Car gen. rate:">
 <!ENTITY model-params-cargenrate.suffix "sec">
+<!ENTITY model-params-safedist.label "Safe distance:">
+<!ENTITY model-params-safedist.suffix "m">
+<!ENTITY model-params-tlgreen.label "Light dur. green:">
+<!ENTITY model-params-tlgreen.suffix "s">
+<!ENTITY model-params-tlred.label "red:">
+<!ENTITY model-params-tlred.suffix "s">
+<!ENTITY model-params-speedmin.label "Speed min:">
+<!ENTITY model-params-speedmin.suffix "m/s">
+<!ENTITY model-params-speedmax.label "max:">
+<!ENTITY model-params-speedmax.suffix "m/s">
