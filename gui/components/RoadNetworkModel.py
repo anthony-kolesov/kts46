@@ -75,12 +75,20 @@ class RoadNetworkModel:
 
         # Generate new car
         if self._lastCarGenerationTime + newCarGenRate <= newTime:
-            speedMultiplier = self.params.maxSpeed - self.params.minSpeed
-            speedAdder = self.params.minSpeed
-            speed = math.floor(random.random() * speedMultiplier) + speedAdder
-            newCar = Car(speed=speed)
-            self._cars.append(newCar)
-            self._lastCarGenerationTime = newTime
+            lastCar = self.get_nearest_car(0.0)
+            if lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance:
+                speedMultiplier = self.params.maxSpeed - self.params.minSpeed
+                speedAdder = self.params.minSpeed
+                speed = math.floor(random.random() * speedMultiplier) + speedAdder
+                newCar = Car(speed=speed)
+                self._cars.append(newCar)
+                self._lastCarGenerationTime = newTime
+                self._log.logStringMessage(
+                    "%s: Created car: {speed: %f}." % (newTime, speed))
+            else:
+                self._log.logStringMessage(
+                    "%s: Couldn't generate new car, because there is not enough space!" %
+                    newTime)
 
         self._time = newTime
 
