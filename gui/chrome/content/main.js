@@ -1,8 +1,7 @@
 ﻿var dom = {
     "roadCanvas": "#road-canvas",
     "cmdPause": "#cmd_model_pause",
-    "cmdRun": "#cmd_model_run",
-    "modelType": "#model-type"
+    "cmdRun": "#cmd_model_run"
 };
 var RNS = {
     "PREFERENCE_BRANCH": "extensions.rns.",
@@ -44,29 +43,27 @@ function drawModel() {
     var c = $(dom.roadCanvas);
     var dc = c.get(0).getContext("2d");
     var model = c.data("model");
-    var modelType = c.data("model-type");
-    if (modelType === "py") {
-        var dm = c.data("draw-model");
-        var stateStr = model.get_state_data();
-        var state = $.parseJSON(stateStr);
-        for (var i in state.lights) {
-            dm.lights[i].switch(state.lights[i].state);
-        }
-        for (var carId in state.cars) {
-            var car = state.cars[carId];
+    var dm = c.data("draw-model");
+    var stateStr = model.get_state_data();
+    var state = $.parseJSON(stateStr);
+    for (var i in state.lights) {
+        dm.lights[i].switch(state.lights[i].state);
+    }
+    for (var carId in state.cars) {
+        var car = state.cars[carId];
 
-            if (car.action && car.action === "del") {
-                // Delete old car.
-                dm.cars[carId] = undefined;
-            } else if (car.action && car.action === "add") {
-                // Add new car
-                dm.cars[carId] = new Car(car);
-            } else {
-                // Update existing car.
-                dm.cars[carId].position = car.position;
-            }
+        if (car.action && car.action === "del") {
+            // Delete old car.
+            dm.cars[carId] = undefined;
+        } else if (car.action && car.action === "add") {
+            // Add new car
+            dm.cars[carId] = new Car(car);
+        } else {
+            // Update existing car.
+            dm.cars[carId].position = car.position;
         }
     }
+
     dm.draw(dc);
 }
 
@@ -74,10 +71,7 @@ function drawModel() {
 // Move cars and redraws canvas.
 function updateRoadState() {
     var c = $(dom.roadCanvas);
-    if (c.data("model-type") === "js")
-        c.data("model").run_step(0.04);
-    else
-        c.data("model").run_step(40);
+    c.data("model").run_step(40);
     drawModel();
 
     // Setup new timer.
@@ -96,39 +90,28 @@ function drawInitialCanvas() {
     var c = $(dom.roadCanvas);
     var dc = c.get(0).getContext("2d");
 
-    if ( $(dom.modelType).attr('value') === "js" ) {
-        var r = new Road({"length": 300, "width": 10});
-        var car = new Car();
-        var model = new Model({"road": r, "cars":[car], "lights": [new SimpleTrafficLight()]});
+    const PyModel = new Components.Constructor(
+        "@kolesov.blogspot.com/RoadNetworkModel;1",
+        "nsIRoadNetworkModel");
+    var model = new PyModel();
+    c.data("model", model);
+    var descrStr = model.get_description_data();
+    var descr = $.parseJSON(descrStr);
+    c.data("model-description", descr);
+    logmsg("NETWORK: " + descrStr);
+    logmsg("STATE: " + model.get_state_data());
 
-        c.data("model", model);
-        c.data("model-type","js");
-        drawModel();
-    } else {
-        const PyModel = new Components.Constructor(
-            "@kolesov.blogspot.com/RoadNetworkModel;1",
-            "nsIRoadNetworkModel");
-        var model = new PyModel();
-        c.data("model", model);
-        c.data("model-type","py");
-        var descrStr = model.get_description_data();
-        var descr = $.parseJSON(descrStr);
-        c.data("model-description", descr);
-        logmsg("NETWORK: " + descrStr);
-        logmsg("STATE: " + model.get_state_data());
-
-        var road = new Road(descr.road);
-        var lights = {};
-        for (var i in descr.lights)
-            lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
-        var drawingModel = new Model({
-            "road":road,
-            "lights":lights,
-            "cars": {}
-        });
-        c.data("draw-model", drawingModel);
-        drawModel();
-    }
+    var road = new Road(descr.road);
+    var lights = {};
+    for (var i in descr.lights)
+        lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
+    var drawingModel = new Model({
+        "road":road,
+        "lights":lights,
+        "cars": {}
+    });
+    c.data("draw-model", drawingModel);
+    drawModel();
 }
 
 function openJavaScriptConsole() {
@@ -154,7 +137,6 @@ function pauseModel(){
     // UI modification.
     $(dom.cmdPause).attr('disabled', true);
     $(dom.cmdRun).removeAttr('disabled');
-    $(dom.modelType).removeAttr('disabled');
     $(RNS.DOM.modelParamBoxes).attr('disabled', true);
 }
 
@@ -170,7 +152,6 @@ function runModel(){
     // UI modification.
     $(dom.cmdPause).removeAttr('disabled');
     $(dom.cmdRun).attr('disabled', true);
-    $(dom.modelType).attr('disabled', true);
     $(RNS.DOM.modelParamBoxes).removeAttr('disabled');
 }
 
