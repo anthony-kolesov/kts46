@@ -83,7 +83,7 @@ function updateRoadState() {
 /**
  * Draws initial view of canvas.
  */
-function drawInitialCanvas() {
+/*function drawInitialCanvas() {
     // Pause current model, so new model will not be runned by old interval timer.
     pauseModel();
 
@@ -98,8 +98,6 @@ function drawInitialCanvas() {
     var descrStr = model.get_description_data();
     var descr = $.parseJSON(descrStr);
     c.data("model-description", descr);
-    logmsg("NETWORK: " + descrStr);
-    logmsg("STATE: " + model.get_state_data());
 
     var road = new Road(descr.road);
     var lights = {};
@@ -112,7 +110,7 @@ function drawInitialCanvas() {
     });
     c.data("draw-model", drawingModel);
     drawModel();
-}
+}*/
 
 function openJavaScriptConsole() {
     var wwatch = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
@@ -185,4 +183,76 @@ function applyModelParams() {
  */
 function resetModelParams(){
     logmsg("Reset model params.");
+}
+
+/**
+ * Opens model from the specified file.
+ */
+function openModel(){
+    var nsIFilePicker = Components.interfaces.nsIFilePicker;
+    var fp = Components.classes["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
+    fp.init(window, "Select a File", nsIFilePicker.modeOpen);
+    if (fp.show() === nsIFilePicker.returnOK){
+        var f = fp.file;
+
+        // This code taken from MDN:
+        // https://developer.mozilla.org/en/Code_snippets/File_I//O#section_20
+        var yamlData = "";
+        var fstream = Components.classes["@mozilla.org/network/file-input-stream;1"].
+                        createInstance(Components.interfaces.nsIFileInputStream);
+        var cstream = Components.classes["@mozilla.org/intl/converter-input-stream;1"].
+                        createInstance(Components.interfaces.nsIConverterInputStream);
+        fstream.init(f, -1, 0, 0);
+        cstream.init(fstream, "UTF-8", 0, 0);
+
+        let (str = {}) {
+          let read = 0;
+          do {
+            read = cstream.readString(0xffffffff, str); // read as much as we can and put it in str.value
+            yamlData += str.value;
+          } while (read != 0);
+        }
+        cstream.close(); // this closes fstream
+
+        newModel(yamlData);
+    }
+}
+
+/**
+ * Loads model from YAML description.
+ * If there is no description, then default model is used.
+ */
+function newModel(yamlData) {
+    // Pause current model, so new model will not be runned by old interval timer.
+    pauseModel();
+
+    var c = $(dom.roadCanvas);
+    var dc = c.get(0).getContext("2d");
+
+    const PyModel = new Components.Constructor(
+        "@kolesov.blogspot.com/RoadNetworkModel;1",
+        "nsIRoadNetworkModel");
+    var model = new PyModel();
+
+    // Load from YAML if available.
+    if (yamlData) {
+        model.loadYAML(yamlData);
+    }
+
+    c.data("model", model);
+    var descrStr = model.get_description_data();
+    var descr = $.parseJSON(descrStr);
+    c.data("model-description", descr);
+
+    var road = new Road(descr.road);
+    var lights = {};
+    for (var i in descr.lights)
+        lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
+    var drawingModel = new Model({
+        "road":road,
+        "lights":lights,
+        "cars": {}
+    });
+    c.data("draw-model", drawingModel);
+    drawModel();
 }

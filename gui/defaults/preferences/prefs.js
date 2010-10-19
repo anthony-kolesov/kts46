@@ -15,7 +15,6 @@ pref("extensions.rns.car-position", "0.0");
 pref("extensions.rns.car-speed", "15.0");
 
 // Simple traffic light
-pref("extensions.rns.tl-interval", 5);
 pref("extensions.rns.tl-position", "100");
 pref("extensions.rns.tl-height", "1.0");
 pref("extensions.rns.tl-green-color", "#00ff00");

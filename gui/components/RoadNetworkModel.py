@@ -1,4 +1,5 @@
 import random, json, math
+import yaml
 from datetime import timedelta
 from xpcom import components, verbose
 from Car import Car
@@ -146,3 +147,32 @@ class RoadNetworkModel:
             lights[light.get_id()] = light.get_description_data()
         road = {'length': self._road.get_length(), 'width': self._road.get_width()}
         return json.dumps({'lights': lights, 'road': road})
+
+    def loadYAML(self, yamlData):
+        objData = yaml.safe_load(yamlData)
+
+        if "carGenerationInterval" in objData:
+            self.params.carGenerationInterval = objData["carGenerationInterval"]
+        if "safeDistance" in objData:
+            self.params.safeDistance = objData["safeDistance"]
+        if "maxSpeed" in objData:
+            self.params.maxSpeed = objData["maxSpeed"]
+        if "minSpeed" in objData:
+            self.params.minSpeed = objData["minSpeed"]
+        
+
+#road:
+#    length: 300
+#    width: 10#
+#
+#trafficLights:
+#    -   id: 1
+#        position: 100
+#        greenDuration: 5
+#        redDuration: 4
+
+
+#        #self._road = Road(length=300, linesCount=2)
+
+        #for x in objData.iterkeys():
+        #    self._log.logStringMessage("%s = %s" % (x, objData[x]))

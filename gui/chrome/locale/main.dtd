@@ -1,5 +1,7 @@
 <!ENTITY menu-file.label "File">
 <!ENTITY menu-file.key "f">
+<!ENTITY menu-open.label "Open">
+<!ENTITY menu-open.key "o">
 <!ENTITY menu-exit.label "Exit">
 <!ENTITY menu-exit.key "e">
 

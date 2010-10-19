@@ -46,7 +46,6 @@ function Model(options) {
 // Simple traffic light, that has two states: green and red.
 function SimpleTrafficLight(options) {
     var p = getPreferences();
-    this.interval = p.getIntPref("tl-interval"); // [s]
     this.position = parseFloat(p.getCharPref("tl-position")); // [m]
 
 	this.lastStateSwitchTime = 0.0; // [s]

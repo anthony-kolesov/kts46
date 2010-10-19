@@ -7,4 +7,5 @@ interface nsIRoadNetworkModel : nsISupports
     void run_step(in long milliseconds);
 	string get_state_data();
 	string get_description_data();
+	void loadYAML(in string yamlData);
 };
