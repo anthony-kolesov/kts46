@@ -1,17 +1,18 @@
 # seconds
 carGenerationInterval: 3
 # m/s
-safeDistance: 5
+safeDistance: 10
 # m/s
 maxSpeed: 20
 minSpeed: 10
 
-road:
+road: !road
     length: 300
     width: 10
 
 trafficLights:
-    -   id: 1
+    -   !semaphore
+        id: 1
         position: 100
         greenDuration: 5
         redDuration: 4

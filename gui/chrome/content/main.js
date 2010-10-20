@@ -8,8 +8,6 @@ var RNS = {
     "DOM": {
         "carGenIntervalBox": "#car-gen-rate-box",
         "safeDistanceBox": "#safedist-box",
-        "greenLightDurationBox": "#green-light-dur",
-        "redLightDurationBox": "#red-light-dur",
         "minSpeedBox": "#car-speed-min",
         "maxSpeedBox": "#car-speed-max",
         "modelParamBoxes": "#model-params textbox, #model-params button"
@@ -170,8 +168,6 @@ function applyModelParams() {
     let (p = $(dom.roadCanvas).data("model").params) {
         p.carGenerationInterval = parseFloat($(RNS.DOM.carGenIntervalBox).val());
         p.safeDistance = parseFloat($(RNS.DOM.safeDistanceBox).val());
-        p.greenLightDuration = parseFloat($(RNS.DOM.greenLightDurationBox).val());
-        p.redLightDuration = parseFloat($(RNS.DOM.redLightDurationBox).val());
         p.maxSpeed = parseFloat($(RNS.DOM.maxSpeedBox).val());
         p.minSpeed = parseFloat($(RNS.DOM.minSpeedBox).val());
     }

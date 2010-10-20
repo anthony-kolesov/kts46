@@ -5,6 +5,7 @@ from xpcom import components, verbose
 from Car import Car
 from TrafficLight import SimpleSemaphore
 from Road import Road
+from roadModel import *
 
 class RoadNetworkModel:
     _com_interfaces_ = components.interfaces.nsIRoadNetworkModel
@@ -38,10 +39,10 @@ class RoadNetworkModel:
 
         for light in self._lights:
             # Update params.
-            if self.params.greenLightDuration != light.greenInterval.seconds:
-                light.greenInterval = timedelta(seconds=self.params.greenLightDuration)
-            if self.params.redLightDuration != light.redInterval.seconds:
-                light.redInterval = timedelta(seconds=self.params.redLightDuration)
+            if self.params.greenLightDuration != light.greenDuration.seconds:
+                light.greenDuration = timedelta(seconds=self.params.greenLightDuration)
+            if self.params.redLightDuration != light.redDuration.seconds:
+                light.redDuration = timedelta(seconds=self.params.redLightDuration)
             # Update state.
             if newTime > light.getNextSwitchTime():
                 light.switch(newTime)
@@ -112,12 +113,6 @@ class RoadNetworkModel:
                 current_pos = pos
         return current
 
-    def canCreateNewCar(self, newTime):
-        newCarGenRate = timedelta(seconds=self.params.carGenerationInterval)
-        lastCar = get_nearest_car(0.0)
-        # if lastCar.get_position - lastCar.get_length() < stopDistance.
-        return self._lastCarGenerationTime + newCarGenRate <= newTime
-
     def get_state_data(self):
         # Traffic lights
         lights = {}
@@ -150,15 +145,19 @@ class RoadNetworkModel:
 
     def loadYAML(self, yamlData):
         objData = yaml.safe_load(yamlData)
+        #self._log.logStringMessage( "{length=%f, width=%f, type=%s}" % (objData["road"].length, objData["road"].width, type(objData["road"])) )
+        #self._log.logStringMessage(
+        #    "{id=%s, position=%s, green=%s, red=%s, type=%s}" % (objData["trafficLights"][0].id, objData["trafficLights"][0].position,
+        #    objData["trafficLights"][0].greenDuration, objData["trafficLights"][0].redDuration, type(objData["trafficLights"][0])) )
 
         if "carGenerationInterval" in objData:
-            self.params.carGenerationInterval = objData["carGenerationInterval"]
+           self.params.carGenerationInterval = objData["carGenerationInterval"]
         if "safeDistance" in objData:
-            self.params.safeDistance = objData["safeDistance"]
+           self.params.safeDistance = objData["safeDistance"]
         if "maxSpeed" in objData:
-            self.params.maxSpeed = objData["maxSpeed"]
+           self.params.maxSpeed = objData["maxSpeed"]
         if "minSpeed" in objData:
-            self.params.minSpeed = objData["minSpeed"]
+           self.params.minSpeed = objData["minSpeed"]
         
 
 #road:

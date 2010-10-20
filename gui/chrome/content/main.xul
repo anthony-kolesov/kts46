@@ -27,7 +27,7 @@
 	<keyset>
 		<key id="about_cmd_key" keycode="VK_F1" command="cmd_about" />
 		<key id="open_cmd_key" modifiers="accel" key="O" command="cmd_openModel" />
-		<key id="console_cmd_key" modifiers="control" key="E" command="cmd_console" />
+		<key id="console_cmd_key" modifiers="control" key="Q" command="cmd_console" />
 	</keyset>
 
 	<toolbox>
@@ -82,16 +82,6 @@
 						   control="safedist-control"/>
 					<textbox id="safedist-box" value="5.0"/>
 					<label value="&model-params-safedist.suffix;"/>
-				</hbox>
-				<hbox>
-					<label value="&model-params-tlgreen.label;" control="green-light-dur"/>
-					<textbox id="green-light-dur" type="number" value="5"
-						min="1" max="1000"/>
-					<label value="&model-params-tlgreen.suffix;"/>
-					<label value="&model-params-tlred.label;" control="red-light-dur"/>
-					<textbox id="red-light-dur" type="number" value="5"
-						min="1" max="1000"/>
-					<label value="&model-params-tlred.suffix;"/>
 				</hbox>
 				<hbox>
 					<label value="&model-params-speedmin.label;" control="car-speed-min"/>
