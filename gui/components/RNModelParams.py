@@ -8,7 +8,5 @@ class RNModelParams:
     def __init__(self):
         self.carGenerationInterval = 3.0
         self.safeDistance = 5.0
-        self.greenLightDuration = 5.0
-        self.redLightDuration = 5.0
         self.maxSpeed = 20.0
         self.minSpeed = 10.0

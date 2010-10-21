@@ -7,8 +7,6 @@ interface nsIRNModelParams : nsISupports
     // Distance in meters that is considered safe.
     attribute float safeDistance;
 
-    attribute float greenLightDuration;
-    attribute float redLightDuration;
     attribute float maxSpeed;
     attribute float minSpeed;
 };

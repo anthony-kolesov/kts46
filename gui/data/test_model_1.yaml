@@ -16,3 +16,8 @@ trafficLights:
         position: 100
         greenDuration: 5
         redDuration: 4
+    -   !semaphore
+        id: 2
+        position: 200
+        greenDuration: 5
+        redDuration: 9

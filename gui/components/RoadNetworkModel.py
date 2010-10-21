@@ -39,10 +39,10 @@ class RoadNetworkModel:
 
         for light in self._lights:
             # Update params.
-            if self.params.greenLightDuration != light.greenDuration.seconds:
-                light.greenDuration = timedelta(seconds=self.params.greenLightDuration)
-            if self.params.redLightDuration != light.redDuration.seconds:
-                light.redDuration = timedelta(seconds=self.params.redLightDuration)
+            #if self.params.greenLightDuration != light.greenDuration.seconds:
+            #    light.greenDuration = timedelta(seconds=self.params.greenLightDuration)
+            #if self.params.redLightDuration != light.redDuration.seconds:
+            #    light.redDuration = timedelta(seconds=self.params.redLightDuration)
             # Update state.
             if newTime > light.getNextSwitchTime():
                 light.switch(newTime)
@@ -117,7 +117,11 @@ class RoadNetworkModel:
         # Traffic lights
         lights = {}
         for light in self._lights:
-            lights[light.get_id()] = light.get_state_data()
+            try:
+                lights[light.get_id()] = light.get_state_data()
+            except AttributeError as ex:
+                self._log.logStringMessage("Exception while getting current state data: " + str(ex))
+                self._log.logStringMessage("Id = %s" % light.get_id())
         # Cars
         cars = {}
         for car in self._cars:
@@ -145,11 +149,7 @@ class RoadNetworkModel:
 
     def loadYAML(self, yamlData):
         objData = yaml.safe_load(yamlData)
-        #self._log.logStringMessage( "{length=%f, width=%f, type=%s}" % (objData["road"].length, objData["road"].width, type(objData["road"])) )
-        #self._log.logStringMessage(
-        #    "{id=%s, position=%s, green=%s, red=%s, type=%s}" % (objData["trafficLights"][0].id, objData["trafficLights"][0].position,
-        #    objData["trafficLights"][0].greenDuration, objData["trafficLights"][0].redDuration, type(objData["trafficLights"][0])) )
-
+        # fields
         if "carGenerationInterval" in objData:
            self.params.carGenerationInterval = objData["carGenerationInterval"]
         if "safeDistance" in objData:
@@ -158,20 +158,8 @@ class RoadNetworkModel:
            self.params.maxSpeed = objData["maxSpeed"]
         if "minSpeed" in objData:
            self.params.minSpeed = objData["minSpeed"]
-        
-
-#road:
-#    length: 300
-#    width: 10#
-#
-#trafficLights:
-#    -   id: 1
-#        position: 100
-#        greenDuration: 5
-#        redDuration: 4
-
-
-#        #self._road = Road(length=300, linesCount=2)
-
-        #for x in objData.iterkeys():
-        #    self._log.logStringMessage("%s = %s" % (x, objData[x]))
+        # collections
+        if "road" in objData:
+            self._road = objData["road"]
+        if "trafficLights" in objData:
+            self._lights = objData["trafficLights"]
