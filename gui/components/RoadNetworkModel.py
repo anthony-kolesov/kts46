@@ -1,3 +1,4 @@
+import logging
 from xpcom import components
 from roadModel import Car, Road, SimpleSemaphore, Model
 
@@ -24,3 +25,11 @@ class RoadNetworkModel:
 
     def loadYAML(self, yamlData):
         self._model.loadYAML(yamlData)
+
+# Add XPCOM log handler.
+# Set up logging to file. Logging to XULRunner console will initialized automatically.
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m/%d %H:%M:%S',
+                    filename='/tmp/rns-xul-runner.log',
+                    filemode='w')
