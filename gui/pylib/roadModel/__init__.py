@@ -1,14 +1,15 @@
 # from xpcom import components
 #import yaml
-import Car, Road, TrafficLight
+import Car as CarModule, Road as RoadModule, TrafficLight as TrafficLightModule,\
+    Model as ModelModule
 
 __version__ = '0.1.2'
 
 # Create aliases.
-Car = Car.Car
-Road = Road.Road
-SimpleSemaphore = TrafficLight.SimpleSemaphore
-
+Car = CarModule.Car
+Road = RoadModule.Road
+SimpleSemaphore = TrafficLightModule.SimpleSemaphore
+Model = ModelModule.Model
 
 # def road_constructor(loader, node):
 #    mapping = loader.construct_mapping(node)
