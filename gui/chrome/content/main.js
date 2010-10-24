@@ -1,7 +1,5 @@
 ﻿var dom = {
     "roadCanvas": "#road-canvas",
-    "cmdPause": "#cmd_model_pause",
-    "cmdRun": "#cmd_model_run"
 };
 var RNS = {
     "PREFERENCE_BRANCH": "extensions.rns.",
@@ -10,7 +8,10 @@ var RNS = {
         "safeDistanceBox": "#safedist-box",
         "minSpeedBox": "#car-speed-min",
         "maxSpeedBox": "#car-speed-max",
-        "modelParamBoxes": "#model-params textbox, #model-params button"
+        "modelParamBoxes": "#model-params textbox, #model-params button",
+        "cmdPause": "#cmd_model_pause",
+        "cmdRun": "#cmd_model_run",
+        "cmdReset": "#cmd_model_reset"
     }
 };
 
@@ -131,8 +132,8 @@ function pauseModel(){
     c.removeData("modelTimerId");
 
     // UI modification.
-    $(dom.cmdPause).attr('disabled', true);
-    $(dom.cmdRun).removeAttr('disabled');
+    $(RNS.DOM.cmdPause).attr('disabled', true);
+    $(RNS.DOM.cmdRun).removeAttr('disabled');
     $(RNS.DOM.modelParamBoxes).attr('disabled', true);
 }
 
@@ -146,8 +147,9 @@ function runModel(){
     updateRoadState();
 
     // UI modification.
-    $(dom.cmdPause).removeAttr('disabled');
-    $(dom.cmdRun).attr('disabled', true);
+    $(RNS.DOM.cmdReset).removeAttr('disabled');
+    $(RNS.DOM.cmdPause).removeAttr('disabled');
+    $(RNS.DOM.cmdRun).attr('disabled', true);
     $(RNS.DOM.modelParamBoxes).removeAttr('disabled');
 }
 
@@ -156,6 +158,14 @@ function getPreferences(){
     return Components.classes["@mozilla.org/preferences-service;1"]
         .getService(Components.interfaces.nsIPrefService)
         .getBranch(RNS.PREFERENCE_BRANCH);
+}
+
+
+function initWindow() {
+    $(RNS.DOM.cmdPause).attr('disabled', true);
+    $(RNS.DOM.cmdRun).attr('disabled', true);
+    $(RNS.DOM.cmdReset).attr('disabled', true);
+    $(RNS.DOM.modelParamBoxes).attr('disabled', true);
 }
 
 
