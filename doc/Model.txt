@@ -12,3 +12,16 @@ How each step is performed
 	4.1 Generate car.
 	4.2 If there is enough place then send car to the road, otherwise put it in the queue.
 
+
+What data is saved
+------------------
+
+Model definition:
+    * length of road
+    * positions of lights
+Modes states:
+    * state of lights
+    * position of cars
+
+
+

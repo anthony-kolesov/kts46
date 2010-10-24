@@ -2,10 +2,10 @@ import random, json, math
 import yaml
 from datetime import timedelta
 from xpcom import components
-from Car import Car
-from TrafficLight import SimpleSemaphore
-from Road import Road
-from roadModel import *
+from roadModel.Car import Car
+from roadModel.TrafficLight import SimpleSemaphore
+from roadModel.Road import Road
+#from roadModel import *
 
 class RoadNetworkModel:
     _com_interfaces_ = components.interfaces.nsIRoadNetworkModel
