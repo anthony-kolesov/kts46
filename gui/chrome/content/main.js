@@ -1,7 +1,4 @@
-﻿var dom = {
-    "roadCanvas": "#road-canvas",
-};
-var RNS = {
+﻿var RNS = {
     "PREFERENCE_BRANCH": "extensions.rns.",
     "DOM": {
         "carGenIntervalBox": "#car-gen-rate-box",
@@ -11,7 +8,8 @@ var RNS = {
         "modelParamBoxes": "#model-params textbox, #model-params button",
         "cmdPause": "#cmd_model_pause",
         "cmdRun": "#cmd_model_run",
-        "cmdReset": "#cmd_model_reset"
+        "cmdReset": "#cmd_model_reset",
+        "roadCanvas": "#road-canvas"
     }
 };
 
@@ -39,7 +37,7 @@ function closeApp(){
 }
 
 function drawModel() {
-    var c = $(dom.roadCanvas);
+    var c = $(RNS.DOM.roadCanvas);
     var dc = c.get(0).getContext("2d");
     var model = c.data("model");
     var dm = c.data("draw-model");
@@ -69,13 +67,13 @@ function drawModel() {
 
 // Move cars and redraws canvas.
 function updateRoadState() {
-    var c = $(dom.roadCanvas);
+    var c = $(RNS.DOM.roadCanvas);
     c.data("model").run_step(40);
     drawModel();
 
     // Setup new timer.
     var timerId = setTimeout("updateRoadState();", 40);
-    $(dom.roadCanvas).data("modelTimerId", timerId);
+    $(RNS.DOM.roadCanvas).data("modelTimerId", timerId);
 }
 
 
@@ -86,7 +84,7 @@ function updateRoadState() {
     // Pause current model, so new model will not be runned by old interval timer.
     pauseModel();
 
-    var c = $(dom.roadCanvas);
+    var c = $(RNS.DOM.roadCanvas);
     var dc = c.get(0).getContext("2d");
 
     const PyModel = new Components.Constructor(
@@ -126,7 +124,7 @@ function logmsg(str) {
 
 function pauseModel(){
     // Pause model.
-    var c = $(dom.roadCanvas);
+    var c = $(RNS.DOM.roadCanvas);
     var timerId = c.data("modelTimerId");
     clearTimeout(timerId);
     c.removeData("modelTimerId");
@@ -139,7 +137,7 @@ function pauseModel(){
 
 
 function runModel(){
-    if ($(dom.roadCanvas).data("modelTimerId")) {
+    if ($(RNS.DOM.roadCanvas).data("modelTimerId")) {
         // Do nothing, because model is already running.
         // Without this model will start to run faster.
         return;
@@ -175,7 +173,7 @@ function initWindow() {
 function applyModelParams() {
     logmsg('Apply model params.');
 
-    let (p = $(dom.roadCanvas).data("model").params) {
+    let (p = $(RNS.DOM.roadCanvas).data("model").params) {
         p.carGenerationInterval = parseFloat($(RNS.DOM.carGenIntervalBox).val());
         p.safeDistance = parseFloat($(RNS.DOM.safeDistanceBox).val());
         p.maxSpeed = parseFloat($(RNS.DOM.maxSpeedBox).val());
@@ -220,6 +218,7 @@ function openModel(){
         }
         cstream.close(); // this closes fstream
 
+        $(RNS.DOM.roadCanvas).data("yaml-source", yamlData);
         newModel(yamlData);
     }
 }
@@ -232,7 +231,7 @@ function newModel(yamlData) {
     // Pause current model, so new model will not be runned by old interval timer.
     pauseModel();
 
-    var c = $(dom.roadCanvas);
+    var c = $(RNS.DOM.roadCanvas);
     var dc = c.get(0).getContext("2d");
 
     const PyModel = new Components.Constructor(
@@ -243,6 +242,8 @@ function newModel(yamlData) {
     // Load from YAML if available.
     if (yamlData) {
         model.loadYAML(yamlData);
+    } else if (c.data('yaml-source')) {
+        model.loadYAML(c.data('yaml-source'));
     }
 
     c.data("model", model);
