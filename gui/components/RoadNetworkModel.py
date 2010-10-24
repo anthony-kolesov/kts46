@@ -12,7 +12,7 @@ class RoadNetworkModel:
     def __init__(self):
         self._time = timedelta()
         self._cars = []
-	self._enterQueue = []
+        self._enterQueue = []
         self._lastSendCars = {}
         self._lights = []
         self._road = None
@@ -60,7 +60,7 @@ class RoadNetworkModel:
             if self._road.get_length() < car.get_position():
                 self._cars.remove(car)
 
-	    # If there is a car in the queue, then send it.
+        # If there is a car in the queue, then send it.
         if len(self._enterQueue) > 0 and self.canAddCar():
             self._log.logStringMessage("Get car from queue, qlength: %i." % len(self._enterQueue) )
             self._cars.append(self._enterQueue[0])
