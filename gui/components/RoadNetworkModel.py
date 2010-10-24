@@ -15,6 +15,7 @@ class RoadNetworkModel:
     def __init__(self):
         self._time = timedelta()
         self._cars = []
+	self._enterQueue = []
         self._lastSendCars = {}
         self._lights = []
         self._road = None
@@ -23,8 +24,6 @@ class RoadNetworkModel:
             .classes["@kolesov.blogspot.com/RoadNetworkModelParams;1"]\
             .createInstance()
         self._log = components.classes['@mozilla.org/consoleservice;1'].getService(components.interfaces.nsIConsoleService)
-        # config default model
-        # self._lights.append(SimpleSemaphore(id=1, position=100))
 
     def run_step(self, milliseconds):
         stopDistance = self.params.safeDistance
@@ -64,23 +63,30 @@ class RoadNetworkModel:
             if self._road.get_length() < car.get_position():
                 self._cars.remove(car)
 
-        # Generate new car
+	    # If there is a car in the queue, then send it.
+        if len(self._enterQueue) > 0 and self.canAddCar():
+            self._log.logStringMessage("Get car from queue, qlength: %i." % len(self._enterQueue) )
+            self._cars.append(self._enterQueue[0])
+            del self._enterQueue[0]
+        
+        # Generate new car.
+        # If car was added from the queue then there is no possibility to add
+        # car to the road, but it can be added to the queue so we still need to
+        # run this step.
         if self._lastCarGenerationTime + newCarGenRate <= newTime:
-            lastCar = self.get_nearest_car(0.0)
-            if lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance:
-                speedMultiplier = self.params.maxSpeed - self.params.minSpeed
-                speedAdder = self.params.minSpeed
-                speed = math.floor(random.random() * speedMultiplier) + speedAdder
-                newCar = Car(speed=speed)
+            speedMultiplier = self.params.maxSpeed - self.params.minSpeed
+            speedAdder = self.params.minSpeed
+            speed = math.floor(random.random() * speedMultiplier) + speedAdder
+            newCar = Car(speed=speed)
+            self._lastCarGenerationTime = newTime
+            self._log.logStringMessage('Created car: {speed: %f}.' % speed)
+            if self.canAddCar():
                 self._cars.append(newCar)
-                self._lastCarGenerationTime = newTime
-                self._log.logStringMessage(
-                    "%s: Created car: {speed: %f}." % (newTime, speed))
             else:
-                self._log.logStringMessage(
-                    "%s: Couldn't generate new car, because there is not enough space!" %
-                    newTime)
+                self._enterQueue.append(newCar)
+                self._log.logStringMessage("Couldn't add car to the road, put in the queue.")
 
+        # Update time.
         self._time = newTime
 
 
@@ -92,7 +98,7 @@ class RoadNetworkModel:
 
     def get_nearest_object_in_array(self, array, position):
         current = None
-        current_pos = 0.0
+        current_pos = -1.0 # just to make sure :)
         for i in array:
             pos = i.get_position()
             if hasattr(i, "get_length"):
@@ -101,6 +107,10 @@ class RoadNetworkModel:
                 current = i
                 current_pos = pos
         return current
+        
+    def canAddCar(self):
+        lastCar = self.get_nearest_car(-100.0) # Detect cars which are comming on the road.
+        return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
 
     def get_state_data(self):
         # Traffic lights
@@ -154,3 +164,4 @@ class RoadNetworkModel:
             self._road = objData["road"]
         if "trafficLights" in objData:
             self._lights = objData["trafficLights"]
+
