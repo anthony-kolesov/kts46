@@ -7,17 +7,17 @@ maxSpeed: 20
 minSpeed: 10
 
 road: !road
-    length: 300
+    length: 500
     width: 10
 
 trafficLights:
     -   !semaphore
         id: 1
-        position: 100
+        position: 150
         greenDuration: 5
         redDuration: 4
     -   !semaphore
         id: 2
-        position: 200
+        position: 400
         greenDuration: 5
         redDuration: 9

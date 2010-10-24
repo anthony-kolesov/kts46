@@ -1,7 +1,7 @@
 import random, json, math
 import yaml
 from datetime import timedelta
-from xpcom import components, verbose
+from xpcom import components
 from Car import Car
 from TrafficLight import SimpleSemaphore
 from Road import Road
@@ -17,18 +17,14 @@ class RoadNetworkModel:
         self._cars = []
         self._lastSendCars = {}
         self._lights = []
-        self._road = Road(length=300, linesCount=2)
+        self._road = None
         self._lastCarGenerationTime = timedelta()
         self.params = components\
             .classes["@kolesov.blogspot.com/RoadNetworkModelParams;1"]\
             .createInstance()
         self._log = components.classes['@mozilla.org/consoleservice;1'].getService(components.interfaces.nsIConsoleService)
         # config default model
-        self._lights.append(SimpleSemaphore(id=1, position=100))
-
-    def __del__(self):
-        if verbose:
-            print("RoadNetworkModel: __del__ method called - object is destructing")
+        # self._lights.append(SimpleSemaphore(id=1, position=100))
 
     def run_step(self, milliseconds):
         stopDistance = self.params.safeDistance
@@ -38,12 +34,6 @@ class RoadNetworkModel:
         newTime = self._time + timeStep # Time after step is performed.
 
         for light in self._lights:
-            # Update params.
-            #if self.params.greenLightDuration != light.greenDuration.seconds:
-            #    light.greenDuration = timedelta(seconds=self.params.greenLightDuration)
-            #if self.params.redLightDuration != light.redDuration.seconds:
-            #    light.redDuration = timedelta(seconds=self.params.redLightDuration)
-            # Update state.
             if newTime > light.getNextSwitchTime():
                 light.switch(newTime)
 
@@ -69,7 +59,6 @@ class RoadNetworkModel:
                     distanceToMove = possiblePosition - car.get_position()
                     if distanceToMove < 0:
                         distanceToMove = 0.0
-
 
             car.move(distanceToMove)
             if self._road.get_length() < car.get_position():
@@ -141,11 +130,13 @@ class RoadNetworkModel:
         return json.dumps({'cars': cars, 'lights': lights})
 
     def get_description_data(self):
-        lights = {}
+        data = {}
+        data['lights'] = {}
         for light in self._lights:
-            lights[light.get_id()] = light.get_description_data()
-        road = {'length': self._road.get_length(), 'width': self._road.get_width()}
-        return json.dumps({'lights': lights, 'road': road})
+            data['lights'][light.get_id()] = light.get_description_data()
+        if self._road is not None:
+            data['road'] = {'length': self._road.get_length(), 'width': self._road.get_width()}
+        return json.dumps(data)
 
     def loadYAML(self, yamlData):
         objData = yaml.safe_load(yamlData)

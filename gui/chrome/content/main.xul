@@ -4,7 +4,7 @@
 <?xml-stylesheet href="chrome://pyxul/skin/pyxul.css" type="text/css"?>
 <!DOCTYPE window SYSTEM "chrome://pyxul/locale/main.dtd">
 
-<window id="main" title="PyXUL" width="900" height="500" onload="newModel();"
+<window id="main" title="PyXUL" width="900" height="500"
 	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
 	xmlns:html="http://www.w3.org/1999/xhtml" sizemode="maximized">
 
