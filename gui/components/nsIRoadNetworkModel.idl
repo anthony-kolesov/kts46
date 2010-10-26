@@ -1,5 +1,7 @@
 #include "nsISupports.idl"
 #include "nsIRNModelParams.idl"
+#include "nsIProgressReportCallback.idl"
+
 [scriptable, uuid(eaa022aa-5cdf-43bb-97d3-37e06a1c7026)]
 interface nsIRoadNetworkModel : nsISupports
 {
@@ -8,4 +10,6 @@ interface nsIRoadNetworkModel : nsISupports
 	string get_state_data();
 	string get_description_data();
 	void loadYAML(in string yamlData);
+	void simulate(in float duration, in float step, in string outpath,
+		in nsIProgressReportCallback reporter);
 };

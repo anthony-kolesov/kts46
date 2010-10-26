@@ -15,6 +15,10 @@
 <!ENTITY menu-about.label "About">
 <!ENTITY menu-about.key "a">
 
+<!ENTITY model-sim-caption "Simulate model">
+<!ENTITY model-sim-duration "Duration (s):">
+<!ENTITY model-sim-save "File:">
+<!ENTITY model-simulate "Emulate">
 
 <!ENTITY model-run "Run">
 <!ENTITY model-pause "Pause">

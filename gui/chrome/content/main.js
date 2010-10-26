@@ -9,7 +9,8 @@
         "cmdPause": "#cmd_model_pause",
         "cmdRun": "#cmd_model_run",
         "cmdReset": "#cmd_model_reset",
-        "roadCanvas": "#road-canvas"
+        "roadCanvas": "#road-canvas",
+        "simulationProgress": "#simulation-progress"
     }
 };
 
@@ -262,4 +263,13 @@ function newModel(yamlData) {
     });
     c.data("draw-model", drawingModel);
     drawModel();
+}
+
+function simulateModel() {
+    var c = $(RNS.DOM.roadCanvas);
+    var m = c.data("model");
+    var p = function(v, m) {
+        $(RNS.DOM.simulationProgress).attr('value', Math.round(v / m)*100);
+    };
+    m.simulate(100, 0.04, "qq", p);
 }
