@@ -71,7 +71,7 @@
                 <caption label="&model-sim-caption;"/>
                 <hbox>
 					<label value="&model-sim-duration;" control="model-sim-duration"/>
-					<textbox id="model-sim-duration" value="3600"/>
+					<textbox id="model-sim-duration" type="number" min="0" value="3600"/>
 				</hbox>
 				<hbox>
 					<label value="&model-sim-save;" control="model-sim-file"/>

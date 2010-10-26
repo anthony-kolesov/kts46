@@ -1,5 +1,6 @@
 ﻿var RNS = {
     "PREFERENCE_BRANCH": "extensions.rns.",
+    "SIMULATION_STEP": 0.04, // in seconds
     "DOM": {
         "carGenIntervalBox": "#car-gen-rate-box",
         "safeDistanceBox": "#safedist-box",
@@ -10,16 +11,11 @@
         "cmdRun": "#cmd_model_run",
         "cmdReset": "#cmd_model_reset",
         "roadCanvas": "#road-canvas",
-        "simulationProgress": "#simulation-progress"
+        "simulationProgress": "#simulation-progress",
+        "simulationDuration": "#model-sim-duration",
+        "simulationOutput": "#model-sim-file"
     }
 };
-
-//function runQuery() {
-//    //const SimpleConstructor = new Components.Constructor("@mozilla.org/js_simple_component;1", "nsISimple");
-//    var SimpleConstructor = new Components.Constructor("@mozilla.org/PySimple;1", "nsISimple");
-//    var s = new SimpleConstructor();
-//    document.getElementById("query-text").value = s.yourName;
-//}
 
 
 /**
@@ -68,47 +64,14 @@ function drawModel() {
 
 // Move cars and redraws canvas.
 function updateRoadState() {
-    var c = $(RNS.DOM.roadCanvas);
-    c.data("model").run_step(40);
+    var stepTime = RNS.SIMULATION_STEP * 1000; // seconds -> msec
+    $(RNS.DOM.roadCanvas).data("model").run_step(stepTime);
     drawModel();
 
     // Setup new timer.
-    var timerId = setTimeout("updateRoadState();", 40);
+    var timerId = setTimeout("updateRoadState();", stepTime);
     $(RNS.DOM.roadCanvas).data("modelTimerId", timerId);
 }
-
-
-/**
- * Draws initial view of canvas.
- */
-/*function drawInitialCanvas() {
-    // Pause current model, so new model will not be runned by old interval timer.
-    pauseModel();
-
-    var c = $(RNS.DOM.roadCanvas);
-    var dc = c.get(0).getContext("2d");
-
-    const PyModel = new Components.Constructor(
-        "@kolesov.blogspot.com/RoadNetworkModel;1",
-        "nsIRoadNetworkModel");
-    var model = new PyModel();
-    c.data("model", model);
-    var descrStr = model.get_description_data();
-    var descr = $.parseJSON(descrStr);
-    c.data("model-description", descr);
-
-    var road = new Road(descr.road);
-    var lights = {};
-    for (var i in descr.lights)
-        lights[descr.lights[i].id] = new SimpleTrafficLight(descr.lights[i]);
-    var drawingModel = new Model({
-        "road":road,
-        "lights":lights,
-        "cars": {}
-    });
-    c.data("draw-model", drawingModel);
-    drawModel();
-}*/
 
 function openJavaScriptConsole() {
     var wwatch = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
@@ -265,11 +228,18 @@ function newModel(yamlData) {
     drawModel();
 }
 
+
+/**
+ * Simulates model for the specified duration (in seconds) and stores result
+ * output in the specified file.
+ */
 function simulateModel() {
-    var c = $(RNS.DOM.roadCanvas);
-    var m = c.data("model");
-    var p = function(v, m) {
-        $(RNS.DOM.simulationProgress).attr('value', Math.round(v / m)*100);
+    var duration = $(RNS.DOM.simulationDuration).val(),
+        output = $(RNS.DOM.simulationOutput).val(),
+        model = $(RNS.DOM.roadCanvas).data('model'),
+        $progress = $(RNS.DOM.simulationProgress);
+    var p = function($p, v, m) {
+        $p.attr('value', Math.round(v / m)*100);
     };
-    m.simulate(100, 0.04, "qq", p);
+    model.simulate(duration, RNS.SIMULATION_STEP, output, p);
 }
