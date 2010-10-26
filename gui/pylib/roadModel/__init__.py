@@ -1,5 +1,5 @@
 # from xpcom import components
-#import yaml
+import logging
 import Car as CarModule, Road as RoadModule, TrafficLight as TrafficLightModule,\
     Model as ModelModule
 

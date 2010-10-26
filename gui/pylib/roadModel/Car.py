@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4
 
 class Car:
@@ -20,10 +21,12 @@ class Car:
         self.linePosition = linePosition
 
     def move(self, distance):
-        "Moves car on specified distance forward."
+        "Moves car on specified distance forward. Distance couldn't be negative."
         if distance < 0:
-            raise Exception("Distance of car moving can't be negative. " +
-                            "Backword moving isn't currently allowed.")
+            msg = "Distance of car moving can't be negative. " +\
+                "Backwards moving isn't currently allowed."
+            logging.getLogger('roadModel').error(msg)
+            raise Exception(msg)
         self._position += distance
 
     def get_speed(self): return self._speed

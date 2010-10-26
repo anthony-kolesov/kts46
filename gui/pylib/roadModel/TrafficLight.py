@@ -9,7 +9,8 @@ class SimpleSemaphore(yaml.YAMLObject):
 
     Duration of green and red lights states are setted separatly.
     They are stored as datetime.timedelta type, but you can just a number, it
-    will be used as a number of seconds in conversion.
+    will be used as a number of seconds in conversion. Id is always converted to
+    unicode.
     """
 
     yaml_tag = u"!semaphore"
@@ -55,6 +56,8 @@ class SimpleSemaphore(yaml.YAMLObject):
     def get_state_data(self):
         return {'state': self.get_state()}
 
+    # Little metaprogramming magic, so it is possible to set duration as float
+    # (in seconds). Also store in unicode explicitly.
     def __setattr__(self, name, value):
         effValue = value
         if name == "id" and value is not unicode:

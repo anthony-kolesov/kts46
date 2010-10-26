@@ -1,7 +1,5 @@
-import random, json, math
-import yaml
+import random, json, math, logging, yaml
 from datetime import timedelta
-# from xpcom import components
 from Car import Car
 from Road import Road
 from TrafficLight import SimpleSemaphore 
@@ -17,10 +15,8 @@ class Model(object):
         self._road = None
         self._lastCarGenerationTime = timedelta()
         self.params = params
-        # self.params = components\
-        #    .classes["@kolesov.blogspot.com/RoadNetworkModelParams;1"]\
-        #    .createInstance()
-        # self._log = components.classes['@mozilla.org/consoleservice;1'].getService(components.interfaces.nsIConsoleService)
+        self._loggerName = 'roadModel'
+        self._logger = logging.getLogger(self._loggerName)
 
     def run_step(self, milliseconds):
         stopDistance = self.params.safeDistance
@@ -62,7 +58,6 @@ class Model(object):
 
         # If there is a car in the queue, then send it.
         if len(self._enterQueue) > 0 and self.canAddCar():
-            #self._log.logStringMessage("Get car from queue, qlength: %i." % len(self._enterQueue) )
             self._cars.append(self._enterQueue[0])
             del self._enterQueue[0]
         
@@ -76,12 +71,12 @@ class Model(object):
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             newCar = Car(speed=speed)
             self._lastCarGenerationTime = newTime
-            #self._log.logStringMessage('Created car: {speed: %f}.' % speed)
+            self._logger.debug('Created car: {speed: %f}.', speed)
             if self.canAddCar():
                 self._cars.append(newCar)
             else:
                 self._enterQueue.append(newCar)
-                #self._log.logStringMessage("Couldn't add car to the road, put in the queue.")
+                self._logger.info("Couldn't add car to the road, put in the queue.")
 
         # Update time.
         self._time = newTime
