@@ -27,14 +27,14 @@ class SQLiteStorage:
         except sqlite3.OperationalError:
             self.logger.error("Couldn't open database file: %s." % path)
             raise
-        cur = self.conn.cursor()
+        cur = conn.cursor()
         return (conn, cur)
         
     def add(self, time, data):
         self.cur.execute('INSERT INTO states VALUES(:time, :state);',
                 {'time': time, 'state': data} )
     
-    def dump(self)
+    def dump(self):
         self.conn.commit() # Dump previous transaction.
         self.cur.execute('BEGIN TRANSACTION;') # And begin new.
     
@@ -77,15 +77,15 @@ class RoadNetworkModel:
         # Prepare infrastructure.
         logger = logging.getLogger('roadModel.manager')
         try:
-            conn = sqlite3.connect(outpath)
+            storage = SQLiteStorage(outpath) # sqlite3.connect(outpath)
         except sqlite3.OperationalError:
             logger.error("Couldn't open database file: %s." % outpath)
             return
-        cur = conn.cursor()
+        #cur = conn.cursor()
         # DB schema
-        cur.execute("DROP TABLE IF EXISTS states;")
-        cur.execute("CREATE TABLE states (float time, string state);")
-        conn.commit()
+        #cur.execute("DROP TABLE IF EXISTS states;")
+        #cur.execute("CREATE TABLE states (float time, string state);")
+        #conn.commit()
         logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
         
         # Run.
@@ -94,16 +94,19 @@ class RoadNetworkModel:
             stepsCount += 1
             if stepsCount % (stepsN / 100) == 0:
                 reporter.report(t, duration)
-                conn.commit()
-                cur.execute('BEGIN TRANSACTION;')
-            cur.execute('INSERT INTO states VALUES(:time, :state);',
-                {'time': t, 'state': self.get_state_data()} )
+                storage.dump()
+                #conn.commit()
+                #cur.execute('BEGIN TRANSACTION;')
+            #cur.execute('INSERT INTO states VALUES(:time, :state);',
+            #    {'time': t, 'state': self.get_state_data()} )
+            storage.add(t, self.get_state_data())
             t += step
             
         # Finilize.
+        storage.close()
         reporter.report(1.0, 1.0) # Report exactly 100%
-        conn.commit()
-        conn.close()
+        #conn.commit()
+        #conn.close()
         
 # Add XPCOM log handler.
 # Set up logging to file. Logging to XULRunner console will initialized automatically.
