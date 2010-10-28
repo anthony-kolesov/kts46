@@ -238,8 +238,8 @@ function simulateModel() {
         output = $(RNS.DOM.simulationOutput).val(),
         model = $(RNS.DOM.roadCanvas).data('model'),
         $progress = $(RNS.DOM.simulationProgress);
-    var p = function($p, v, m) {
-        $p.attr('value', Math.round(v / m)*100);
+    var p = function(v, m) {
+        $progress.attr('value', Math.round(v / m)*100);
     };
     model.simulate(duration, RNS.SIMULATION_STEP, output, p);
 }
