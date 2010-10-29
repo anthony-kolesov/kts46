@@ -17,6 +17,7 @@ class Model(object):
         self.params = params
         self._loggerName = 'roadModel'
         self._logger = logging.getLogger(self._loggerName)
+        self._lastCarId = -1
 
     def run_step(self, milliseconds):
         stopDistance = self.params.safeDistance
@@ -69,7 +70,8 @@ class Model(object):
             speedMultiplier = self.params.maxSpeed - self.params.minSpeed
             speedAdder = self.params.minSpeed
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
-            newCar = Car(speed=speed)
+            self._lastCarId += 1
+            newCar = Car(id=self._lastCarId, speed=speed)
             self._lastCarGenerationTime = newTime
             self._logger.debug('Created car: {speed: %f}.', speed)
             if self.canAddCar():
