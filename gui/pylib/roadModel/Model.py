@@ -105,6 +105,7 @@ class Model(object):
         return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
 
     def get_state_data(self):
+        """Returns object data that represents current state of a model."""
         # Traffic lights
         lights = {}
         for light in self._lights:
@@ -125,7 +126,7 @@ class Model(object):
                 cars[carId] = {'action': 'del'} # No need to send invalid state.
         self._lastSendCars = cars
         # Result.
-        return json.dumps({'cars': cars, 'lights': lights})
+        return {'cars': cars, 'lights': lights}
 
     def get_description_data(self):
         data = {}
