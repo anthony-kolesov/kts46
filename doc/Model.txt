@@ -2,13 +2,14 @@ How each step is performed
 --------------------------
 
 1. Update each light.
-2. Move each car:
-	2.1 Check for nearest traffic light.
-	2.2 Check for distance for neares car.
-	2.3 Move car for possible distance.
-	2.4 If car gets out of road then delete it.
-3. If there is a car in the queue, then send it.
-4. New car.
+2 Remove cars, marked as deleted.
+3. Move each car:
+	1) Check for nearest traffic light.
+	2) Check for distance for neares car.
+	3) Move car for possible distance.
+	4) If car gets out of road then mark it for deleting.
+4. If there is a car in the queue, then send it.
+5. New car.
 	4.1 Generate car.
 	4.2 If there is enough place then send car to the road, otherwise put it in the queue.
 

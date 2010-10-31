@@ -3,6 +3,12 @@ from uuid import uuid4
 
 class Car:
 
+    INACTIVE = 'inactive'
+    ADDED = 'add'
+    ACTIVE = 'active'
+    DEFAULT = 'active'
+    DELETED = 'del'
+
     def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0,
                 linePosition=0):
         """Initializes a new car object.
@@ -19,6 +25,7 @@ class Car:
         self._width = width
         self._position = position
         self.linePosition = linePosition
+        self.state = Car.INACTIVE
 
     def move(self, distance):
         "Moves car on specified distance forward. Distance couldn't be negative."
@@ -42,6 +49,9 @@ class Car:
         }
 
     def get_state_data(self):
-        return {'position': self.get_position(),
+        d = {'position': round(self.get_position(), 2),
                 'line': self.linePosition
         }
+        if self.state != Car.DEFAULT:
+            d['state'] = self.state
+        return d

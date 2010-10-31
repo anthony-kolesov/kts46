@@ -130,15 +130,11 @@ class RoadNetworkModel:
             # Report every percent.
             if stepsCount % (stepsN / 100) == 0:
                 reporter.report(t, duration)
-                #storage.dump()
-                #conn.commit()
-                #cur.execute('BEGIN TRANSACTION;')
-            # Dump every 100 tx
-            if stepsCount % 100 == 0:
-                storage.dump()
-            #cur.execute('INSERT INTO states VALUES(:time, :state);',
-            #    {'time': t, 'state': self.get_state_data()} )
-            storage.add(t, self._model.get_state_data())
+            ## Dump every 100 tx
+            #if stepsCount % 100 == 0:
+            #    storage.dump()
+            # Round time to milliseconds
+            storage.add(round(t, 3),  self._model.get_state_data())
             t += step
             
         # Finilize.

@@ -31,35 +31,42 @@ class Model(object):
                 light.switch(newTime)
 
         for car in self._cars:
-            distanceToMove = car.get_speed() * timeStep.seconds
-            distanceToMove += car.get_speed() * timeStep.microseconds * 1e-6
-            distanceToMove += car.get_speed() * timeStep.days * 86400 # 3600 * 24
-
-            # Check for red traffic light.
-            nearestTL = self.get_nearest_traffic_light(car.get_position())
-            if nearestTL is not None and not nearestTL.is_green():
-                if nearestTL.get_position() - car.get_position() - stopDistance < distanceToMove:
-                    distanceToMove = nearestTL.get_position() - car.get_position() - stopDistance
-                    if distanceToMove < 0:
-                        distanceToMove = 0.0
-
-            # Check for leading car.
-            nearestCar = self.get_nearest_car(car.get_position())
-            if nearestCar is not None:
-                nearestCarBack = nearestCar.get_position() - nearestCar.get_length()
-                possiblePosition = nearestCarBack - stopDistance
-                if possiblePosition - car.get_position() < distanceToMove:
-                    distanceToMove = possiblePosition - car.get_position()
-                    if distanceToMove < 0:
-                        distanceToMove = 0.0
-
-            car.move(distanceToMove)
-            if self._road.get_length() < car.get_position():
+            if car.state != Car.DELETED:
+                # Update state.
+                if car.state == Car.ADDED: car.state = Car.ACTIVE 
+                
+                distanceToMove = car.get_speed() * timeStep.seconds
+                distanceToMove += car.get_speed() * timeStep.microseconds * 1e-6
+                distanceToMove += car.get_speed() * timeStep.days * 86400 # 3600 * 24
+    
+                # Check for red traffic light.
+                nearestTL = self.get_nearest_traffic_light(car.get_position())
+                if nearestTL is not None and not nearestTL.is_green():
+                    if nearestTL.get_position() - car.get_position() - stopDistance < distanceToMove:
+                        distanceToMove = nearestTL.get_position() - car.get_position() - stopDistance
+                        if distanceToMove < 0:
+                            distanceToMove = 0.0
+    
+                # Check for leading car.
+                nearestCar = self.get_nearest_car(car.get_position())
+                if nearestCar is not None:
+                    nearestCarBack = nearestCar.get_position() - nearestCar.get_length()
+                    possiblePosition = nearestCarBack - stopDistance
+                    if possiblePosition - car.get_position() < distanceToMove:
+                        distanceToMove = possiblePosition - car.get_position()
+                        if distanceToMove < 0:
+                            distanceToMove = 0.0
+    
+                car.move(distanceToMove)
+                if self._road.get_length() < car.get_position():
+                    # self._cars.remove(car)
+                    car.state = Car.DELETED
+            else:
                 self._cars.remove(car)
 
         # If there is a car in the queue, then send it.
         if len(self._enterQueue) > 0 and self.canAddCar():
-            self._cars.append(self._enterQueue[0])
+            self._addCar(self._enterQueue[0])
             del self._enterQueue[0]
         
         # Generate new car.
@@ -75,7 +82,7 @@ class Model(object):
             self._lastCarGenerationTime = newTime
             self._logger.debug('Created car: {speed: %f}.', speed)
             if self.canAddCar():
-                self._cars.append(newCar)
+                self._addCar(newCar)
             else:
                 self._enterQueue.append(newCar)
                 self._logger.info("Couldn't add car to the road, put in the queue.")
@@ -94,18 +101,24 @@ class Model(object):
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
-            pos = i.get_position()
-            if hasattr(i, "get_length"):
-                pos -= i.get_length()
-            if pos > position and ((current is None) or current_pos > pos):
-                current = i
-                current_pos = pos
+            # Rule out deleted cars.
+            if not hasattr(i, "state") or i.state != Car.DELETED:
+                pos = i.get_position()
+                if hasattr(i, "get_length"):
+                    pos -= i.get_length()
+                if pos > position and ((current is None) or current_pos > pos):
+                    current = i
+                    current_pos = pos
         return current
         
     def canAddCar(self):
         lastCar = self.get_nearest_car(-100.0) # Detect cars which are comming on the road.
         return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
 
+    def _addCar(self, car):
+        self._cars.append(car)
+        car.state = Car.ADDED
+        
     def get_state_data(self):
         """Returns object data that represents current state of a model."""
         # Traffic lights
@@ -115,18 +128,20 @@ class Model(object):
         # Cars
         cars = {}
         for car in self._cars:
-            if car.get_id() in self._lastSendCars:
-                cars[car.get_id()] = car.get_state_data()
-                del self._lastSendCars[car.get_id()]
-            else:
-                state = car.get_state_data()
-                state['action'] = 'add'
-                cars[car.get_id()] = state
-        # Delete old cars.
-        for carId, carValue in self._lastSendCars.iteritems():
-            if ("action" not in carValue) or carValue["action"] != "del":
-                cars[carId] = {'action': 'del'} # No need to send invalid state.
-        self._lastSendCars = cars
+            cars[car.get_id()] = car.get_state_data()
+        #for car in self._cars:
+        #    if car.get_id() in self._lastSendCars:
+        #        cars[car.get_id()] = car.get_state_data()
+        #        del self._lastSendCars[car.get_id()]
+        #    else:
+        #        state = car.get_state_data()
+        #        state['action'] = 'add'
+        #        cars[car.get_id()] = state
+        ## Delete old cars.
+        #for carId, carValue in self._lastSendCars.iteritems():
+        #    if ("action" not in carValue) or carValue["action"] != "del":
+        #        cars[carId] = {'action': 'del'} # No need to send invalid state.
+        #self._lastSendCars = cars
         # Result.
         return {'cars': cars, 'lights': lights}
 
