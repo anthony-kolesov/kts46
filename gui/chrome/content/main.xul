@@ -66,12 +66,12 @@
 		<html:canvas id="road-canvas" width="600" height="400" />
 
 		<vbox flex="1">
-            
+
             <groupbox id="model-simulation">
                 <caption label="&model-sim-caption;"/>
                 <hbox>
 					<label value="&model-sim-duration;" control="model-sim-duration"/>
-					<textbox id="model-sim-duration" type="number" min="0" value="3600"/>
+					<textbox id="model-sim-duration" type="number" min="0" value="30"/>
 				</hbox>
 				<hbox>
 					<label value="&model-sim-save;" control="model-sim-file"/>
@@ -80,7 +80,7 @@
                 <button label="&model-simulate;" command="cmd_model_simulate"/>
                 <progressmeter id="simulation-progress" mode="determined" value="0"/>
             </groupbox>
-            
+
 			<button label="&model-run;" command="cmd_model_run"/>
 			<button label="&model-pause;" command="cmd_model_pause"/>
 			<button label="&model-reset;" command="cmd_model_reset"/>

@@ -54,7 +54,7 @@ function drawModel() {
             dm.cars[carId] = new Car(car);
         } else {
             // Update existing car.
-            dm.cars[carId].position = car.position;
+            dm.cars[carId].position = car.pos;
         }
     }
 

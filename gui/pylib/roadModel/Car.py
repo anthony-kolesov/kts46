@@ -49,7 +49,7 @@ class Car:
         }
 
     def get_state_data(self):
-        d = {'position': round(self.get_position(), 2),
+        d = {'pos': round(self.get_position(), 2),
                 'line': self.linePosition
         }
         if self.state != Car.DEFAULT:
