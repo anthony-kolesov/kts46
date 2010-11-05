@@ -1,8 +1,10 @@
 #!/usr/bin/python
-import json, pprint
+import json, pprint, sys
 import numpy
 #from urllib.request import urlopen
 from urllib2 import urlopen
+from string import Template
+from ConfigParser import SafeConfigParser
 
 def getJSON(url):
     a = urlopen(url)
@@ -10,15 +12,21 @@ def getJSON(url):
     a.close()
     return json.loads(text)
 
-dbPath = "http://localhost:5984/rns_15/_design/basicStats/_view"
+# Read configuration file.
+cfg = SafeConfigParser()
+cfg.read( ('basicStats.ini',) )
+
+# Parse cmd arsg.
+dbName = sys.argv[1]
+
+dbPath = Template(cfg.get("couchdb", "basicStatsDbPath")).safe_substitute(dbname=dbName)
 
 # Connect to CouchDB and get data.
-addCarData = getJSON(dbPath + "/addCar")
-delCarData = getJSON(dbPath + "/deleteCar")
+addCarData = getJSON(dbPath + cfg.get("couchdb", "addCarView"))
+delCarData = getJSON(dbPath + cfg.get("couchdb", "deleteCarView"))
 
-addCarTimes = dict((x['key'], x['value']['time']) for x in addCarData['rows'])
-delCarTimes = dict((x['key'], x['value']['time']) for x in delCarData['rows'])
-
+addCarTimes = dict( (x['key'], x['value']['time']) for x in addCarData['rows'])
+delCarTimes = dict( (x['key'], x['value']['time']) for x in delCarData['rows'])
 
 times = {}
 moveTimes = []
@@ -30,5 +38,5 @@ for carid, addTime in addCarTimes.items():
 # Create numpy array and count statistics.
 arr = numpy.array(moveTimes)
 print("Average: %f" % numpy.average(arr) )
-print("Mean: %f" % numpy.mean(arr) )
+# print("Mean: %f" % numpy.mean(arr) )
 print("Standard deviation: %f" % numpy.std(arr) )
