@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import logging
+import logging, couchdb
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 
@@ -8,7 +8,7 @@ def init():
     # Create configuration.
     logging.debug('Reading configuration.')
     cfg = SafeConfigParser()
-    cfg.read(('rpc_server.ini',))
+    cfg.read(('rpc_server.ini', '../stats/basicStats.ini'))
 
     # Configure logging.
     logging.basicConfig(level=logging.DEBUG,
@@ -29,9 +29,18 @@ def init():
 
 
 def hello(msg):
+    "Test method to check that server is working fine."
     return 'Hello you too! This is simple XML-RPC server for kts46.' +\
         '\nYou\'ve said: [' + msg + ']'
 
+
+def addModel(name, definition):
+    server = couchdb.Server('http://127.0.0.1:5984/')
+    if name not in server:
+        db = server.create(name)
+    else:
+        raise Exception("Couldn't add model because it already exists.")
+    db['model_definition'] = {'name': name, 'yaml': definition }
 
 if __name__ == '__main__':
     cfg, logger = init()
@@ -39,10 +48,11 @@ if __name__ == '__main__':
     # Create and configure server.
     address = cfg.get('connection', 'address')
     port = cfg.getint('connection', 'port')
-    server = SimpleXMLRPCServer( (address, port) )
+    server = SimpleXMLRPCServer( (address, port), allow_none = True )
 
     # Register functions.
     server.register_function(hello)
+    server.register_function(addModel)
 
     # Run server.
     logging.warn('Serving...')

@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import xmlrpclib, logging
+import xmlrpclib, logging, sys
 from ConfigParser import SafeConfigParser
 
 def init():
@@ -33,4 +33,14 @@ logger.info('Connecting to server %s' % connString)
 sp = xmlrpclib.ServerProxy(connString)
 
 # Say hello and print available functions.
-print sp.hello('Hello Mr. Server!')
+print( sp.hello('Hello Mr. Server!') )
+
+# Model file.
+modelFile = sys.argv[1]
+modelName = sys.argv[2]
+logger.info('Working with model file: %s' % modelFile)
+fp = open(modelFile, 'r')
+yamlStr = fp.read(-1)
+fp.close()
+logger.info('Adding model to database.')
+sp.addModel(modelName, yamlStr)
