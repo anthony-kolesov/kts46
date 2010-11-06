@@ -2,23 +2,28 @@
 import xmlrpclib, logging
 from ConfigParser import SafeConfigParser
 
-# Configure logging.
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m/%d %H:%M:%S',
-                    filename='/tmp/kts46_rpc_client.log',
-                    filemode='w')
+def init():
+    # Configure logging.
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        datefmt='%m/%d %H:%M:%S',
+                        filename='/tmp/kts46_rpc_client.log',
+                        filemode='w')
 
-# Define a handler for console message with mode simple format.
-console = logging.StreamHandler()
-console.setFormatter( logging.Formatter('L:%(levelname)-6s %(message)s') )
-logger = logging.getLogger('kts46.rpc_client')
-logger.addHandler(console)
+    # Define a handler for console message with mode simple format.
+    console = logging.StreamHandler()
+    console.setFormatter( logging.Formatter('L:%(levelname)-6s %(message)s') )
+    logger = logging.getLogger('kts46.rpc_client')
+    logger.addHandler(console)
 
-# Create configuration.
-logger.debug('Reading configuration.')
-cfg = SafeConfigParser()
-cfg.read(('rpc_client.ini',))
+    # Create configuration.
+    logger.debug('Reading configuration.')
+    cfg = SafeConfigParser()
+    cfg.read(('rpc_client.ini',))
+
+    return (cfg, logger)
+
+cfg, logger = init()
 
 # Create proxy.
 host = cfg.get('connection', 'server')
