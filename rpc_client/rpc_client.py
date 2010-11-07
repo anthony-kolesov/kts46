@@ -33,6 +33,9 @@ if __name__ == '__main__':
                        default=False,
                        help='Force creation of new model if it already exists.')
     options, args = cmdOpts.parse_args(sys.argv[1:])
+    if len(args) != 2:
+        cmdOpts.error('Invalid number of arguments. Must be 2. See -h for help.')
+    
 
     # Create proxy.
     host = cfg.get('connection', 'server')
@@ -55,10 +58,12 @@ if __name__ == '__main__':
     if not sp.modelExists(modelName):
         logger.info('Adding model to database.')
         sp.addModel(modelName, yamlStr)
+        sp.simulate(modelName, 30, 0.02)
     elif options.force:
         logger.info('Model exists and --force is selected. Remove current model.')
         sp.deleteModel(modelName)
         sp.addModel(modelName, yamlStr)
+        sp.simulate(modelName, 30, 0.02)
     else:
         logger.error(("Coucldn't add model with name '%s' to server " +
                      "because model with this name alredy exists.") % modelName)

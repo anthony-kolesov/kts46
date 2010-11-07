@@ -1,7 +1,7 @@
 import yaml
 from datetime import timedelta
 from uuid import uuid4
-from xpcom import components
+# from xpcom import components
 
 
 class SimpleSemaphore(yaml.YAMLObject):

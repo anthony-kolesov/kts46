@@ -1,7 +1,10 @@
 #!/usr/bin/python
-import logging, couchdb, logging.handlers
+import logging, couchdb, logging.handlers, sys
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
+
+sys.path.append('../gui/pylib/')
+from roadModel import Car, Road, SimpleSemaphore, Model, CouchDBStorage
 
 def init():
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
@@ -34,6 +37,14 @@ def hello(msg):
     return '''Hello you too! This is simple XML-RPC server for kts46.
             You\'ve said: [''' + msg + ']'
 
+class ModelParams:
+    
+    def __init__(self):
+        self.carGenerationInterval = 3.0
+        self.safeDistance = 5.0
+        self.maxSpeed = 20.0
+        self.minSpeed = 10.0
+
 class CouchDBProxy:
 
     def __init__(self, cfg):
@@ -61,6 +72,38 @@ class CouchDBProxy:
         else:
             raise Exception("""Couldn't delete model with name '%s' because it
                              doesn't exists.""" % modelName)
+            
+    def simulate(self, modelName, duration, step):
+        """Simulates model for the specified time duration.
+        
+        modelName - name of model to simulate.
+        duration - duration of simulation in seconds.
+        step - step of simulation in seconds.
+        """
+        # Prepare values.
+        stepAsMs = step * 1000 # step in milliseconds
+        stepsN = duration / step
+        stepsCount = 0
+        t = 0.0
+
+        # Prepare infrastructure.
+        logger = logging.getLogger('kts46.rpc_server.simulator')
+        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), modelName)
+        logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
+
+        model = Model(ModelParams())
+        model.loadYAML(self.server[modelName]['model_definition']['yaml'])
+
+        # Run.
+        while t < duration:
+            model.run_step(stepAsMs)
+            stepsCount += 1
+            # Round time to milliseconds
+            storage.add(round(t, 3),  model.get_state_data())
+            t += step
+
+        # Finilize.
+        storage.close()
             
 
 if __name__ == '__main__':
