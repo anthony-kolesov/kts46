@@ -45,12 +45,47 @@ class ModelParams:
         self.maxSpeed = 20.0
         self.minSpeed = 10.0
 
+
+class RPCServerException(Exception):
+    pass
+
+
 class CouchDBProxy:
 
     def __init__(self, cfg):
         self.cfg = cfg
         self.logger = logging.getLogger('kts46.rpc_server.couchdb')
         self.server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
+
+    def createProject(self, projectName):
+        """Create in database project with specified name.
+        
+        An exception will be raised it project already exists.
+        Arguments:
+            projectName -- name of peoject to create."""
+        if projectName not in self.server:
+            self.server.create(projectName)
+        else:
+            msg = "Couldn't create project because it already exists."
+            msg += ' Project name: %s.' % projectName
+            raise RPCServerException(msg)
+
+    def projectExists(self, projectName):
+        "Checks whether project with specified name already exists."
+        return projectName in self.server
+
+    def deleteProject(self, projectName):
+        """Deletes project with specified name if it exists. Otherwise raises
+        RPCServerException."""
+        if projectName in self.server:
+            self.logger.debug("Deleting project '%s'." % projectName)
+            del self.server[modelName]
+            self.logger.info("Project '%s' deleted." % projectName)
+        else:
+            msg = "Couldn't delete project '%s' because it doesn't exists." % projectName
+            self.logger.warning(msg)
+            raise RPCServerException(msg)
+
 
     def addModel(self, modelName, definition):
         "Adds specified model to the database if it doesn't already exists."
