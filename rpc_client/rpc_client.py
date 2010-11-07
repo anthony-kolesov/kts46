@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import xmlrpclib, logging, sys
 from ConfigParser import SafeConfigParser
+from optparse import OptionParser
 
 def init():
     # Configure logging.
@@ -23,24 +24,41 @@ def init():
 
     return (cfg, logger)
 
-cfg, logger = init()
+if __name__ == '__main__':
+    cfg, logger = init()
+    
+    usage = "usage: %prog [options] <modelFile> <modelName>"
+    cmdOpts = OptionParser(usage=usage)
+    cmdOpts.add_option('-f', '--force', action='store_true', dest='force',
+                       default=False,
+                       help='Force creation of new model if it already exists.')
+    options, args = cmdOpts.parse_args(sys.argv[1:])
 
-# Create proxy.
-host = cfg.get('connection', 'server')
-port = cfg.getint('connection', 'port')
-connString = 'http://%s:%i' % (host, port)
-logger.info('Connecting to server %s' % connString)
-sp = xmlrpclib.ServerProxy(connString)
+    # Create proxy.
+    host = cfg.get('connection', 'server')
+    port = cfg.getint('connection', 'port')
+    connString = 'http://%s:%i' % (host, port)
+    logger.info('Connecting to server %s' % connString)
+    sp = xmlrpclib.ServerProxy(connString)
 
-# Say hello and print available functions.
-print( sp.hello('Hello Mr. Server!') )
+    # Say hello and print available functions.
+    print( sp.hello('Hello Mr. Server!') )
 
-# Model file.
-modelFile = sys.argv[1]
-modelName = sys.argv[2]
-logger.info('Working with model file: %s' % modelFile)
-fp = open(modelFile, 'r')
-yamlStr = fp.read(-1)
-fp.close()
-logger.info('Adding model to database.')
-sp.addModel(modelName, yamlStr)
+    # Model file.
+    modelFile = args[0]
+    modelName = args[1]
+    logger.info('Working with model file: %s' % modelFile)
+    fp = open(modelFile, 'r')
+    yamlStr = fp.read(-1)
+    fp.close()
+    logger.info('Checking whether model already exists on server.')
+    if not sp.modelExists(modelName):
+        logger.info('Adding model to database.')
+        sp.addModel(modelName, yamlStr)
+    elif options.force:
+        logger.info('Model exists and --force is selected. Remove current model.')
+        sp.deleteModel(modelName)
+        sp.addModel(modelName, yamlStr)
+    else:
+        logger.error(("Coucldn't add model with name '%s' to server " +
+                     "because model with this name alredy exists.") % modelName)

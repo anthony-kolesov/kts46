@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import logging, couchdb
+import logging, couchdb, logging.handlers
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 
@@ -17,30 +17,51 @@ def init():
                     filename='/tmp/kts46_rpc_server.log',
                     filemode='w')
 
-    # Define a handler for console message with mode simple format.
-    #console = logging.StreamHandler()
-    #console.setFormatter( logging.Formatter('L:%(levelname)-6s %(message)s') )
+    # Define a log handler for rotating files.
+    rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
+        maxBytes=cfg.get('log', 'maxBytesInFile'),
+        backupCount=cfg.get('log', 'backupCountOfFile'))
+    rfhandler.setLevel(logging.INFO)
+    logging.getLogger('').addHandler(rfhandler)
+
     logger = logging.getLogger('kts46.rpc_server')
-    #logging.getLogger('').addHandler(console)
-    logging.info('info')
-    logging.warn('warn')
 
     return (cfg, logger)
 
 
 def hello(msg):
     "Test method to check that server is working fine."
-    return 'Hello you too! This is simple XML-RPC server for kts46.' +\
-        '\nYou\'ve said: [' + msg + ']'
+    return '''Hello you too! This is simple XML-RPC server for kts46.
+            You\'ve said: [''' + msg + ']'
 
+class CouchDBProxy:
 
-def addModel(name, definition):
-    server = couchdb.Server('http://127.0.0.1:5984/')
-    if name not in server:
-        db = server.create(name)
-    else:
-        raise Exception("Couldn't add model because it already exists.")
-    db['model_definition'] = {'name': name, 'yaml': definition }
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.logger = logging.getLogger('kts46.rpc_server.couchdb')
+        self.server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
+
+    def addModel(self, modelName, definition):
+        "Adds specified model to the database if it doesn't already exists."
+        if modelName not in self.server:
+            db = self.server.create(modelName)
+            db['model_definition'] = {'name': modelName, 'yaml': definition }
+        else:
+            raise Exception("Couldn't add model because it already exists.")
+
+    def modelExists(self, modelName):
+        "Checks whether model with provided name already exists."
+        return modelName in self.server
+    
+    def deleteModel(self, modelName):
+        "Deletes model with specified name if it exists. Otherwise creates an exception."
+        if modelName in self.server:
+            self.logger.info("Deleting model with name '%s'." % modelName)
+            del self.server[modelName]
+        else:
+            raise Exception("""Couldn't delete model with name '%s' because it
+                             doesn't exists.""" % modelName)
+            
 
 if __name__ == '__main__':
     cfg, logger = init()
@@ -51,8 +72,9 @@ if __name__ == '__main__':
     server = SimpleXMLRPCServer( (address, port), allow_none = True )
 
     # Register functions.
+    couchdbProxy = CouchDBProxy(cfg)
     server.register_function(hello)
-    server.register_function(addModel)
+    server.register_instance(couchdbProxy)
 
     # Run server.
     logging.warn('Serving...')
