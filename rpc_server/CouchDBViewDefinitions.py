@@ -21,5 +21,15 @@ definitions = (
             }
         }
         """
+    },
+    {
+        "doc": "manage", "view": "jobs",
+        "map": """
+        function(doc) {
+            if (doc.type === 'job'){
+                emit(doc.name, doc._id);
+            }
+        }
+        """
     }
 ,)
