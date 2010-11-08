@@ -54,16 +54,18 @@ if __name__ == '__main__':
     fp = open(modelFile, 'r')
     yamlStr = fp.read(-1)
     fp.close()
-    logger.info('Checking whether model already exists on server.')
-    if not sp.modelExists(modelName):
-        logger.info('Adding model to database.')
-        sp.addModel(modelName, yamlStr)
-        sp.simulate(modelName, 30, 0.02)
+    logger.info('Checking whether project already exists on server.')
+    if not sp.projectExists(modelName):
+        logger.info('Adding project to database.')
+        sp.createProject(modelName)
+        sp.addJob(modelName, modelName, yamlStr)
+        #sp.simulate(modelName, 'j1', 30, 0.04)
     elif options.force:
-        logger.info('Model exists and --force is selected. Remove current model.')
-        sp.deleteModel(modelName)
-        sp.addModel(modelName, yamlStr)
-        sp.simulate(modelName, 30, 0.02)
+        logger.info('Project exists and --force is selected. Remove current project.')
+        sp.deleteProject(modelName)
+        sp.createProject(modelName)
+        sp.addJob(modelName, modelName, yamlStr)
+        #sp.simulate(modelName, 'j1', 30, 0.1)
     else:
-        logger.error(("Coucldn't add model with name '%s' to server " +
+        logger.error(("Couldn't add model with name '%s' to server " +
                      "because model with this name alredy exists.") % modelName)

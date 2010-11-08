@@ -2,6 +2,7 @@
 import logging, couchdb, logging.handlers, sys
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
+import CouchDBViewDefinitions
 
 sys.path.append('../gui/pylib/')
 from roadModel import Car, Road, SimpleSemaphore, Model, CouchDBStorage
@@ -52,10 +53,33 @@ class RPCServerException(Exception):
 
 class CouchDBProxy:
 
+    jobsCountDocId = 'jobsCount'
+    lastId = 'lastId'
+
     def __init__(self, cfg):
         self.cfg = cfg
         self.logger = logging.getLogger('kts46.rpc_server.couchdb')
         self.server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
+
+    def _createViews(self, projectName):
+        "Creates all requires views for the database."
+
+        defsStr = CouchDBViewDefinitions.definitions
+        defs = [ ]
+        for defStr in defsStr:
+            defs.append(couchdb.design.ViewDefinition(defStr['doc'],
+                defStr['view'], defStr['map']))
+        couchdb.design.ViewDefinition.sync_many(self.server[projectName], defs )
+
+    def getNewJobId(self, projectName):
+        if projectName not in self.server:
+            raise RPCServerException("Couldn't get new job id because project doesn't exist.")
+        project = self.server[projectName]
+        countDoc = project[CouchDBProxy.jobsCountDocId]
+        countDoc[CouchDBProxy.lastId] = countDoc[CouchDBProxy.lastId] + 1
+        project[CouchDBProxy.jobsCountDocId] = countDoc
+        return countDoc[CouchDBProxy.lastId]
+                
 
     def createProject(self, projectName):
         """Create in database project with specified name.
@@ -64,51 +88,65 @@ class CouchDBProxy:
         Arguments:
             projectName -- name of peoject to create."""
         if projectName not in self.server:
-            self.server.create(projectName)
+            project = self.server.create(projectName)
+            # Create special document to store amount of jobs created.
+            project[CouchDBProxy.jobsCountDocId] = {'lastId' : 0}
+            self._createViews(projectName)
         else:
             msg = "Couldn't create project because it already exists."
             msg += ' Project name: %s.' % projectName
             raise RPCServerException(msg)
 
+
     def projectExists(self, projectName):
         "Checks whether project with specified name already exists."
         return projectName in self.server
+
 
     def deleteProject(self, projectName):
         """Deletes project with specified name if it exists. Otherwise raises
         RPCServerException."""
         if projectName in self.server:
             self.logger.debug("Deleting project '%s'." % projectName)
-            del self.server[modelName]
+            del self.server[projectName]
             self.logger.info("Project '%s' deleted." % projectName)
         else:
             msg = "Couldn't delete project '%s' because it doesn't exists." % projectName
             self.logger.warning(msg)
             raise RPCServerException(msg)
 
-
-    def addModel(self, modelName, definition):
-        "Adds specified model to the database if it doesn't already exists."
-        if modelName not in self.server:
-            db = self.server.create(modelName)
-            db['model_definition'] = {'name': modelName, 'yaml': definition }
-        else:
-            raise Exception("Couldn't add model because it already exists.")
-
-    def modelExists(self, modelName):
-        "Checks whether model with provided name already exists."
-        return modelName in self.server
-    
-    def deleteModel(self, modelName):
-        "Deletes model with specified name if it exists. Otherwise creates an exception."
-        if modelName in self.server:
-            self.logger.info("Deleting model with name '%s'." % modelName)
-            del self.server[modelName]
-        else:
-            raise Exception("""Couldn't delete model with name '%s' because it
-                             doesn't exists.""" % modelName)
             
-    def simulate(self, modelName, duration, step):
+    def addJob(self, projectName, jobName, definition):
+        """Adds specified job to project.
+        
+        RPCServerException will be raised if project doesn't exist or job with
+        specified name already exists.
+        Arguments:
+            projectName -- name of model project.
+            jobName -- job name.
+            definition -- definition of job written in YAML.
+        """
+        if projectName not in self.server:
+            raise RPCServerException("""Couldn't add job '%s', because project
+            '%s' doesn't exist.""" % (jobName, projectName))
+        db = self.server[projectName]
+        jobId = 'j' + str(self.getNewJobId(projectName))
+        db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job'}
+
+    #def modelExists(self, modelName):
+    #    "Checks whether model with provided name already exists."
+    #    return modelName in self.server
+    
+    #def deleteModel(self, modelName):
+    #    "Deletes model with specified name if it exists. Otherwise creates an exception."
+    #    if modelName in self.server:
+    #        self.logger.info("Deleting model with name '%s'." % modelName)
+    #        del self.server[modelName]
+    #    else:
+    #        raise Exception("""Couldn't delete model with name '%s' because it
+    #                         doesn't exists.""" % modelName)
+            
+    def simulate(self, projectName, jobId, duration, step):
         """Simulates model for the specified time duration.
         
         modelName - name of model to simulate.
@@ -123,11 +161,11 @@ class CouchDBProxy:
 
         # Prepare infrastructure.
         logger = logging.getLogger('kts46.rpc_server.simulator')
-        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), modelName)
+        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName)
         logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
 
         model = Model(ModelParams())
-        model.loadYAML(self.server[modelName]['model_definition']['yaml'])
+        model.loadYAML(self.server[projectName][jobId]['yaml'])
 
         # Run.
         while t < duration:
@@ -140,7 +178,6 @@ class CouchDBProxy:
         # Finilize.
         storage.close()
             
-
 if __name__ == '__main__':
     cfg, logger = init()
 
