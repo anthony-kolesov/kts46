@@ -1,3 +1,4 @@
 glob:*.pyo
 glob:*.lnk
 glob:*.xpt
+glob:*.pyc

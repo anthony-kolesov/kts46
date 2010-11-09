@@ -65,7 +65,7 @@ if __name__ == '__main__':
         sp.deleteProject(modelName)
         sp.createProject(modelName)
         sp.addJob(modelName, modelName, yamlStr)
-        #sp.simulate(modelName, 'j1', 30, 0.1)
+        sp.simulate(modelName, 'j1', 30, 0.1)
     else:
         logger.error(("Couldn't add model with name '%s' to server " +
                      "because model with this name alredy exists.") % modelName)

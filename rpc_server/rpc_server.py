@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import logging, couchdb, logging.handlers, sys
+import logging, couchdb, logging.handlers, sys, yaml, math
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 import CouchDBViewDefinitions
@@ -55,6 +55,7 @@ class CouchDBProxy:
 
     jobsCountDocId = 'jobsCount'
     lastId = 'lastId'
+    jobProgressDocId = '%sProgress'
 
     def __init__(self, cfg):
         self.cfg = cfg
@@ -130,8 +131,19 @@ class CouchDBProxy:
             raise RPCServerException("""Couldn't add job '%s', because project
             '%s' doesn't exist.""" % (jobName, projectName))
         db = self.server[projectName]
+        
+        # Store simulation parameters.
+        objData = yaml.safe_load(definition)
+        simulationTime = objData['simulationTime']
+        simulationStep = objData['simulationStep']
+        
         jobId = 'j' + str(self.getNewJobId(projectName))
-        db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job'}
+        db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job',
+            simulationTime: simulationTime, simulationStep: simulationStep}
+        db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId, 
+            'totalSteps': math.floor(simulationTime/simulationStep),
+            'done': 0 }
+        
 
     #def modelExists(self, modelName):
     #    "Checks whether model with provided name already exists."

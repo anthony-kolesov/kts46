@@ -1,3 +1,7 @@
+# Simulation parameters
+simulationTime: 30
+simulationStep: 0.2
+
 # seconds
 carGenerationInterval: 3
 # m/s
