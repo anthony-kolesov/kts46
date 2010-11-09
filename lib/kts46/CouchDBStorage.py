@@ -7,7 +7,7 @@ class CouchDBStorage:
     Data is buffered to save requestes to server.
     """
 
-    def __init__(self, servername, dbname, bufferSize = 1000):
+    def __init__(self, servername, dbname, jobId, bufferSize = 1000):
         """Initializes new instance of CouchDB storage.
 
         If specified database doesn't exist it will be created with all required
@@ -25,21 +25,13 @@ class CouchDBStorage:
             self.db = self.server[dbname]
         self.bulk_queue = []
         self.bufferSize = bufferSize
-        self._createViews()
+        self.jobId = jobId
+        #self._createViews()
 
     def _createViews(self):
         "Creates all requires views for the database."
 
         defsStr = CouchDBViewDefinitions.definitions
-        #addCarMap = """
-        #function(doc) {
-        #    // car creations
-        #    for (var id in doc.cars){
-        #        if (doc.cars[id].state && doc.cars[id].state === 'add') {
-        #            emit(id, doc.time)
-        #        }
-        #    }
-        #}"""
 
         defs = [ ]
         for defStr in defsStr:
@@ -51,7 +43,7 @@ class CouchDBStorage:
         d = dict(data)
         d['time'] = time
         d['type'] = 'state'
-        d['_id'] = 'st_'+str(time)
+        d['_id'] = 's' + self.jobId + '_' + str(time)
         doc = couchdb.Document(d)
 
         self.bulk_queue.append(doc)
@@ -60,6 +52,9 @@ class CouchDBStorage:
 
     def dump(self):
         if len(self.bulk_queue) > 0:
+            progress = self.db['j%sProgress' % self.jobId]
+            progress['done'] += len(self.bulk_queue)
+            self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
             self.bulk_queue = []
 

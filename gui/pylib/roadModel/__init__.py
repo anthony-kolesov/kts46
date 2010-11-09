@@ -1,7 +1,7 @@
 # from xpcom import components
 import logging
 import Car as CarModule, Road as RoadModule, TrafficLight as TrafficLightModule,\
-    Model as ModelModule, CouchDBStorage as CouchDBStorageModule
+    Model as ModelModule#, CouchDBStorage as CouchDBStorageModule
 
 __version__ = '0.1.2'
 
@@ -10,7 +10,7 @@ Car = CarModule.Car
 Road = RoadModule.Road
 SimpleSemaphore = TrafficLightModule.SimpleSemaphore
 Model = ModelModule.Model
-CouchDBStorage = CouchDBStorageModule.CouchDBStorage
+#CouchDBStorage = CouchDBStorageModule.CouchDBStorage
 
 # def road_constructor(loader, node):
 #    mapping = loader.construct_mapping(node)

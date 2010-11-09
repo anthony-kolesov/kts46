@@ -59,13 +59,13 @@ if __name__ == '__main__':
         logger.info('Adding project to database.')
         sp.createProject(modelName)
         sp.addJob(modelName, modelName, yamlStr)
-        #sp.simulate(modelName, 'j1', 30, 0.04)
+        #sp.simulate(modelName, '1')
     elif options.force:
         logger.info('Project exists and --force is selected. Remove current project.')
         sp.deleteProject(modelName)
         sp.createProject(modelName)
         sp.addJob(modelName, modelName, yamlStr)
-        sp.simulate(modelName, 'j1', 30, 0.1)
+        sp.simulate(modelName, '1')
     else:
         logger.error(("Couldn't add model with name '%s' to server " +
                      "because model with this name alredy exists.") % modelName)

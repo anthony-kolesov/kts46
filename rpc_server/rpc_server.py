@@ -5,7 +5,9 @@ from ConfigParser import SafeConfigParser
 import CouchDBViewDefinitions
 
 sys.path.append('../gui/pylib/')
-from roadModel import Car, Road, SimpleSemaphore, Model, CouchDBStorage
+sys.path.append('../lib/')
+from roadModel import Car, Road, SimpleSemaphore, Model
+from kts46 import CouchDBStorage
 
 def init():
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
@@ -139,7 +141,7 @@ class CouchDBProxy:
         
         jobId = 'j' + str(self.getNewJobId(projectName))
         db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job',
-            simulationTime: simulationTime, simulationStep: simulationStep}
+            'simulationTime': simulationTime, 'simulationStep': simulationStep}
         db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId, 
             'totalSteps': math.floor(simulationTime/simulationStep),
             'done': 0 }
@@ -158,26 +160,30 @@ class CouchDBProxy:
     #        raise Exception("""Couldn't delete model with name '%s' because it
     #                         doesn't exists.""" % modelName)
             
-    def simulate(self, projectName, jobId, duration, step):
+    def simulate(self, projectName, jobId):
         """Simulates model for the specified time duration.
         
         modelName - name of model to simulate.
         duration - duration of simulation in seconds.
         step - step of simulation in seconds.
         """
+
+        # Prepare infrastructure.
+        logger = logging.getLogger('kts46.rpc_server.simulator')
+        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName, jobId)
+
+        model = Model(ModelParams())
+        job = self.server[projectName]['j'+jobId]
+        model.loadYAML(job['yaml'])
+        step = job['simulationStep']
+        duration = job['simulationTime']
+        
         # Prepare values.
         stepAsMs = step * 1000 # step in milliseconds
         stepsN = duration / step
         stepsCount = 0
         t = 0.0
-
-        # Prepare infrastructure.
-        logger = logging.getLogger('kts46.rpc_server.simulator')
-        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName)
         logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
-
-        model = Model(ModelParams())
-        model.loadYAML(self.server[projectName][jobId]['yaml'])
 
         # Run.
         while t < duration:
