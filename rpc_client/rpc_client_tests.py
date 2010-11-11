@@ -4,8 +4,10 @@ from ConfigParser import SafeConfigParser
 class Test(unittest.TestCase):
 
     def setUp(self):
+        configFiles = ('rpc_client.ini', '../stats/basicStats.ini')
+    
         self.cfg = SafeConfigParser()
-        self.cfg.read(('rpc_client.ini', '../stats/basicStats.ini'))
+        self.cfg.read(configFiles)
         host = self.cfg.get('connection', 'server')
         port = self.cfg.getint('connection', 'port')
         connString = 'http://%s:%i' % (host, port)

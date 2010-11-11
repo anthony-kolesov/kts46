@@ -4,6 +4,8 @@ from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
 def init():
+    configFiles = ('rpc_client.ini',)
+
     # Configure logging.
     logging.basicConfig(level=logging.INFO,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
@@ -20,7 +22,7 @@ def init():
     # Create configuration.
     logger.debug('Reading configuration.')
     cfg = SafeConfigParser()
-    cfg.read(('rpc_client.ini',))
+    cfg.read(configFiles)
 
     return (cfg, logger)
 

@@ -1,10 +1,11 @@
 #!/usr/bin/python
 import json, pprint, sys
 import numpy
-#from urllib.request import urlopen
 from urllib2 import urlopen
 from string import Template
 from ConfigParser import SafeConfigParser
+
+configFiles = ('../config/common.ini',)
 
 def getJSON(url):
     a = urlopen(url)
@@ -14,7 +15,7 @@ def getJSON(url):
 
 # Read configuration file.
 cfg = SafeConfigParser()
-cfg.read( ('basicStats.ini',) )
+cfg.read(configFiles)
 
 # Parse cmd arsg.
 dbName = sys.argv[1]

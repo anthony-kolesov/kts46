@@ -4,17 +4,17 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 import CouchDBViewDefinitions
 
-sys.path.append('../gui/pylib/')
 sys.path.append('../lib/')
-from roadModel import Car, Road, SimpleSemaphore, Model
-from kts46 import CouchDBStorage
+from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage
 
 def init():
+    configFiles = ('rpc_server.ini', '../config/common.ini')
+
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
     # Create configuration.
     logging.debug('Reading configuration.')
     cfg = SafeConfigParser()
-    cfg.read(('rpc_server.ini', '../stats/basicStats.ini'))
+    cfg.read(configFiles)
 
     # Configure logging.
     logging.basicConfig(level=logging.DEBUG,
