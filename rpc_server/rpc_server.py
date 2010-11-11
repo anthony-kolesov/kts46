@@ -8,9 +8,9 @@ sys.path.append('../lib/')
 from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage
 
 def init():
-    configFiles = ('rpc_server.ini', '../config/common.ini')
-
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
+    
+    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
     # Create configuration.
     logging.debug('Reading configuration.')
     cfg = SafeConfigParser()
@@ -200,8 +200,8 @@ if __name__ == '__main__':
     cfg, logger = init()
 
     # Create and configure server.
-    address = cfg.get('connection', 'address')
-    port = cfg.getint('connection', 'port')
+    address = cfg.get('rpc-server', 'address')
+    port = cfg.getint('rpc-server', 'port')
     server = SimpleXMLRPCServer( (address, port), allow_none = True )
 
     # Register functions.

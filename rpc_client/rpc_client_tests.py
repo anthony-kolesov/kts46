@@ -4,12 +4,12 @@ from ConfigParser import SafeConfigParser
 class Test(unittest.TestCase):
 
     def setUp(self):
-        configFiles = ('rpc_client.ini', '../stats/basicStats.ini')
+        configFiles = ('../config/common.ini', '../config/rpc_client.ini')
     
         self.cfg = SafeConfigParser()
         self.cfg.read(configFiles)
-        host = self.cfg.get('connection', 'server')
-        port = self.cfg.getint('connection', 'port')
+        host = self.cfg.get('rpc-client', 'server')
+        port = self.cfg.getint('rpc-server', 'port')
         connString = 'http://%s:%i' % (host, port)
         self.sp = xmlrpclib.ServerProxy(connString)
         self.projName = 'test_project_abracadabra'

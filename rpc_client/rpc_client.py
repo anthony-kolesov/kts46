@@ -4,7 +4,7 @@ from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
 def init():
-    configFiles = ('rpc_client.ini',)
+    configFiles = ('../config/rpc_client.ini', '../config/common.ini')
 
     # Configure logging.
     logging.basicConfig(level=logging.INFO,
@@ -40,8 +40,8 @@ if __name__ == '__main__':
     
 
     # Create proxy.
-    host = cfg.get('connection', 'server')
-    port = cfg.getint('connection', 'port')
+    host = cfg.get('rpc-client', 'server')
+    port = cfg.getint('rpc-server', 'port')
     connString = 'http://%s:%i' % (host, port)
     logger.info('Connecting to server %s' % connString)
     sp = xmlrpclib.ServerProxy(connString)
