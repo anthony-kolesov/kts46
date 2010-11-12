@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import logging, couchdb, logging.handlers, sys, yaml, math
+import logging, logging.handlers, couchdb, couchdb.client, sys, yaml, math
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 import CouchDBViewDefinitions
@@ -74,7 +74,15 @@ class CouchDBProxy:
                 defStr['view'], defStr['map']))
         couchdb.design.ViewDefinition.sync_many(self.server[projectName], defs )
 
+
     def getNewJobId(self, projectName):
+        """Creates new job id. 
+        
+        It is guaranteed that there will be no dublicates, because after
+        generation new id is written to database and CouchDB will not allow two
+        same job ids because of revision number conflicts.
+        RPCServerException is thrown if project doesn't exist."""
+        
         if projectName not in self.server:
             raise RPCServerException("Couldn't get new job id because project doesn't exist.")
         project = self.server[projectName]
@@ -147,9 +155,12 @@ class CouchDBProxy:
             'done': 0 }
         
 
-    #def modelExists(self, modelName):
-    #    "Checks whether model with provided name already exists."
-    #    return modelName in self.server
+    def jobExists(self, projectName, jobName):
+        "Checks whether job with provided name exists in project."
+        if projectName not in self.server:
+            raise RPCServerException("Project '%s' doesn't exist." % projName)
+        db = self.server[projectName]
+        return len(db.view('manage/jobs')[jobName]) > 0
     
     #def deleteModel(self, modelName):
     #    "Deletes model with specified name if it exists. Otherwise creates an exception."
