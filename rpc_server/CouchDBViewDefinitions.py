@@ -31,5 +31,14 @@ definitions = (
             }
         }
         """
+    },
+    {
+        "doc": "manage", "view": "states",
+        "map":"""
+            function(doc) {
+                if (doc.type === 'state')
+                    emit(doc.job, doc._id);
+            }
+        """
     }
 ,)

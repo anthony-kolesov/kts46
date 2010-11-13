@@ -17,8 +17,8 @@ def init():
     cfg.read(configFiles)
 
     # Configure logging.
-    logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+    logging.getLogger('').setLevel(logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                     datefmt='%m/%d %H:%M:%S',
                     filename='/tmp/kts46_rpc_server.log',
                     filemode='w')
@@ -28,6 +28,7 @@ def init():
         maxBytes=cfg.get('log', 'maxBytesInFile'),
         backupCount=cfg.get('log', 'backupCountOfFile'))
     rfhandler.setLevel(logging.INFO)
+    rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
     logging.getLogger('').addHandler(rfhandler)
 
     logger = logging.getLogger('kts46.rpc_server')
@@ -58,6 +59,8 @@ class CouchDBProxy:
     jobsCountDocId = 'jobsCount'
     lastId = 'lastId'
     jobProgressDocId = '%sProgress'
+    jobsListView = 'manage/jobs'
+    statesView = 'manage/states'
 
     def __init__(self, cfg):
         self.cfg = cfg
@@ -156,20 +159,33 @@ class CouchDBProxy:
         
 
     def jobExists(self, projectName, jobName):
-        "Checks whether job with provided name exists in project."
+        """Checks whether job with provided name exists in project.
+        
+        RPCServerExceptpion is thrown if project doesn't exist."""
         if projectName not in self.server:
             raise RPCServerException("Project '%s' doesn't exist." % projName)
         db = self.server[projectName]
-        return len(db.view('manage/jobs')[jobName]) > 0
+        return len(db.view(CouchDBProxy.jobsListView)[jobName]) > 0
+
     
-    #def deleteModel(self, modelName):
-    #    "Deletes model with specified name if it exists. Otherwise creates an exception."
-    #    if modelName in self.server:
-    #        self.logger.info("Deleting model with name '%s'." % modelName)
-    #        del self.server[modelName]
-    #    else:
-    #        raise Exception("""Couldn't delete model with name '%s' because it
-    #                         doesn't exists.""" % modelName)
+    def deleteJob(self, projectName, jobName):
+        "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
+        if projectName not in self.server:
+            raise RPCServerException("Project '%s' doesn't exist." % projectName)
+        proj = self.server[projectName]
+        jobRows = proj.view(CouchDBProxy.jobsListView)[jobName]
+        if len(jobRows) == 0:
+            raise RPCServerException(
+                "Couldn't delete job '%s' in project '%s' because it doesn't exist." %
+                (jobName, projectName) )
+        for jobRow in jobRows:
+            jobId = int(jobRow['value'][1:]) # Skip first 'j' letter.
+            del proj[CouchDBProxy.jobProgressDocId % ( 'j'+str(jobId) )]
+            del proj['j'+str(jobId)]
+            states = proj.view(CouchDBProxy.statesView)[jobId]
+            for s in states:
+                del proj[s['value']]
+            
             
     def simulate(self, projectName, jobId):
         """Simulates model for the specified time duration.
@@ -181,10 +197,10 @@ class CouchDBProxy:
 
         # Prepare infrastructure.
         logger = logging.getLogger('kts46.rpc_server.simulator')
-        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName, jobId)
+        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName, str(jobId))
 
         model = Model(ModelParams())
-        job = self.server[projectName]['j'+jobId]
+        job = self.server[projectName]['j'+str(jobId)]
         model.loadYAML(job['yaml'])
         step = job['simulationStep']
         duration = job['simulationTime']
@@ -201,7 +217,9 @@ class CouchDBProxy:
             model.run_step(stepAsMs)
             stepsCount += 1
             # Round time to milliseconds
-            storage.add(round(t, 3),  model.get_state_data())
+            data = model.get_state_data()
+            data['job'] = jobId
+            storage.add(round(t, 3), data)
             t += step
 
         # Finilize.

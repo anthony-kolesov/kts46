@@ -38,9 +38,6 @@ class Test(unittest.TestCase):
         self.assertFalse( self.sp.projectExists(self.projName) )
         
     def test_createViews(self):
-        if self.sp.projectExists(self.projName):
-            self.sp.createProject(self.projName)
-        self.assertFalse( self.sp.projectExists(self.projName) )
         self.sp.createProject(self.projName)
         
         server = couchdb.Server(self.cfg.get('couchdb', 'dbaddress'))
@@ -55,7 +52,6 @@ class Test(unittest.TestCase):
         self.assertFalse( self.sp.projectExists(self.projName) )
     
     def test_newProjectId(self):
-        self.assertFalse(self.sp.projectExists(self.projName) )
         self.sp.createProject(self.projName)
         self.assertTrue( self.sp.projectExists(self.projName) )
         
@@ -69,13 +65,36 @@ class Test(unittest.TestCase):
         self.assertFalse( self.sp.projectExists(self.projName) )
         
     def test_addJobAndExistence(self):
-        self.assertFalse(self.sp.projectExists(self.projName) )
         self.sp.createProject(self.projName)
         self.assertTrue( self.sp.projectExists(self.projName) )
 
         self.assertFalse(self.sp.jobExists(self.projName, self.jobName))        
         self.sp.addJob(self.projName, self.jobName, self.yamlModel)
         self.assertTrue(self.sp.jobExists('rns_16', 'rns_16'))
+        
+        self.sp.deleteProject(self.projName)
+        self.assertFalse( self.sp.projectExists(self.projName) )
+        
+    def test_deleteJob(self):
+        self.sp.createProject(self.projName)
+        self.assertTrue( self.sp.projectExists(self.projName) )
+
+        self.assertFalse(self.sp.jobExists(self.projName, self.jobName))        
+        self.sp.addJob(self.projName, self.jobName, self.yamlModel)
+        self.assertTrue(self.sp.jobExists(self.projName, self.jobName))
+        
+        server = couchdb.Server(self.cfg.get('couchdb', 'dbaddress'))
+        db = server[self.projName]
+        self.assertTrue('j1' in db)
+        self.assertTrue('j1Progress' in db)
+        self.sp.simulate(self.projName, 1)
+        self.assertTrue('s1_0.0' in db)
+        
+        self.sp.deleteJob(self.projName, self.jobName)
+        self.assertFalse(self.sp.jobExists(self.projName, self.jobName))
+        self.assertFalse('j1' in db)
+        self.assertFalse('j1Progress' in db)
+        self.assertFalse('s1_0.0' in db)
         
         self.sp.deleteProject(self.projName)
         self.assertFalse( self.sp.projectExists(self.projName) )
