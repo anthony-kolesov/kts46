@@ -18,10 +18,10 @@ def init():
 
     # Configure logging.
     logging.getLogger('').setLevel(logging.INFO)
-    logging.basicConfig(format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                    datefmt='%m/%d %H:%M:%S',
-                    filename='/tmp/kts46_rpc_server.log',
-                    filemode='w')
+    logging.basicConfig(format=cfg.get('log', 'format'),
+                    datefmt=cfg.get('log', 'dateFormat'),
+                    filename=cfg.get('log', 'filename'),
+                    filemode=cfg.get('log', 'filemode'))
 
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
@@ -31,7 +31,7 @@ def init():
     rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
     logging.getLogger('').addHandler(rfhandler)
 
-    logger = logging.getLogger('kts46.rpc_server')
+    logger = logging.getLogger(cfg.get('log', 'loggerName'))
 
     return (cfg, logger)
 
@@ -239,5 +239,5 @@ if __name__ == '__main__':
     server.register_instance(couchdbProxy)
 
     # Run server.
-    logging.warn('Serving...')
+    logging.info('Serving...')
     server.serve_forever()

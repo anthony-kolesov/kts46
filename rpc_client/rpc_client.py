@@ -8,15 +8,15 @@ def init():
 
     # Configure logging.
     logging.basicConfig(level=logging.INFO,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%m/%d %H:%M:%S',
-                        filename='/tmp/kts46_rpc_client.log',
-                        filemode='w')
+                        format=cfg.get('log', 'format'),
+                        datefmt=cfg.get('log', 'dateFormat'),
+                        filename=cfg.get('log', 'filename'),
+                        filemode=cfg.get('log', 'filemode'))
 
     # Define a handler for console message with mode simple format.
     console = logging.StreamHandler()
-    console.setFormatter( logging.Formatter('L:%(levelname)-6s %(message)s') )
-    logger = logging.getLogger('kts46.rpc_client')
+    console.setFormatter( logging.Formatter(cfg.get('log', 'shortFormat')) )
+    logger = logging.getLogger(cfg.get('log', 'loggerName'))
     logger.addHandler(console)
 
     # Create configuration.
