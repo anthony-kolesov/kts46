@@ -28,7 +28,7 @@ from kts46.serverApi import RPCServerException
 
 def init():
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
-    
+
     configFiles = ('../config/common.ini', '../config/rpc_server.ini')
     # Create configuration.
     logging.debug('Reading configuration.')
@@ -60,8 +60,15 @@ def hello(msg):
     return '''Hello you too! This is simple XML-RPC server for kts46.
             You\'ve said: [''' + msg + ']'
 
+def shutdown():
+    logging.getLogger('').info('Shutdown server.')
+    # sys.exit(1)
+    server.shutdown()
+    logging.getLogger('').info('Shutdowned server.')
+
+
 class ModelParams:
-    
+
     def __init__(self):
         self.carGenerationInterval = 3.0
         self.safeDistance = 5.0
@@ -98,13 +105,13 @@ class CouchDBProxy:
 
 
     def getNewJobId(self, projectName):
-        """Creates new job id. 
-        
+        """Creates new job id.
+
         It is guaranteed that there will be no dublicates, because after
         generation new id is written to database and CouchDB will not allow two
         same job ids because of revision number conflicts.
         RPCServerException is thrown if project doesn't exist."""
-        
+
         if projectName not in self.server:
             raise RPCServerException("Couldn't get new job id because project doesn't exist.")
         project = self.server[projectName]
@@ -112,11 +119,11 @@ class CouchDBProxy:
         countDoc[CouchDBProxy.lastId] = countDoc[CouchDBProxy.lastId] + 1
         project[CouchDBProxy.jobsCountDocId] = countDoc
         return countDoc[CouchDBProxy.lastId]
-                
+
 
     def createProject(self, projectName):
         """Create in database project with specified name.
-        
+
         An exception will be raised it project already exists.
         Arguments:
             projectName -- name of peoject to create."""
@@ -148,10 +155,10 @@ class CouchDBProxy:
             self.logger.warning(msg)
             raise RPCServerException(msg)
 
-            
+
     def addJob(self, projectName, jobName, definition):
         """Adds specified job to project.
-        
+
         RPCServerException will be raised if project doesn't exist or job with
         specified name already exists.
         Arguments:
@@ -174,25 +181,25 @@ because it already exists.""" % (jobName, projectName) )
         objData = yaml.safe_load(definition)
         simulationTime = objData['simulationTime']
         simulationStep = objData['simulationStep']
-        
+
         jobId = 'j' + str(self.getNewJobId(projectName))
         db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job',
             'simulationTime': simulationTime, 'simulationStep': simulationStep}
-        db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId, 
+        db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId,
             'totalSteps': math.floor(simulationTime/simulationStep),
             'done': 0 }
-        
+
 
     def jobExists(self, projectName, jobName):
         """Checks whether job with provided name exists in project.
-        
+
         RPCServerExceptpion is thrown if project doesn't exist."""
         if projectName not in self.server:
             raise RPCServerException("Project '%s' doesn't exist." % projName)
         db = self.server[projectName]
         return len(db.view(CouchDBProxy.jobsListView)[jobName]) > 0
 
-    
+
     def deleteJob(self, projectName, jobName):
         "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
         if projectName not in self.server:
@@ -210,15 +217,15 @@ because it already exists.""" % (jobName, projectName) )
             states = proj.view(CouchDBProxy.statesView)[jobId]
             for s in states:
                 del proj[s['value']]
-            
-            
+
+
     def runJob(self, projectName, jobName):
         """Simulates model for the specified time duration."""
-        
+
         if projectName not in self.server:
             raise RPCServerException("Project '%s' doesn't exist." % projectName)
         db = self.server[projectName]
-        
+
         # Use only first job. There acually can be only one.
         jobsViewResult = db.view(CouchDBProxy.jobsListView)[jobName]
         jobIdStr = list(jobsViewResult)[0]['value'][1:]
@@ -233,7 +240,7 @@ because it already exists.""" % (jobName, projectName) )
         model.loadYAML(job['yaml'])
         step = job['simulationStep']
         duration = job['simulationTime']
-        
+
         # Prepare values.
         stepAsMs = step * 1000 # step in milliseconds
         stepsN = duration / step
@@ -253,7 +260,7 @@ because it already exists.""" % (jobName, projectName) )
 
         # Finilize.
         storage.close()
-            
+
 if __name__ == '__main__':
     cfg, logger = init()
 
@@ -265,6 +272,7 @@ if __name__ == '__main__':
     # Register functions.
     couchdbProxy = CouchDBProxy(cfg)
     server.register_function(hello)
+    server.register_function(shutdown)
     server.register_instance(couchdbProxy)
 
     # Run server.

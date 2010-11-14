@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     usage = "usage: %prog [options] <action>"
     epilog = """<action> could be: createProject (crp), deleteProject (delp)
-addJob (a), deleteJob (delj), runJob (r)."""
+addJob (a), deleteJob (delj), runJob (r), shutdown."""
     cmdOpts = OptionParser(usage=usage, epilog=epilog)
     cmdOpts.add_option('-p', '--project', action='store', dest='proj', default='',
                        help='Project name. This option is required.')
@@ -63,10 +63,10 @@ addJob (a), deleteJob (delj), runJob (r)."""
                        help='Path to file with job definition.')
 
     options, args = cmdOpts.parse_args(sys.argv[1:])
-    if len(options.proj) < 1:
-        cmdOpts.error('Project name must be specified. See options -p and --project')
     if len(args) != 1:
         cmdOpts.error('There must be one and only one positional argument of action.')
+    if len(options.proj) < 1 and args[0] != 'shutdown':
+        cmdOpts.error('Project name must be specified. See options -p and --project')
 
     # Create RPC proxy.
     host = cfg.get('rpc-client', 'server')
@@ -76,7 +76,10 @@ addJob (a), deleteJob (delj), runJob (r)."""
     sp = xmlrpclib.ServerProxy(connString)
 
     # Do action.
-    if args[0] == 'crp' or args[0] == 'createProject':
+    if args[0] == 'shutdown':
+        sp.shutdown()
+        del sp
+    elif args[0] == 'crp' or args[0] == 'createProject':
         logger.info('Creating project: %s' % options.proj)
         if sp.projectExists(options.proj):
             msg = "Couldn't create project '%s', because it already exists."
