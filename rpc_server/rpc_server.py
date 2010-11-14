@@ -21,9 +21,9 @@ from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
 
 sys.path.append('../lib/')
-from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage
+from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage,\
+    CouchDBViewDefinitions
 from kts46.serverApi import RPCServerException
-import CouchDBViewDefinitions
 
 
 def init():
