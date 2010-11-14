@@ -2,10 +2,12 @@
 import logging, logging.handlers, couchdb, couchdb.client, sys, yaml, math
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
-import CouchDBViewDefinitions
 
 sys.path.append('../lib/')
 from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage
+from kts46.serverApi import RPCServerException
+import CouchDBViewDefinitions
+
 
 def init():
     """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
@@ -50,8 +52,8 @@ class ModelParams:
         self.minSpeed = 10.0
 
 
-class RPCServerException(Exception):
-    pass
+#class RPCServerException(Exception):
+#    pass
 
 
 class CouchDBProxy:
@@ -142,9 +144,15 @@ class CouchDBProxy:
         """
         if projectName not in self.server:
             raise RPCServerException("""Couldn't add job '%s', because project
-            '%s' doesn't exist.""" % (jobName, projectName))
+'%s' doesn't exist.""" % (jobName, projectName))
+
+        # Check for job dublication.
+        if self.jobExists(projectName, jobName):
+            raise RPCServerException("""Couldn't add job '%s' to project '%s'
+because it already exists.""" % (jobName, projectName) )
+
         db = self.server[projectName]
-        
+
         # Store simulation parameters.
         objData = yaml.safe_load(definition)
         simulationTime = objData['simulationTime']
@@ -187,13 +195,17 @@ class CouchDBProxy:
                 del proj[s['value']]
             
             
-    def simulate(self, projectName, jobId):
-        """Simulates model for the specified time duration.
+    def runJob(self, projectName, jobName):
+        """Simulates model for the specified time duration."""
         
-        modelName - name of model to simulate.
-        duration - duration of simulation in seconds.
-        step - step of simulation in seconds.
-        """
+        if projectName not in self.server:
+            raise RPCServerException("Project '%s' doesn't exist." % projectName)
+        db = self.server[projectName]
+        
+        # Use only first job. There acually can be only one.
+        jobsViewResult = db.view(CouchDBProxy.jobsListView)[jobName]
+        jobIdStr = list(jobsViewResult)[0]['value'][1:]
+        jobId = int(jobIdStr)
 
         # Prepare infrastructure.
         logger = logging.getLogger('kts46.rpc_server.simulator')

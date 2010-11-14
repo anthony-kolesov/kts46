@@ -1,6 +1,9 @@
 #!/usr/bin/python
-import unittest, xmlrpclib, couchdb, couchdb.client
+import unittest, xmlrpclib, couchdb, couchdb.client, sys
 from ConfigParser import SafeConfigParser
+
+sys.path.append('../lib/')
+from kts46.serverApi import RPCServerException
 
 class Test(unittest.TestCase):
 
@@ -75,6 +78,20 @@ class Test(unittest.TestCase):
         self.sp.deleteProject(self.projName)
         self.assertFalse( self.sp.projectExists(self.projName) )
         
+    def test_addDublicateJob(self):
+        self.sp.createProject(self.projName)
+        self.assertTrue( self.sp.projectExists(self.projName) )
+
+        self.assertFalse(self.sp.jobExists(self.projName, self.jobName))        
+        self.sp.addJob(self.projName, self.jobName, self.yamlModel)
+        self.assertTrue(self.sp.jobExists(self.projName, self.jobName))
+        self.assertRaises(xmlrpclib.Fault, self.sp.addJob,
+                          self.projName, self.jobName, self.yamlModel)
+        self.assertTrue(self.sp.jobExists(self.projName, self.jobName))
+        
+        self.sp.deleteProject(self.projName)
+        self.assertFalse( self.sp.projectExists(self.projName) )
+        
     def test_deleteJob(self):
         self.sp.createProject(self.projName)
         self.assertTrue( self.sp.projectExists(self.projName) )
@@ -87,7 +104,7 @@ class Test(unittest.TestCase):
         db = server[self.projName]
         self.assertTrue('j1' in db)
         self.assertTrue('j1Progress' in db)
-        self.sp.simulate(self.projName, 1)
+        self.sp.runJob(self.projName, self.jobName)
         self.assertTrue('s1_0.0' in db)
         
         self.sp.deleteJob(self.projName, self.jobName)
