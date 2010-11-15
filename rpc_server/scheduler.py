@@ -16,33 +16,56 @@ License:
    limitations under the License.
 """
 
-import Queue, threading
+import Queue, threading, logging, logging.handlers
 from multiprocessing.managers import BaseManager
+from ConfigParser import SafeConfigParser
 
-class Scheduler(BaseManager):
-    pass
 
-class Dummy:
-    def send(self, param): pass
+def createConfiguration():
+    "Returns SafeConfigParser for this application."
+    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
+    cfg = SafeConfigParser()
+    cfg.read(configFiles)
+    return cfg
 
-def shutdown():
-    server.shutdown( Dummy() )
+def createLogger():
+    # Define a log handler for rotating files.
+    rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
+        maxBytes=cfg.get('log', 'maxBytesInFile'),
+        backupCount=cfg.get('log', 'backupCountOfFile'))
+    rfhandler.setLevel(logging.INFO)
+    rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
+    logging.getLogger('').addHandler(rfhandler)
+
+    logger = logging.getLogger(cfg.get('log', 'loggerName'))
+    logger.setLevel(logging.INFO)
+    return logger
+
+
+queue = Queue.Queue()
+cfg = createConfiguration()
+logger = createLogger()
+
+
+class Scheduler(BaseManager): pass
 
 def runJob(projectName, jobName):
-    print('add job: %s.%s' %(projectName, jobName))
+    logger.info('Adding job: project=%s, job=%s' % (projectName, jobName))
     queue.put({'p':projectName, 'j':jobName})
 
 def getJob():
-    print('get job')
-    return queue.get()
+    a = queue.get()
+    logger.info('Removing from queue: project=%s, job=%s' % (a['projectName'], a['jobName']))
+    return a
 
-queue = Queue.Queue()
-Scheduler.register('get_queue', callable=lambda:queue)
-Scheduler.register('shutdown', callable=shutdown)
-Scheduler.register('runJob', callable=runJob)
-Scheduler.register('getJob', callable=getJob)
+if __name__ == '__main__':
+    logger.info('Starting scheduler.')
+    Scheduler.register('runJob', callable=runJob)
+    Scheduler.register('getJob', callable=getJob)
 
-manager = Scheduler(address=('', 46211), authkey='anthony')
+    manager = Scheduler(address=('', cfg.getint('scheduler', 'port')),
+                        authkey=cfg.get('scheduler', 'authkey') )
 
-server = manager.get_server()
-server.serve_forever()
+    logger.info('Scheduler is starting to serve.')
+    server = manager.get_server()
+    server.serve_forever()
