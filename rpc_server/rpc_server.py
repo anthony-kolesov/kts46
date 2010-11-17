@@ -22,8 +22,7 @@ from ConfigParser import SafeConfigParser
 from multiprocessing.managers import BaseManager
 
 sys.path.append('../lib/')
-from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage,\
-    CouchDBViewDefinitions
+from kts46 import CouchDBViewDefinitions
 from kts46.serverApi import RPCServerException
 
 
@@ -60,21 +59,6 @@ def hello(msg):
     "Test method to check that server is working fine."
     return '''Hello you too! This is simple XML-RPC server for kts46.
             You\'ve said: [''' + msg + ']'
-
-def shutdown():
-    logging.getLogger('').info('Shutdown server.')
-    # sys.exit(1)
-    server.shutdown()
-    logging.getLogger('').info('Shutdowned server.')
-
-
-class ModelParams:
-
-    def __init__(self):
-        self.carGenerationInterval = 3.0
-        self.safeDistance = 5.0
-        self.maxSpeed = 20.0
-        self.minSpeed = 10.0
 
 
 # Dummy class to represent scheduler
@@ -219,50 +203,7 @@ because it already exists.""" % (jobName, projectName) )
             for s in states:
                 del proj[s['value']]
 
-
     def runJob(self, projectName, jobName):
-        """Simulates model for the specified time duration."""
-
-        if projectName not in self.server:
-            raise RPCServerException("Project '%s' doesn't exist." % projectName)
-        db = self.server[projectName]
-
-        # Use only first job. There acually can be only one.
-        jobsViewResult = db.view(CouchDBProxy.jobsListView)[jobName]
-        jobIdStr = list(jobsViewResult)[0]['value'][1:]
-        jobId = int(jobIdStr)
-
-        # Prepare infrastructure.
-        logger = logging.getLogger('kts46.rpc_server.simulator')
-        storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'), projectName, str(jobId))
-
-        model = Model(ModelParams())
-        job = self.server[projectName]['j'+str(jobId)]
-        model.loadYAML(job['yaml'])
-        step = job['simulationStep']
-        duration = job['simulationTime']
-
-        # Prepare values.
-        stepAsMs = step * 1000 # step in milliseconds
-        stepsN = duration / step
-        stepsCount = 0
-        t = 0.0
-        logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
-
-        # Run.
-        while t < duration:
-            model.run_step(stepAsMs)
-            stepsCount += 1
-            # Round time to milliseconds
-            data = model.get_state_data()
-            data['job'] = jobId
-            storage.add(round(t, 3), data)
-            t += step
-
-        # Finilize.
-        storage.close()
-
-    def runJob2(self, projectName, jobName):
         "Runs simulation job, using remote scheduler."
 
         if not self.jobExists(projectName, jobName):
@@ -289,7 +230,6 @@ if __name__ == '__main__':
     # Register functions.
     couchdbProxy = CouchDBProxy(cfg)
     server.register_function(hello)
-    server.register_function(shutdown)
     server.register_instance(couchdbProxy)
 
     # Run server.
