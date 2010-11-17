@@ -1,6 +1,8 @@
 # Simulation parameters
-simulationTime: 30
-simulationStep: 0.2
+simulationParameters:
+    duration: 30
+    stepDuration: 0.2
+    batchLength: 50
 
 # seconds
 carGenerationInterval: 3

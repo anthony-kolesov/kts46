@@ -69,14 +69,17 @@ jobsViewResult = db.view(jobsListView)[jobName]
 jobIdStr = list(jobsViewResult)[0]['value'][1:]
 jobId = int(jobIdStr)
 
-# Prepare infrastructure.
-storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'), projectName, str(jobId))
-
 model = Model(ModelParams())
 job = server[projectName]['j'+str(jobId)]
 model.loadYAML(job['yaml'])
-step = job['simulationStep']
-duration = job['simulationTime']
+simParams = job['simulationParameters']
+step = simParams['stepDuration']
+duration = simParams['duration']
+batchLength = simParams['batchLength']
+
+# Prepare infrastructure.
+storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'), projectName,
+                         str(jobId), bufferSize = batchLength)
 
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds

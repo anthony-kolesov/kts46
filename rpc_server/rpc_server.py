@@ -164,14 +164,17 @@ because it already exists.""" % (jobName, projectName) )
 
         # Store simulation parameters.
         objData = yaml.safe_load(definition)
-        simulationTime = objData['simulationTime']
-        simulationStep = objData['simulationStep']
+        simParams = objData['simulationParameters']
+        simulationTime = simParams['duration']
+        simulationStep = simParams['stepDuration']
+        simulationBatchLength = simParams['batchLength']
 
         jobId = 'j' + str(self.getNewJobId(projectName))
         db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job',
-            'simulationTime': simulationTime, 'simulationStep': simulationStep}
+            'simulationParameters': simParams }
         db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId,
             'totalSteps': math.floor(simulationTime/simulationStep),
+            'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
             'done': 0 }
 
 
