@@ -147,7 +147,7 @@ addJob (a), deleteJob (delj), runJob (r), shutdown."""
             msg = "Couldn't run job '%s' from project '%s' because job doesn't exists."
             logger.error(msg % (options.job, options.proj))
         else:
-            sp.runJob(options.proj, options.job)
+            sp.runJob2(options.proj, options.job)
 
     # Say hello.
     # print( sp.hello('Hello Mr. Server!') )

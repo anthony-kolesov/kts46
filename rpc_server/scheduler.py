@@ -23,12 +23,15 @@ from ConfigParser import SafeConfigParser
 
 def createConfiguration():
     "Returns SafeConfigParser for this application."
-    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
+    configFiles = ('../config/common.ini', '../config/scheduler.ini')
     cfg = SafeConfigParser()
     cfg.read(configFiles)
     return cfg
 
 def createLogger():
+    logging.getLogger('').setLevel(logging.INFO)
+    logging.basicConfig(format=cfg.get('log', 'format'))
+
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
         maxBytes=cfg.get('log', 'maxBytesInFile'),
@@ -55,7 +58,7 @@ def runJob(projectName, jobName):
 
 def getJob():
     a = queue.get()
-    logger.info('Removing from queue: project=%s, job=%s' % (a['projectName'], a['jobName']))
+    logger.info('Removing from queue: project=%s, job=%s' % (a['p'], a['j']))
     return a
 
 if __name__ == '__main__':

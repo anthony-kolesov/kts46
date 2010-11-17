@@ -19,6 +19,7 @@ License:
 import logging, logging.handlers, couchdb, couchdb.client, sys, yaml, math
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
+from multiprocessing.managers import BaseManager
 
 sys.path.append('../lib/')
 from kts46 import Car, Road, SimpleSemaphore, Model, CouchDBStorage,\
@@ -76,9 +77,9 @@ class ModelParams:
         self.minSpeed = 10.0
 
 
-#class RPCServerException(Exception):
-#    pass
-
+# Dummy class to represent scheduler
+class Scheduler(BaseManager): pass
+Scheduler.register('runJob')
 
 class CouchDBProxy:
 
@@ -260,6 +261,22 @@ because it already exists.""" % (jobName, projectName) )
 
         # Finilize.
         storage.close()
+
+    def runJob2(self, projectName, jobName):
+        "Runs simulation job, using remote scheduler."
+
+        if not self.jobExists(projectName, jobName):
+            msg = "Couldn't run job %s of project %s that doesn't exist."
+            raise RPCServerException(msg % (jobName, projectName))
+
+        schedulerAddress = (self.cfg.get('scheduler', 'address'),
+                            self.cfg.getint('scheduler', 'port') )
+        scheduler = Scheduler(address=schedulerAddress,
+                              authkey=self.cfg.get('scheduler', 'authkey'))
+        scheduler.connect()
+        self.logger.info('Running job: %s.%s' % (projectName, jobName))
+        scheduler.runJob(projectName, jobName)
+
 
 if __name__ == '__main__':
     cfg, logger = init()
