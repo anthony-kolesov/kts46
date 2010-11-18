@@ -45,19 +45,22 @@ def createLogger():
     return logger
 
 
-queue = Queue.Queue()
+unstartedJobs = Queue.Queue()
+currentJobs = Queue.Queue()
 cfg = createConfiguration()
 logger = createLogger()
 
 
 class Scheduler(BaseManager): pass
 
+
 def runJob(projectName, jobName):
     logger.info('Adding job: project=%s, job=%s' % (projectName, jobName))
-    queue.put({'p':projectName, 'j':jobName})
+    unstartedJobs.put({'p':projectName, 'j':jobName})
+
 
 def getJob():
-    a = queue.get()
+    a = unstartedJobs.get()
     logger.info('Removing from queue: project=%s, job=%s' % (a['p'], a['j']))
     return a
 

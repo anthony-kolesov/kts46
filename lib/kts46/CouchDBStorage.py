@@ -15,7 +15,7 @@ License:
    limitations under the License.
 """
 
-import couchdb, couchdb.design, json
+import couchdb, couchdb.design, json, logging, yaml, math
 import CouchDBViewDefinitions
 
 class CouchDBStorage:
@@ -78,3 +78,188 @@ class CouchDBStorage:
     def close(self):
         # couchdb for python doesn't have any 'close' methods, so just dump content.
         self.dump()
+
+
+class CouchDBStorageException(Exception): pass
+
+
+class CouchDBStorage2:
+    "Wraps functionality of CouchDB for specific purposes of this application."
+
+    def __init__(self, serverPath):
+        """Initializes storage instance.
+
+        Arguments:
+          serverPath [string] - network path to CouchDB server, e.g. http://192.168.1.2:5984.
+        """
+
+        self.logger = logging.getLogger('kts46.CouchDBStorage2')
+        self.logger.debug('Creating server...')
+        self.server = couchdb.Server(serverPath)
+        self.logger.info('Server created.')
+
+    def createProject(self, projectName):
+        """Creates database project with specified name.
+
+        A CouchDBStorageException will be raised if project already exists.
+        Arguments:
+          projectName [string] - name of project to create."""
+
+        if projectName in self.server:
+            msg = "Couldn't create project because it already exists."
+            msg += ' Project name: %s.' % projectName
+            raise CouchDBStorageException(msg)
+
+        project = self.server.create(projectName)
+        # Create special document to store amount of jobs created.
+        project[CouchDBProxy.jobsCountDocId] = {'lastId' : 0}
+        self._createViews(projectName)
+        p = SimulationProject(self.server, projectName, self.logger)
+        p.initialize()
+        return p
+
+    def __getitem__(self, key):
+        if key not in self:
+            msg = "Couldn't get project '%s' because it doesn't exists." % key
+            self.logger.warning(msg)
+            raise KeyError(msg)
+        return SimulationProject(self.server, key, self.logger)
+
+    def __contains__(self, item):
+        return item in self.server
+
+    def __delitem__(self, key):
+        """Deletes project with specified name if it exists. Otherwise raises
+        RPCServerException."""
+        if key in self:
+            self.logger.debug("Deleting project '%s'." % key)
+            del self.server[key]
+            self.logger.info("Project '%s' deleted." % key)
+        else:
+            msg = "Couldn't delete project '%s' because it doesn't exists." % key
+            self.logger.warning(msg)
+            raise KeyError(msg)
+
+
+class SimulationProject:
+    "Represents a simulation project stored in database."
+
+    jobsCountDocId = 'jobsCount'
+    lastId = 'lastId'
+    jobsListView = 'manage/jobs'
+    statesView = 'manage/states'
+
+    def __init__(self, couchServer, name, logger):
+        self.server = couchServer
+        self.name = name
+        self.db = self.server[name]
+        self.logger = logger
+
+
+    def initialize(self):
+        "Initializes project infrastructure in database by creating required documents."
+        self.db[SimulationProject.jobsCountDocId] = {'lastId' : 0}
+        self._createViews()
+
+    def _createViews(self):
+        "Creates all requires views in the database."
+
+        defsStr = CouchDBViewDefinitions.definitions
+        defs = [ ]
+        for defStr in defsStr:
+            defs.append(couchdb.design.ViewDefinition(defStr['doc'], defStr['view'], defStr['map']))
+        couchdb.design.ViewDefinition.sync_many(selfdb, defs)
+
+    def getNewJobId(self):
+        """Creates new job id.
+
+        It is guaranteed that there will be no dublicates, because after
+        generation new id is written to database and CouchDB will not allow two
+        same job ids because of revision number conflicts. However an exception
+        will be thrown by underlying couchdb bindings and this function currently
+        doesn't do anything about that."""
+
+        countDoc = project[SimulationProject.jobsCountDocId]
+        countDoc[SimulationProject.lastId] += 1
+        project[SimulationProject.jobsCountDocId] = countDoc
+        return countDoc[SimulationProject.lastId]
+
+    def addJob(self, jobName, definition):
+        """Adds job with sepcified YAML definition to project.
+
+        CouchDBStorageException will be raised if job with specified name already exists.
+        Arguments:
+            jobName -- job name.
+            definition -- definition of job written in YAML.
+        """
+
+        # Check for job dublication.
+        if jobName in self:
+            msg = "Couldn't add job '%s' to project '%s' because it already exists."
+            raise CouchDBServerException(msg % (jobName, self.name))
+
+        job = SimulationJob(self, jobName)
+        job.initialize(definition)
+
+        return job
+
+    def __getitem__(self, key):
+        filteredJobs = self.db.view(SimulationProject.jobsListView)[key]
+        if len(filteredJobs) == 0:
+            msg = "Couldn't get job '%s' from project '%s' because it doesn't exists."
+            msg %= (key, self.name)
+            self.logger.warning(msg)
+            raise KeyError(msg)
+        return list(filteredJobs)[0]
+
+    def __contains__(self, item):
+        "Checks whether job with provided name exists in project."
+        return len(self.db.view(SimulationProject.jobsListView)[item]) > 0
+
+    def __delitem__(self, key):
+        "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
+        # proj = self.server[projectName]
+        jobRows = self.db.view(SimulationProject.jobsListView)[key]
+        if len(jobRows) == 0:
+            raise CouchDBStorageException(
+                "Couldn't delete job '%s' in project '%s' because it doesn't exist." %
+                (key, self.name) )
+        for jobRow in jobRows:
+            jobId = int(jobRow['value'][1:]) # Skip first 'j' letter.
+            jobIdStr = jobRow['value']
+            # Delete job progress.
+            del self.db[SimulationProject.jobProgressDocId % jobIdStr]
+            # Delete job itself.
+            del proj[jobIdStr]
+            # Delete simulated states.
+            states = self.db.view(SimulationProject.statesView)[jobtId]
+            for s in states:
+                del self.db[s['value']]
+
+
+class SimulationJob:
+
+    jobProgressDocId = '%sProgress'
+
+    def __init__(self, project, name):
+        self.project = project
+        self.name = name
+
+    def initialize(self, definition):
+        self.definition = definition
+
+        # Store simulation parameters.
+        objData = yaml.safe_load(self.definition)
+        simParams = objData['simulationParameters']
+        simulationTime = simParams['duration']
+        simulationStep = simParams['stepDuration']
+        simulationBatchLength = simParams['batchLength']
+
+        jobId = 'j' + str(self.project.getNewJobId())
+        self.project.db[jobId] = {'name': self.name, 'yaml': self.definition,
+                                'type': 'job', 'simulationParameters': simParams}
+        jobProgressDocId = SimulationJob.jobProgressDocId % jobId
+        self.project.db[jobProgressDocId] = {'job': jobId,
+            'totalSteps': math.floor(simulationTime/simulationStep),
+            'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
+            'done': 0 }
