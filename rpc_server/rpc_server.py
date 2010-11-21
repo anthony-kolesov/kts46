@@ -68,27 +68,10 @@ Scheduler.register('runJob')
 
 class CouchDBProxy:
 
-    #jobsCountDocId = 'jobsCount'
-    #lastId = 'lastId'
-    #jobProgressDocId = '%sProgress'
-    #jobsListView = 'manage/jobs'
-    #statesView = 'manage/states'
-
     def __init__(self, cfg):
         self.cfg = cfg
         self.logger = logging.getLogger('kts46.rpc_server.couchdb')
-        #self.server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
         self.storage = CouchDBStorage2(cfg.get('couchdb', 'dbaddress'))
-
-    #def _createViews(self, projectName):
-    #    "Creates all requires views for the database."
-    #
-    #    defsStr = CouchDBViewDefinitions.definitions
-    #    defs = [ ]
-    #    for defStr in defsStr:
-    #        defs.append(couchdb.design.ViewDefinition(defStr['doc'],
-    #            defStr['view'], defStr['map']))
-    #    couchdb.design.ViewDefinition.sync_many(self.server[projectName], defs )
 
 
     def getNewJobId(self, projectName):
@@ -101,13 +84,6 @@ class CouchDBProxy:
         doesn't exist."""
 
         return self.storage[projectName].getNewJobId()
-        #if projectName not in self.server:
-        #    raise RPCServerException("Couldn't get new job id because project doesn't exist.")
-        #project = self.server[projectName]
-        #countDoc = project[CouchDBProxy.jobsCountDocId]
-        #countDoc[CouchDBProxy.lastId] = countDoc[CouchDBProxy.lastId] + 1
-        #project[CouchDBProxy.jobsCountDocId] = countDoc
-        #return countDoc[CouchDBProxy.lastId]
 
 
     def createProject(self, projectName):
@@ -117,35 +93,17 @@ class CouchDBProxy:
         Arguments:
             projectName -- name of peoject to create."""
         self.storage.createProject(projectName)
-        #if projectName not in self.server:
-        #    project = self.server.create(projectName)
-        #    # Create special document to store amount of jobs created.
-        #    project[CouchDBProxy.jobsCountDocId] = {'lastId' : 0}
-        #    self._createViews(projectName)
-        #else:
-        #    msg = "Couldn't create project because it already exists."
-        #    msg += ' Project name: %s.' % projectName
-        #    raise RPCServerException(msg)
 
 
     def projectExists(self, projectName):
         "Checks whether project with specified name already exists."
         return projectName in self.storage
-        #return projectName in self.server
 
 
     def deleteProject(self, projectName):
         """Deletes project with specified name if it exists. Otherwise raises
         RPCServerException."""
         del self.storage[projectName]
-        #if projectName in self.server:
-        #    self.logger.debug("Deleting project '%s'." % projectName)
-        #    del self.server[projectName]
-        #    self.logger.info("Project '%s' deleted." % projectName)
-        #else:
-        #    msg = "Couldn't delete project '%s' because it doesn't exists." % projectName
-        #    self.logger.warning(msg)
-        #    raise RPCServerException(msg)
 
 
     def addJob(self, projectName, jobName, definition):
@@ -159,31 +117,6 @@ class CouchDBProxy:
             definition -- definition of job written in YAML.
         """
         self.storage[projectName].addJob(jobName, definition)
-        #        if projectName not in self.server:
-        #            raise RPCServerException("""Couldn't add job '%s', because project
-        #'%s' doesn't exist.""" % (jobName, projectName))
-        #
-        #        # Check for job dublication.
-        #        if self.jobExists(projectName, jobName):
-        #            raise RPCServerException("""Couldn't add job '%s' to project '%s'
-        #because it already exists.""" % (jobName, projectName) )
-        #
-        #        db = self.server[projectName]
-        #
-        #        # Store simulation parameters.
-        #        objData = yaml.safe_load(definition)
-        #        simParams = objData['simulationParameters']
-        #        simulationTime = simParams['duration']
-        #        simulationStep = simParams['stepDuration']
-        #        simulationBatchLength = simParams['batchLength']
-        #
-        #        jobId = 'j' + str(self.getNewJobId(projectName))
-        #        db[jobId] = {'name': jobName, 'yaml': definition, 'type': 'job',
-        #            'simulationParameters': simParams }
-        #        db[CouchDBProxy.jobProgressDocId % jobId] = {'job': jobId,
-        #            'totalSteps': math.floor(simulationTime/simulationStep),
-        #            'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
-        #            'done': 0 }
 
 
     def jobExists(self, projectName, jobName):
@@ -191,31 +124,12 @@ class CouchDBProxy:
 
         RPCServerExceptpion is thrown if project doesn't exist."""
         return jobName in self.storage[projectName]
-        #if projectName not in self.server:
-        #    raise RPCServerException("Project '%s' doesn't exist." % projName)
-        #db = self.server[projectName]
-        #return len(db.view(CouchDBProxy.jobsListView)[jobName]) > 0
 
 
     def deleteJob(self, projectName, jobName):
         "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
         p = self.storage[projectName]
         del p[jobName]
-        #if projectName not in self.server:
-        #    raise RPCServerException("Project '%s' doesn't exist." % projectName)
-        #proj = self.server[projectName]
-        #jobRows = proj.view(CouchDBProxy.jobsListView)[jobName]
-        #if len(jobRows) == 0:
-        #    raise RPCServerException(
-        #        "Couldn't delete job '%s' in project '%s' because it doesn't exist." %
-        #        (jobName, projectName) )
-        #for jobRow in jobRows:
-        #    jobId = int(jobRow['value'][1:]) # Skip first 'j' letter.
-        #    del proj[CouchDBProxy.jobProgressDocId % ( 'j'+str(jobId) )]
-        #    del proj['j'+str(jobId)]
-        #    states = proj.view(CouchDBProxy.statesView)[jobId]
-        #    for s in states:
-        #        del proj[s['value']]
 
     def runJob(self, projectName, jobName):
         "Runs simulation job, using remote scheduler."
