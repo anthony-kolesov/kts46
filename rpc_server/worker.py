@@ -60,29 +60,17 @@ jobName = d.get('j')
 
 cfg = initConfig()
 logger = initLogger(cfg)
-storage = kts46.CouchDBStorage.CouchDBStorage2(cfg.get('couchdb', 'dbaddress'))
+storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
-##> TO DELETE
-#server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
-#jobsListView = 'manage/jobs'
-##> END
 
 if projectName not in storage:
     raise RPCServerException("Project '%s' doesn't exist." % projectName)
 project = storage[projectName]
-##> TO DELETE
-#db = server[projectName]
-##> END
 
 job = project[jobName]
 jobId = job.id
-# Use only first job. There acually can be only one.
-#jobsViewResult = db.view(jobsListView)[jobName]
-#jobIdStr = list(jobsViewResult)[0]['value'][1:]
-#jobId = int(jobIdStr)
 
 model = Model(ModelParams())
-#job = server[projectName]['j'+str(jobId)]
 model.loadYAML(job.definition)
 simParams = job.simulationParameters
 step = simParams['stepDuration']
@@ -90,9 +78,7 @@ duration = simParams['duration']
 batchLength = simParams['batchLength']
 
 # Prepare infrastructure.
-#storageOld = CouchDBStorage(cfg.get('couchdb', 'dbaddress'), projectName,
-#                         str(jobId), bufferSize = batchLength)
-saver = kts46.CouchDBStorage.CouchDBStorage(job)
+saver = kts46.CouchDBStorage.CouchDBStateStorage(job)
 
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds

@@ -24,7 +24,7 @@ from multiprocessing.managers import BaseManager
 sys.path.append('../lib/')
 from kts46 import CouchDBViewDefinitions
 from kts46.serverApi import RPCServerException
-from kts46.CouchDBStorage import CouchDBStorage2
+from kts46.CouchDBStorage import CouchDBStorage
 
 
 def init():
@@ -71,7 +71,7 @@ class CouchDBProxy:
     def __init__(self, cfg):
         self.cfg = cfg
         self.logger = logging.getLogger('kts46.rpc_server.couchdb')
-        self.storage = CouchDBStorage2(cfg.get('couchdb', 'dbaddress'))
+        self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
 
     def getNewJobId(self, projectName):
