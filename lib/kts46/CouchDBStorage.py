@@ -24,7 +24,7 @@ class CouchDBStorage:
     Data is buffered to save requestes to server.
     """
 
-    def __init__(self, servername, dbname, jobId, bufferSize = 1000):
+    def __init__(self, job):
         """Initializes new instance of CouchDB storage.
 
         If specified database doesn't exist it will be created with all required
@@ -35,32 +35,34 @@ class CouchDBStorage:
         :dbname: Name of database where to store results of simultaion.
         :bufferSize: Size of buffer of documents to send. Default values is 1000.
         """
-        self.server = couchdb.Server(servername)
-        if dbname not in self.server:
-            self.db = self.server.create(dbname)
-        else:
-            self.db = self.server[dbname]
+        self.server = job.project.server # couchdb.Server(servername)
+        self.db = job.project.db
+        #if dbname not in self.server:
+        #    self.db = self.server.create(dbname)
+        #else:
+        #    self.db = self.server[dbname]
         self.bulk_queue = []
-        self.bufferSize = bufferSize
-        self.jobId = jobId
+        self.bufferSize = job.simulationParameters['batchLength'] # bufferSize
+        self.jobId = job.id
+        self.jobDocId = job.docid
         #self._createViews()
 
-    def _createViews(self):
-        "Creates all requires views for the database."
-
-        defsStr = CouchDBViewDefinitions.definitions
-
-        defs = [ ]
-        for defStr in defsStr:
-            defs.append(couchdb.design.ViewDefinition(defStr['doc'],
-                defStr['view'], defStr['map']))
-        couchdb.design.ViewDefinition.sync_many(self.db, defs )
+    #def _createViews(self):
+    #    "Creates all requires views for the database."
+    #
+    #    defsStr = CouchDBViewDefinitions.definitions
+    #
+    #    defs = [ ]
+    #    for defStr in defsStr:
+    #        defs.append(couchdb.design.ViewDefinition(defStr['doc'],
+    #            defStr['view'], defStr['map']))
+    #    couchdb.design.ViewDefinition.sync_many(self.db, defs )
 
     def add(self, time, data):
         d = dict(data)
         d['time'] = time
         d['type'] = 'state'
-        d['_id'] = 's' + self.jobId + '_' + str(time)
+        d['_id'] = ''.join(('s', str(self.jobId), '_', str(time) ))
         doc = couchdb.Document(d)
 
         self.bulk_queue.append(doc)
@@ -69,7 +71,8 @@ class CouchDBStorage:
 
     def dump(self):
         if len(self.bulk_queue) > 0:
-            progress = self.db['j%sProgress' % self.jobId]
+            jobProgressId = SimulationProject.jobProgressDocId % self.jobDocId
+            progress = self.db[jobProgressId]
             progress['done'] += len(self.bulk_queue)
             self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
@@ -212,7 +215,8 @@ class SimulationProject:
             msg %= (key, self.name)
             self.logger.warning(msg)
             raise KeyError(msg)
-        return list(filteredJobs)[0]
+        row = list(filteredJobs)[0]
+        return SimulationJob(self, key, row['value'])
 
     def __contains__(self, item):
         "Checks whether job with provided name exists in project."
@@ -241,9 +245,11 @@ class SimulationProject:
 
 class SimulationJob:
 
-    def __init__(self, project, name):
+    def __init__(self, project, name, id = None):
         self.project = project
         self.name = name
+        if id is not None:
+            self._initializeFromDb(id)
 
     def initialize(self, definition):
         self.definition = definition
@@ -254,12 +260,23 @@ class SimulationJob:
         simulationTime = simParams['duration']
         simulationStep = simParams['stepDuration']
         simulationBatchLength = simParams['batchLength']
+        self.simulationParameters = simParams
 
-        jobId = 'j' + str(self.project.getNewJobId())
-        self.project.db[jobId] = {'name': self.name, 'yaml': self.definition,
+        self.id = self.project.getNewJobId()
+        self.docid = 'j' + str(self.id)
+        self.project.db[self.docid] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
-        jobProgressDocId = SimulationProject.jobProgressDocId % jobId
-        self.project.db[jobProgressDocId] = {'job': jobId,
+        jobProgressDocId = SimulationProject.jobProgressDocId % self.docId
+        self.project.db[jobProgressDocId] = {'job': self.docid,
             'totalSteps': math.floor(simulationTime/simulationStep),
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
             'done': 0 }
+
+    def _initializeFromDb(self, id):
+        self.docid = id
+        self.id = int(id[1:])
+        db = self.project.db
+        doc = db[id]
+
+        self.definition = doc['yaml']
+        self.simulationParameters = doc['simulationParameters']

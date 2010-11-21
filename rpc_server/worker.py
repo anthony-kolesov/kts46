@@ -22,7 +22,21 @@ from ConfigParser import SafeConfigParser
 
 sys.path.append('../lib/')
 from kts46.serverApi import RPCServerException
-from kts46 import CouchDBStorage, Model
+from kts46 import Model
+import kts46.CouchDBStorage
+
+def initConfig():
+    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
+    cfg = SafeConfigParser()
+    cfg.read(configFiles)
+    return cfg
+
+def initLogger(cfg):
+    logging.basicConfig(level=logging.INFO, format=cfg.get('log', 'format'),
+                datefmt=cfg.get('log', 'dateFormat'))
+    logger = logging.getLogger('kts46.worker')
+    logger.info('I have a job: %s.%s' % (projectName, jobName))
+    return logger
 
 class Scheduler(BaseManager):
     pass
@@ -41,45 +55,44 @@ m = Scheduler(address=('localhost', 46211), authkey='anthony')
 m.connect()
 
 d = m.getJob()
-#help(d)
-#print(d.keys())
-#print(d.values())
-#print(d.items())
 projectName = d.get('p')
 jobName = d.get('j')
 
-configFiles = ('../config/common.ini', '../config/rpc_server.ini')
-cfg = SafeConfigParser()
-cfg.read(configFiles)
+cfg = initConfig()
+logger = initLogger(cfg)
+storage = kts46.CouchDBStorage.CouchDBStorage2(cfg.get('couchdb', 'dbaddress'))
 
-logging.basicConfig(level=logging.INFO, format=cfg.get('log', 'format'),
-                datefmt=cfg.get('log', 'dateFormat'))
-logger = logging.getLogger('kts46.worker')
-logger.info('I have a job: %s.%s' % (projectName, jobName))
+##> TO DELETE
+#server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
+#jobsListView = 'manage/jobs'
+##> END
 
-server = couchdb.Server(cfg.get('couchdb', 'dbaddress'))
-jobsListView = 'manage/jobs'
-
-if projectName not in server:
+if projectName not in storage:
     raise RPCServerException("Project '%s' doesn't exist." % projectName)
-db = server[projectName]
+project = storage[projectName]
+##> TO DELETE
+#db = server[projectName]
+##> END
 
+job = project[jobName]
+jobId = job.id
 # Use only first job. There acually can be only one.
-jobsViewResult = db.view(jobsListView)[jobName]
-jobIdStr = list(jobsViewResult)[0]['value'][1:]
-jobId = int(jobIdStr)
+#jobsViewResult = db.view(jobsListView)[jobName]
+#jobIdStr = list(jobsViewResult)[0]['value'][1:]
+#jobId = int(jobIdStr)
 
 model = Model(ModelParams())
-job = server[projectName]['j'+str(jobId)]
-model.loadYAML(job['yaml'])
-simParams = job['simulationParameters']
+#job = server[projectName]['j'+str(jobId)]
+model.loadYAML(job.definition)
+simParams = job.simulationParameters
 step = simParams['stepDuration']
 duration = simParams['duration']
 batchLength = simParams['batchLength']
 
 # Prepare infrastructure.
-storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'), projectName,
-                         str(jobId), bufferSize = batchLength)
+#storageOld = CouchDBStorage(cfg.get('couchdb', 'dbaddress'), projectName,
+#                         str(jobId), bufferSize = batchLength)
+saver = kts46.CouchDBStorage.CouchDBStorage(job)
 
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds
@@ -92,11 +105,11 @@ logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, st
 while t < duration:
     model.run_step(stepAsMs)
     stepsCount += 1
-    # Round time to milliseconds
     data = model.get_state_data()
     data['job'] = jobId
-    storage.add(round(t, 3), data)
+    # Round time to milliseconds
+    saver.add(round(t, 3), data)
     t += step
 
 # Finilize.
-storage.close()
+saver.close()
