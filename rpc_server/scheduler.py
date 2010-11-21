@@ -16,9 +16,13 @@ License:
    limitations under the License.
 """
 
-import Queue, threading, logging, logging.handlers
-from multiprocessing.managers import BaseManager
+import Queue, threading, logging, logging.handlers, sys
+from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
+from datetime import datetime
+
+sys.path.append('../lib/')
+from kts46.CouchDBStorage import CouchDBStorage
 
 
 def createConfiguration():
@@ -44,34 +48,88 @@ def createLogger():
     logger.setLevel(logging.INFO)
     return logger
 
-
-unstartedJobs = Queue.Queue()
-currentJobs = Queue.Queue()
 cfg = createConfiguration()
 logger = createLogger()
+storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+WORKING_STATE_NAME = cfg.get('scheduler', 'workingStateName')
+ABORT_STATE_NAME = cfg.get('scheduler', 'abortStateName')
+FINISHED_STATE_NAME = cfg.get('scheduler', 'finishedStateName')
+
+class Scheduler(SyncManager): pass
 
 
-class Scheduler(BaseManager): pass
+def runJob(projectName, jobName, restart=False):
+    """Starts or continues simulation job.
+
+    To avoid multiple creation of project/job objects and extra communication
+    with DB server check for whether this job is finished is done here. So
+    simulated job won't start. If user wants to restart simulation job than
+    he/she must explicitly set `restart` parameter to True."""
+
+    #if currentTasks == 0:
+    #    logger.info('Creating currentTasks list.')
+    #    currentTasks = manager.dict()
+
+    job = storage[projectName][jobName]
+    lastStateId = job.progress['currentStateId']
+    if restart:
+        lastStateId = ''
+
+    logger.info('Adding new job part: [project=%s, job=%s, currentState=%s]',
+                projectName, jobName, lastStateId)
+    d = {'project':projectName, 'job':jobName, 'stateId': lastStateId,
+         'timeout': cfg.getint('scheduler', 'timeout') }
+    waitingTasks.put(d)
 
 
-def runJob(projectName, jobName):
-    logger.info('Adding job: project=%s, job=%s' % (projectName, jobName))
-    unstartedJobs.put({'p':projectName, 'j':jobName})
+#def runJob(projectName, jobName):
+#    logger.info('Adding job: project=%s, job=%s' % (projectName, jobName))
+#    d = {'project':projectName, 'job':jobName, 'stateId': '',
+#         'timeout': cfg.getint('scheduler', 'timeout') }
+#    waitingTasks.put(d)
 
 
-def getJob():
-    a = unstartedJobs.get()
-    logger.info('Removing from queue: project=%s, job=%s' % (a['p'], a['j']))
-    return a
+def getJob(workerId):
+    try:
+        task = waitingTasks.get_nowait()
+    except Queue.Empty:
+        return None
+
+    logger.info('Starting task: project={0}, job={1}'.format(task['project'], task['job']))
+    currentTasks[workerId] = {'task': task, 'lastUpdate': datetime.utcnow()}
+    return task
+
+
+def reportStatus(workerId, state):
+    taskInfo = currentTasks[workerId]
+    if state == WORKING_STATE_NAME:
+        taskInfo['lastUpdate'] = datetime.utcnow()
+    elif state == ABORT_STATE_NAME:
+        task = taskInfo['task']
+        del currentTasks[workerId]
+        waitingTasks.append(task)
+    elif state == FINISHED_STATE_NAME:
+        del currentTasks[workerId]
+        task = taskInfo['task']
+        runJob(task['project'], task['job'])
+
 
 if __name__ == '__main__':
     logger.info('Starting scheduler.')
     Scheduler.register('runJob', callable=runJob)
     Scheduler.register('getJob', callable=getJob)
+    Scheduler.register('reportStatus', callable=reportStatus)
 
     manager = Scheduler(address=('', cfg.getint('scheduler', 'port')),
                         authkey=cfg.get('scheduler', 'authkey') )
 
+    waitingTasks = Queue.Queue()
+    #currentTasks = 0
+
     logger.info('Scheduler is starting to serve.')
-    server = manager.get_server()
-    server.serve_forever()
+    #server = manager.get_server()
+    #server.serve_forever()
+    manager.start()
+    logger.info('Creating currentTasks list.')
+    currentTasks = manager.dict() # Queue.Queue()
+    sys.stdin.readline()

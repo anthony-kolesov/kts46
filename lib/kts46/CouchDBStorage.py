@@ -50,6 +50,7 @@ class CouchDBStateStorage:
             jobProgressId = SimulationProject.jobProgressDocId % self.jobDocId
             progress = self.db[jobProgressId]
             progress['done'] += len(self.bulk_queue)
+            progress['currentStateId'] = self.bulk_queue[-1]['_id']
             self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
             self.bulk_queue = []
@@ -242,11 +243,13 @@ class SimulationJob:
         self.docid = 'j' + str(self.id)
         self.project.db[self.docid] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
-        jobProgressDocId = SimulationProject.jobProgressDocId % self.docId
-        self.project.db[jobProgressDocId] = {'job': self.docid,
-            'totalSteps': math.floor(simulationTime/simulationStep),
+        jobProgressDocId = SimulationProject.jobProgressDocId % self.docid
+        self.progress = {'job': self.docid,
+            'totalSteps': math.floor(simulationTime/simulationStep) + 1,
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
-            'done': 0 }
+            'done': 0,
+            'currentStateId': ''}
+        self.project.db[jobProgressDocId] = self.progress
 
     def _initializeFromDb(self, id):
         self.docid = id
@@ -256,3 +259,5 @@ class SimulationJob:
 
         self.definition = doc['yaml']
         self.simulationParameters = doc['simulationParameters']
+
+        self.progress = db[SimulationProject.jobProgressDocId % id]

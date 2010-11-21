@@ -19,7 +19,7 @@ License:
 import logging, logging.handlers, couchdb, couchdb.client, sys, yaml, math
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from ConfigParser import SafeConfigParser
-from multiprocessing.managers import BaseManager
+from multiprocessing.managers import SyncManager
 
 sys.path.append('../lib/')
 from kts46 import CouchDBViewDefinitions
@@ -63,7 +63,7 @@ def hello(msg):
 
 
 # Dummy class to represent scheduler
-class Scheduler(BaseManager): pass
+class Scheduler(SyncManager): pass
 Scheduler.register('runJob')
 
 class CouchDBProxy:

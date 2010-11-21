@@ -16,8 +16,8 @@ License:
    limitations under the License.
 """
 
-import sys, Queue, couchdb, logging
-from multiprocessing.managers import BaseManager
+import sys, Queue, couchdb, logging, uuid
+from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 
 sys.path.append('../lib/')
@@ -38,7 +38,7 @@ def initLogger(cfg):
     logger.info('I have a job: %s.%s' % (projectName, jobName))
     return logger
 
-class Scheduler(BaseManager):
+class Scheduler(SyncManager):
     pass
 
 class ModelParams:
@@ -54,9 +54,11 @@ Scheduler.register('runJob')
 m = Scheduler(address=('localhost', 46211), authkey='anthony')
 m.connect()
 
-d = m.getJob()
-projectName = d.get('p')
-jobName = d.get('j')
+workerId = uuid.uuid4()
+
+d = m.getJob(workerId)
+projectName = d.get('project')
+jobName = d.get('job')
 
 cfg = initConfig()
 logger = initLogger(cfg)
@@ -88,7 +90,7 @@ t = 0.0
 logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
 
 # Run.
-while t < duration:
+while t < duration and stepsCount < batchLength:
     model.run_step(stepAsMs)
     stepsCount += 1
     data = model.get_state_data()
@@ -99,3 +101,4 @@ while t < duration:
 
 # Finilize.
 saver.close()
+m.reportStatus(workerId, 'finished')
