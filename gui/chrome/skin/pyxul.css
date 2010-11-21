@@ -1,0 +1,7 @@
+#model-params textbox {
+    width: 60px;
+}
+
+#road-canvas {
+    border: 1px dotted #666666;
+}

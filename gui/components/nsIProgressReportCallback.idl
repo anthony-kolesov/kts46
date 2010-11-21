@@ -1,0 +1,6 @@
+#include "nsISupports.idl"
+
+[scriptable, function, uuid(25a977db-a56e-49bb-8eea-bcbdeb241a4f)]
+interface nsIProgressReportCallback : nsISupports {
+	void report(in double value, in double max);
+};

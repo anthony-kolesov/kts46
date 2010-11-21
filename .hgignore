@@ -1,0 +1,5 @@
+glob:*.pyo
+glob:*.lnk
+glob:*.xpt
+glob:*.pyc
+relre:couchdb.(stderr|stdout)

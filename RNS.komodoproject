@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="97b3fe03-df8a-4fe7-a303-377b03734f5a" kpf_version="5" name="RNS.komodoproject">
+<preference-set idref="97b3fe03-df8a-4fe7-a303-377b03734f5a">
+  <string relative="path" id="import_dirname"></string>
+  <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;_svn;.git;.hg;.bzr;*%*;tmp*.html;.DS_Store;*.swp</string>
+  <string id="import_include_matches"></string>
+  <boolean id="import_live">1</boolean>
+  <string id="javascriptExtraPaths"></string>
+  <string id="mappedPaths"></string>
+  <string id="perlExtraPaths"></string>
+  <boolean id="perl_lintOption_includeCurrentDirForLinter">1</boolean>
+  <string id="phpExtraPaths"></string>
+  <string id="pythonExtraPaths"></string>
+  <string id="rubyExtraPaths"></string>
+</preference-set>
+</project>
