@@ -112,8 +112,8 @@ class CouchDBStorage2:
 
         project = self.server.create(projectName)
         # Create special document to store amount of jobs created.
-        project[CouchDBProxy.jobsCountDocId] = {'lastId' : 0}
-        self._createViews(projectName)
+        #project[SimulationProject.jobsCountDocId] = {'lastId' : 0}
+        #self._createViews(projectName)
         p = SimulationProject(self.server, projectName, self.logger)
         p.initialize()
         return p
@@ -148,6 +148,7 @@ class SimulationProject:
     lastId = 'lastId'
     jobsListView = 'manage/jobs'
     statesView = 'manage/states'
+    jobProgressDocId = '%sProgress'
 
     def __init__(self, couchServer, name, logger):
         self.server = couchServer
@@ -168,7 +169,8 @@ class SimulationProject:
         defs = [ ]
         for defStr in defsStr:
             defs.append(couchdb.design.ViewDefinition(defStr['doc'], defStr['view'], defStr['map']))
-        couchdb.design.ViewDefinition.sync_many(selfdb, defs)
+        couchdb.design.ViewDefinition.sync_many(self.
+                                                db, defs)
 
     def getNewJobId(self):
         """Creates new job id.
@@ -179,9 +181,10 @@ class SimulationProject:
         will be thrown by underlying couchdb bindings and this function currently
         doesn't do anything about that."""
 
-        countDoc = project[SimulationProject.jobsCountDocId]
+        countDoc = self.db[SimulationProject.jobsCountDocId]
         countDoc[SimulationProject.lastId] += 1
-        project[SimulationProject.jobsCountDocId] = countDoc
+        self.db
+        [SimulationProject.jobsCountDocId] = countDoc
         return countDoc[SimulationProject.lastId]
 
     def addJob(self, jobName, definition):
@@ -239,8 +242,6 @@ class SimulationProject:
 
 class SimulationJob:
 
-    jobProgressDocId = '%sProgress'
-
     def __init__(self, project, name):
         self.project = project
         self.name = name
@@ -258,7 +259,7 @@ class SimulationJob:
         jobId = 'j' + str(self.project.getNewJobId())
         self.project.db[jobId] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
-        jobProgressDocId = SimulationJob.jobProgressDocId % jobId
+        jobProgressDocId = SimulationProject.jobProgressDocId % jobId
         self.project.db[jobProgressDocId] = {'job': jobId,
             'totalSteps': math.floor(simulationTime/simulationStep),
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
