@@ -100,7 +100,7 @@ class CouchDBProxy:
         RPCServerException is thrown if
         doesn't exist."""
 
-        self.storage[projectName].getNewJobId()
+        return self.storage[projectName].getNewJobId()
         #if projectName not in self.server:
         #    raise RPCServerException("Couldn't get new job id because project doesn't exist.")
         #project = self.server[projectName]

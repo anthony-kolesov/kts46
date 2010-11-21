@@ -183,8 +183,7 @@ class SimulationProject:
 
         countDoc = self.db[SimulationProject.jobsCountDocId]
         countDoc[SimulationProject.lastId] += 1
-        self.db
-        [SimulationProject.jobsCountDocId] = countDoc
+        self.db[SimulationProject.jobsCountDocId] = countDoc
         return countDoc[SimulationProject.lastId]
 
     def addJob(self, jobName, definition):
@@ -233,9 +232,9 @@ class SimulationProject:
             # Delete job progress.
             del self.db[SimulationProject.jobProgressDocId % jobIdStr]
             # Delete job itself.
-            del proj[jobIdStr]
+            del self.db[jobIdStr]
             # Delete simulated states.
-            states = self.db.view(SimulationProject.statesView)[jobtId]
+            states = self.db.view(SimulationProject.statesView)[jobId]
             for s in states:
                 del self.db[s['value']]
 
