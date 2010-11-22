@@ -35,7 +35,6 @@ def initLogger(cfg):
     logging.basicConfig(level=logging.INFO, format=cfg.get('log', 'format'),
                 datefmt=cfg.get('log', 'dateFormat'))
     logger = logging.getLogger('kts46.worker')
-    logger.info('I have a job: %s.%s' % (projectName, jobName))
     return logger
 
 class Scheduler(SyncManager):
@@ -51,17 +50,21 @@ class ModelParams:
 
 Scheduler.register('getJob')
 Scheduler.register('runJob')
+Scheduler.register('reportStatus')
 m = Scheduler(address=('localhost', 46211), authkey='anthony')
 m.connect()
 
+cfg = initConfig()
+logger = initLogger(cfg)
+
 workerId = uuid.uuid4()
+
 
 d = m.getJob(workerId)
 projectName = d.get('project')
 jobName = d.get('job')
+logger.info('I have a job: %s.%s', projectName, jobName)
 
-cfg = initConfig()
-logger = initLogger(cfg)
 storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
 

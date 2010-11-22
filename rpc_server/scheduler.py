@@ -16,7 +16,7 @@ License:
    limitations under the License.
 """
 
-import Queue, threading, logging, logging.handlers, sys
+import Queue, threading, logging, logging.handlers, sys, time
 from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 from datetime import datetime
@@ -107,9 +107,11 @@ def reportStatus(workerId, state):
     elif state == ABORT_STATE_NAME:
         task = taskInfo['task']
         del currentTasks[workerId]
+	waitingTasks.task_done()
         waitingTasks.append(task)
     elif state == FINISHED_STATE_NAME:
         del currentTasks[workerId]
+	waitingTasks.task_done()
         task = taskInfo['task']
         runJob(task['project'], task['job'])
 
@@ -124,12 +126,13 @@ if __name__ == '__main__':
                         authkey=cfg.get('scheduler', 'authkey') )
 
     waitingTasks = Queue.Queue()
-    #currentTasks = 0
+    currentTasks = {}
 
     logger.info('Scheduler is starting to serve.')
-    #server = manager.get_server()
-    #server.serve_forever()
-    manager.start()
-    logger.info('Creating currentTasks list.')
-    currentTasks = manager.dict() # Queue.Queue()
-    sys.stdin.readline()
+    server = manager.get_server()
+    server.serve_forever()
+    #manager.start()
+    #logger.info('Creating currentTasks list.')
+    #currentTasks = manager.dict() # Queue.Queue()
+    #sys.stdin.readline()
+
