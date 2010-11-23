@@ -50,7 +50,8 @@ class CouchDBStateStorage:
             jobProgressId = SimulationProject.jobProgressDocId % self.jobDocId
             progress = self.db[jobProgressId]
             progress['done'] += len(self.bulk_queue)
-            progress['currentStateId'] = self.bulk_queue[-1]['_id']
+            # Full id will be restored by job storage instance.
+            progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
             self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
             self.bulk_queue = []
@@ -129,6 +130,7 @@ class SimulationProject:
     jobsListView = 'manage/jobs'
     statesView = 'manage/states'
     jobProgressDocId = '%sProgress'
+    stateDocIdFormat = 's{job}_{state}'
 
     def __init__(self, couchServer, name, logger):
         self.server = couchServer
@@ -220,6 +222,17 @@ class SimulationProject:
                 del self.db[s['value']]
 
 
+    def getDocument(self, docid):
+        "Gets document from database with specified id."
+        return self.db[docid]
+
+
+    def containsDocument(self, docid):
+        "Checks whether document with specified id exists in database."
+        return docid in self.db
+
+
+
 class SimulationJob:
 
     def __init__(self, project, name, id = None):
@@ -261,3 +274,18 @@ class SimulationJob:
         self.simulationParameters = doc['simulationParameters']
 
         self.progress = db[SimulationProject.jobProgressDocId % id]
+
+
+    def getStateDocumentId(self, stateId):
+        "Returns document id of specified state."
+        return SimulationProject.stateDocIdFormat.format(job=self.id, state=stateId)
+
+
+    def __contains__(self, key):
+        "Checks whether state with specified id exists."
+        return self.project.containsDocument(self.getStateDocumentId(key))
+
+
+    def __getitem__(self, key):
+        "Gets state with specified id."
+        return self.project.getDocument(self.getStateDocumentId(key))

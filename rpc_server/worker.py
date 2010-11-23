@@ -48,22 +48,28 @@ class ModelParams:
         self.maxSpeed = 20.0
         self.minSpeed = 10.0
 
+
+# Init app infrastructure
+cfg = initConfig()
+logger = initLogger(cfg)
+workerId = 'worker-1' # uuid.uuid4()
+
+# Create scheduler.
 Scheduler.register('getJob')
 Scheduler.register('runJob')
 Scheduler.register('reportStatus')
-m = Scheduler(address=('localhost', 46211), authkey='anthony')
+schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
+schedulerAuthkey = cfg.get('scheduler', 'authkey')
+m = Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
 m.connect()
 
-cfg = initConfig()
-logger = initLogger(cfg)
-
-workerId = uuid.uuid4()
 
 
-d = m.getJob(workerId)
-projectName = d.get('project')
-jobName = d.get('job')
-logger.info('I have a job: %s.%s', projectName, jobName)
+task = m.getJob(workerId)
+projectName = task.get('project')
+jobName = task.get('job')
+initialStateId = task.get('stateId')
+logger.info('I have a task: %s.%s', projectName, jobName)
 
 storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
@@ -72,15 +78,21 @@ if projectName not in storage:
     raise RPCServerException("Project '%s' doesn't exist." % projectName)
 project = storage[projectName]
 
+if jobName not in project:
+    raise RPCServerException("Job with name '{0}' doesn't exist in project '{1}'.".format(
+        jobName, projectName))
 job = project[jobName]
 jobId = job.id
 
 model = Model(ModelParams())
 model.loadYAML(job.definition)
-simParams = job.simulationParameters
-step = simParams['stepDuration']
-duration = simParams['duration']
-batchLength = simParams['batchLength']
+step = job.simulationParameters['stepDuration']
+duration = job.simulationParameters['duration']
+batchLength = job.simulationParameters['batchLength']
+
+# Get current state
+if len(initialStateId) > 0:
+    stateDoc = job[initialStateId]
 
 # Prepare infrastructure.
 saver = kts46.CouchDBStorage.CouchDBStateStorage(job)
