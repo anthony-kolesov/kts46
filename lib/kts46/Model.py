@@ -24,7 +24,7 @@ from TrafficLight import SimpleSemaphore
 class Model(object):
 
     def __init__(self, params):
-        self._time = timedelta()
+        self.time = timedelta()
         self._cars = []
         self._enterQueue = []
         self._lastSendCars = {}
@@ -41,7 +41,7 @@ class Model(object):
         newCarGenRate = timedelta(seconds=self.params.carGenerationInterval)
 
         timeStep = timedelta(milliseconds=milliseconds)
-        newTime = self._time + timeStep # Time after step is performed.
+        newTime = self.time + timeStep # Time after step is performed.
 
         for light in self._lights:
             if newTime > light.getNextSwitchTime():
@@ -105,7 +105,7 @@ class Model(object):
                 self._logger.info("Couldn't add car to the road, put in the queue.")
 
         # Update time.
-        self._time = newTime
+        self.time = newTime
 
 
     def get_nearest_traffic_light(self, position):
@@ -187,6 +187,10 @@ class Model(object):
             self._road = objData["road"]
         if "trafficLights" in objData:
             self._lights = objData["trafficLights"]
+        if 'time' in objData: self.time = objData['time']
+        if 'lastCarGenerationTime' in objData:
+            self._lastCarGenerationTime = objData['lastCarGenerationTime']
+        if 'lastCarId' in objData: self._lastCarId = objData['lastCarId']
 
 
     def asYAML(self):
@@ -197,30 +201,12 @@ class Model(object):
         d["minSpeed"] = self.params.minSpeed
         d["road"] = self._road
         d["trafficLights"] = self._lights
-        return yaml.dump(d)
 
-    #def loadObjectData(self, data):
-    #    if "carGenerationInterval" in data:
-    #       self.params.carGenerationInterval = data["carGenerationInterval"]
-    #    if "safeDistance" in data:
-    #       self.params.safeDistance = data["safeDistance"]
-    #    if "maxSpeed" in data:
-    #       self.params.maxSpeed = data["maxSpeed"]
-    #    if "minSpeed" in data:
-    #       self.params.minSpeed = data["minSpeed"]
-    #    # collections
-    #    if "road" in data:
-    #        self._road = data["road"]
-    #    if "trafficLights" in data:
-    #        self._lights = data["trafficLights"]
-    #    #self._time = timedelta()
-    #    #self._cars = []
-    #    #self._enterQueue = []
-    #    #self._lastSendCars = {}
-    #    #self._lights = []
-    #    #self._road = None
-    #    #self._lastCarGenerationTime = timedelta()
-    #    #self.params = params
-    #    #self._loggerName = 'roadModel'
-    #    #self._logger = logging.getLogger(self._loggerName)
-    #    #self._lastCarId = -1
+        d['time'] = self.time
+        d['cars'] = self._cars
+        d['enterQueue'] = self._enterQueue
+        d['lastSendCars'] = self._lastSendCars
+        d['lastCarGenerationTime'] = self._lastCarGenerationTime
+        d['lastCarId'] = self._lastCarId
+
+        return yaml.dump(d)

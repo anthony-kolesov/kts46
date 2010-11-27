@@ -56,6 +56,8 @@ class CouchDBStateStorage:
 
             if self.fullStateCallback is not None:
                 progress['currentFullState'] = self.fullStateCallback()
+            else:
+                progress['currentFullState'] = ''
 
             self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
