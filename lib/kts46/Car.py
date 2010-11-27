@@ -15,10 +15,13 @@ License:
    limitations under the License.
 """
 
-import logging
+import logging, yaml
 from uuid import uuid4
 
-class Car:
+class Car(yaml.YAMLObject):
+
+    yaml_tag = u"!car"
+    yaml_loader = yaml.SafeLoader
 
     INACTIVE = 'inactive'
     ADDED = 'add'
@@ -34,9 +37,9 @@ class Car:
         width and position in metres.
         """
         if id is None:
-            self._id = unicode(uuid4())
+            self._id = str(uuid4())
         else:
-            self._id = unicode(id)
+            self._id = str(id)
         self._speed = speed
         self._length = length
         self._width = width

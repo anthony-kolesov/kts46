@@ -16,7 +16,7 @@ License:
    limitations under the License.
 """
 
-import sys, Queue, couchdb, logging, uuid, yaml
+import sys, Queue, couchdb, logging, uuid, yaml, datetime
 from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 
@@ -24,6 +24,9 @@ sys.path.append('../lib/')
 from kts46.serverApi import RPCServerException
 from kts46 import Model
 import kts46.CouchDBStorage
+
+def timedeltaToSeconds(td):
+    return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
 
 def initConfig():
     configFiles = ('../config/common.ini', '../config/rpc_server.ini')
@@ -37,8 +40,32 @@ def initLogger(cfg):
     logger = logging.getLogger('kts46.worker')
     return logger
 
+def getScheduler(cfg):
+    # Create scheduler.
+    Scheduler.register('getJob')
+    Scheduler.register('runJob')
+    Scheduler.register('reportStatus')
+    schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
+    schedulerAuthkey = cfg.get('scheduler', 'authkey')
+    m = Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
+    m.connect()
+    return m
+
+
+def getJob(storage, projectName, jobName):
+    if projectName not in storage:
+        raise RPCServerException("Project '%s' doesn't exist." % projectName)
+    project = storage[projectName]
+
+    if jobName not in project:
+        raise RPCServerException("Job with name '{0}' doesn't exist in project '{1}'.".format(
+            jobName, projectName))
+    return project[jobName]
+
+
 class Scheduler(SyncManager):
     pass
+
 
 class ModelParams:
 
@@ -55,18 +82,11 @@ logger = initLogger(cfg)
 workerId = 'worker-1' # uuid.uuid4()
 
 # Create scheduler.
-Scheduler.register('getJob')
-Scheduler.register('runJob')
-Scheduler.register('reportStatus')
-schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
-schedulerAuthkey = cfg.get('scheduler', 'authkey')
-m = Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
-m.connect()
-
+m = getScheduler(cfg)
 
 
 task = m.getJob(workerId)
-# task is a AUtoProxy, not None. So we coudn't check for `is None`. May be there
+# task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
 # is a better way than comparing strings but that works.
 if str(task) == "None":
     logger.warning('Oops. Nothing to do.')
@@ -78,15 +98,7 @@ logger.info('I have a task: %s.%s', projectName, jobName)
 
 storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
-
-if projectName not in storage:
-    raise RPCServerException("Project '%s' doesn't exist." % projectName)
-project = storage[projectName]
-
-if jobName not in project:
-    raise RPCServerException("Job with name '{0}' doesn't exist in project '{1}'.".format(
-        jobName, projectName))
-job = project[jobName]
+job = getJob(storage, projectName, jobName)
 jobId = job.id
 
 model = Model(ModelParams())
@@ -95,20 +107,22 @@ step = job.simulationParameters['stepDuration']
 duration = job.simulationParameters['duration']
 batchLength = job.simulationParameters['batchLength']
 
-# Get current state
-#if len(initialStateId) > 0:
-#    stateDoc = job[initialStateId]
-model.loadYAML(job.progress.currentFullState)
-
 
 # Prepare infrastructure.
 saver = kts46.CouchDBStorage.CouchDBStateStorage(job, model.asYAML)
 
+# Load current state: load state and set time
+if len(job.progress['currentFullState']) > 0:
+    model.loadYAML(job.progress['currentFullState'])
+    t = timedeltaToSeconds(model.time)
+else:
+    t = 0.0
+
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds
-stepsN = duration / step
+stepsN = job.simulationParameters['duration'] / step
 stepsCount = 0
-t = 0.0
+# t = 0.0
 logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
 
 # Run.
@@ -124,3 +138,7 @@ while t < duration and stepsCount < batchLength:
 # Finilize.
 saver.close()
 m.reportStatus(workerId, 'finished')
+
+f1 = open('/tmp/kts46-state.txt', 'w')
+f1.write(model.asYAML())
+f1.close()
