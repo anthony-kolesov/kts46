@@ -16,7 +16,7 @@ License:
    limitations under the License.
 """
 
-import sys, Queue, couchdb, logging, uuid
+import sys, Queue, couchdb, logging, uuid, yaml
 from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 
@@ -66,6 +66,11 @@ m.connect()
 
 
 task = m.getJob(workerId)
+# task is a AUtoProxy, not None. So we coudn't check for `is None`. May be there
+# is a better way than comparing strings but that works.
+if str(task) == "None":
+    logger.warning('Oops. Nothing to do.')
+    sys.exit(0)
 projectName = task.get('project')
 jobName = task.get('job')
 initialStateId = task.get('stateId')
@@ -91,11 +96,13 @@ duration = job.simulationParameters['duration']
 batchLength = job.simulationParameters['batchLength']
 
 # Get current state
-if len(initialStateId) > 0:
-    stateDoc = job[initialStateId]
+#if len(initialStateId) > 0:
+#    stateDoc = job[initialStateId]
+model.loadYAML(job.progress.currentFullState)
+
 
 # Prepare infrastructure.
-saver = kts46.CouchDBStorage.CouchDBStateStorage(job)
+saver = kts46.CouchDBStorage.CouchDBStateStorage(job, model.asYAML)
 
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds
