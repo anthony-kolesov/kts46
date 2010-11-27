@@ -75,8 +75,8 @@ class SimpleSemaphore(yaml.YAMLObject):
     # (in seconds). Also store in unicode explicitly.
     def __setattr__(self, name, value):
         effValue = value
-        if name == "id" and value is not unicode:
-            effValue = unicode(value)
+        if name == "id" and value is not str:
+            effValue = str(value)
         elif (name == "greenDuration" or name == "redDuration") and\
                 not isinstance(value, timedelta):
             effValue = timedelta(seconds=value)

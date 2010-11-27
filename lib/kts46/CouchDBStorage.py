@@ -25,7 +25,7 @@ class CouchDBStateStorage:
     is equal to that is in job.simulationParameters.
     """
 
-    def __init__(self, job):
+    def __init__(self, job, fullStateCallback = None):
         "Initializes new instance of CouchDB state storage."
         self.server = job.project.server
         self.db = job.project.db
@@ -33,6 +33,7 @@ class CouchDBStateStorage:
         self.bufferSize = job.simulationParameters['batchLength']
         self.jobId = job.id
         self.jobDocId = job.docid
+        self.fullStateCallback = fullStateCallback
 
     def add(self, time, data):
         d = dict(data)
@@ -52,6 +53,10 @@ class CouchDBStateStorage:
             progress['done'] += len(self.bulk_queue)
             # Full id will be restored by job storage instance.
             progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
+
+            if self.fullStateCallback is not None:
+                progress['currentFullState'] = self.fullStateCallback()
+
             self.bulk_queue.append(progress)
             self.db.update(self.bulk_queue)
             self.bulk_queue = []

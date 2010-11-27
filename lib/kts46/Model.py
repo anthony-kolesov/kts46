@@ -19,7 +19,7 @@ import random, json, math, logging, yaml
 from datetime import timedelta
 from Car import Car
 from Road import Road
-from TrafficLight import SimpleSemaphore 
+from TrafficLight import SimpleSemaphore
 
 class Model(object):
 
@@ -50,12 +50,12 @@ class Model(object):
         for car in self._cars:
             if car.state != Car.DELETED:
                 # Update state.
-                if car.state == Car.ADDED: car.state = Car.ACTIVE 
-                
+                if car.state == Car.ADDED: car.state = Car.ACTIVE
+
                 distanceToMove = car.get_speed() * timeStep.seconds
                 distanceToMove += car.get_speed() * timeStep.microseconds * 1e-6
                 distanceToMove += car.get_speed() * timeStep.days * 86400 # 3600 * 24
-    
+
                 # Check for red traffic light.
                 nearestTL = self.get_nearest_traffic_light(car.get_position())
                 if nearestTL is not None and not nearestTL.is_green():
@@ -63,7 +63,7 @@ class Model(object):
                         distanceToMove = nearestTL.get_position() - car.get_position() - stopDistance
                         if distanceToMove < 0:
                             distanceToMove = 0.0
-    
+
                 # Check for leading car.
                 nearestCar = self.get_nearest_car(car.get_position())
                 if nearestCar is not None:
@@ -73,7 +73,7 @@ class Model(object):
                         distanceToMove = possiblePosition - car.get_position()
                         if distanceToMove < 0:
                             distanceToMove = 0.0
-    
+
                 car.move(distanceToMove)
                 if self._road.get_length() < car.get_position():
                     # self._cars.remove(car)
@@ -85,7 +85,7 @@ class Model(object):
         if len(self._enterQueue) > 0 and self.canAddCar():
             self._addCar(self._enterQueue[0])
             del self._enterQueue[0]
-        
+
         # Generate new car.
         # If car was added from the queue then there is no possibility to add
         # car to the road, but it can be added to the queue so we still need to
@@ -127,7 +127,7 @@ class Model(object):
                     current = i
                     current_pos = pos
         return current
-        
+
     def canAddCar(self):
         lastCar = self.get_nearest_car(-100.0) # Detect cars which are comming on the road.
         return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
@@ -135,7 +135,7 @@ class Model(object):
     def _addCar(self, car):
         self._cars.append(car)
         car.state = Car.ADDED
-        
+
     def get_state_data(self):
         """Returns object data that represents current state of a model."""
         # Traffic lights
@@ -188,3 +188,39 @@ class Model(object):
         if "trafficLights" in objData:
             self._lights = objData["trafficLights"]
 
+
+    def asYAML(self):
+        d = {}
+        d["carGenerationInterval"] = self.params.carGenerationInterval
+        d["safeDistance"] = self.params.safeDistance
+        d["maxSpeed"] = self.params.maxSpeed
+        d["minSpeed"] = self.params.minSpeed
+        d["road"] = self._road
+        d["trafficLights"] = self._lights
+        return yaml.dump(d)
+
+    #def loadObjectData(self, data):
+    #    if "carGenerationInterval" in data:
+    #       self.params.carGenerationInterval = data["carGenerationInterval"]
+    #    if "safeDistance" in data:
+    #       self.params.safeDistance = data["safeDistance"]
+    #    if "maxSpeed" in data:
+    #       self.params.maxSpeed = data["maxSpeed"]
+    #    if "minSpeed" in data:
+    #       self.params.minSpeed = data["minSpeed"]
+    #    # collections
+    #    if "road" in data:
+    #        self._road = data["road"]
+    #    if "trafficLights" in data:
+    #        self._lights = data["trafficLights"]
+    #    #self._time = timedelta()
+    #    #self._cars = []
+    #    #self._enterQueue = []
+    #    #self._lastSendCars = {}
+    #    #self._lights = []
+    #    #self._road = None
+    #    #self._lastCarGenerationTime = timedelta()
+    #    #self.params = params
+    #    #self._loggerName = 'roadModel'
+    #    #self._logger = logging.getLogger(self._loggerName)
+    #    #self._lastCarId = -1
