@@ -17,6 +17,7 @@ License:
 """
 
 import sys, Queue, couchdb, logging, uuid, yaml, datetime
+import time, threading # For daemon thread that will send notification to scheduler.
 from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 
@@ -63,6 +64,20 @@ def getJob(storage, projectName, jobName):
     return project[jobName]
 
 
+def notificationThreadImplementation(interval, scheduler, workerId):
+    while True:
+        time.sleep(interval)
+        logger.info('[%s] Sending notification to server...', threading.currentThread().name)
+        scheduler.reportStatus(workerId, 'working')
+
+
+def startNotificationThread(interval, scheduler, workerId):
+    t = threading.Thread(target=notificationThreadImplementation, kwargs={
+                        'interval': interval, 'scheduler':scheduler, 'workerId':workerId})
+    t.daemon = True
+    t.start()
+
+
 class Scheduler(SyncManager):
     pass
 
@@ -95,6 +110,8 @@ projectName = task.get('project')
 jobName = task.get('job')
 initialStateId = task.get('stateId')
 logger.info('I have a task: %s.%s', projectName, jobName)
+
+startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
 
 storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
@@ -129,6 +146,7 @@ stepsN = job.simulationParameters['duration'] / step
 stepsCount = 0
 # t = 0.0
 logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
+
 
 # Run.
 while t <= duration and stepsCount < batchLength:
