@@ -58,27 +58,26 @@ FINISHED_STATE_NAME = cfg.get('scheduler', 'finishedStateName')
 class Scheduler(SyncManager): pass
 
 
-def runJob(projectName, jobName, restart=False):
+def runJob(projectName, jobName):
     """Starts or continues simulation job.
 
     To avoid multiple creation of project/job objects and extra communication
     with DB server check for whether this job is finished is done here. So
-    simulated job won't start. If user wants to restart simulation job than
-    he/she must explicitly set `restart` parameter to True."""
+    simulated job won't start."""
 
     #if currentTasks == 0:
     #    logger.info('Creating currentTasks list.')
     #    currentTasks = manager.dict()
 
     job = storage[projectName][jobName]
-    lastStateId = job.progress['currentStateId']
-    if restart:
-        lastStateId = ''
 
-    logger.info('Adding new job part: [project=%s, job=%s, currentState=%s]',
-                projectName, jobName, lastStateId)
-    d = {'project':projectName, 'job':jobName, 'stateId': lastStateId,
-         'timeout': cfg.getint('scheduler', 'timeout') }
+    # Checl whether simulation has been finished.
+    if job.progress['done'] >= job.progress['totalSteps']:
+        return
+
+    logger.info('Adding new job part: [project=%s, job=%s, progress:%i/%i]',
+        projectName, jobName, job.progress['done'], job.progress['totalSteps'])
+    d = {'project':projectName, 'job':jobName, 'timeout': cfg.getint('scheduler', 'timeout')}
     waitingTasks.put(d)
 
 
@@ -102,17 +101,20 @@ def getJob(workerId):
 
 def reportStatus(workerId, state):
     taskInfo = currentTasks[workerId]
+    task = taskInfo['task']
     if state == WORKING_STATE_NAME:
+        logger.info('Task is still in progress: {0}.{1}'.format(task['project'],
+                                                                task['job']) )
         taskInfo['lastUpdate'] = datetime.utcnow()
     elif state == ABORT_STATE_NAME:
-        task = taskInfo['task']
+        logger.info('Aborting task: {0}.{1}.'.format(task['project'], task['job']))
         del currentTasks[workerId]
-	waitingTasks.task_done()
+        waitingTasks.task_done()
         waitingTasks.append(task)
     elif state == FINISHED_STATE_NAME:
+        logger.info('Task is finished: {0}.{1}.'.format(task['project'], task['job']))
         del currentTasks[workerId]
-	waitingTasks.task_done()
-        task = taskInfo['task']
+        waitingTasks.task_done()
         runJob(task['project'], task['job'])
 
 
@@ -135,4 +137,3 @@ if __name__ == '__main__':
     #logger.info('Creating currentTasks list.')
     #currentTasks = manager.dict() # Queue.Queue()
     #sys.stdin.readline()
-

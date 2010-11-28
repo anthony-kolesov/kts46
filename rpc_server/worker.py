@@ -118,6 +118,11 @@ if len(job.progress['currentFullState']) > 0:
 else:
     t = 0.0
 
+# Reset job progres step counter.
+if t == 0.0:
+    # Document will be saved to database with state data.
+    job.progress['done'] = 0
+
 # Prepare values.
 stepAsMs = step * 1000 # step in milliseconds
 stepsN = job.simulationParameters['duration'] / step
@@ -126,7 +131,7 @@ stepsCount = 0
 logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
 
 # Run.
-while t < duration and stepsCount < batchLength:
+while t <= duration and stepsCount < batchLength:
     model.run_step(stepAsMs)
     stepsCount += 1
     data = model.get_state_data()

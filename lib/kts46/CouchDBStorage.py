@@ -34,6 +34,7 @@ class CouchDBStateStorage:
         self.jobId = job.id
         self.jobDocId = job.docid
         self.fullStateCallback = fullStateCallback
+        self.job = job
 
     def add(self, time, data):
         d = dict(data)
@@ -48,18 +49,18 @@ class CouchDBStateStorage:
 
     def dump(self):
         if len(self.bulk_queue) > 0:
-            jobProgressId = SimulationProject.jobProgressDocId % self.jobDocId
-            progress = self.db[jobProgressId]
-            progress['done'] += len(self.bulk_queue)
+            #jobProgressId = SimulationProject.jobProgressDocId % self.jobDocId
+            #progress = self.db[jobProgressId]
+            self.job.progress['done'] += len(self.bulk_queue)
             # Full id will be restored by job storage instance.
-            progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
+            self.job.progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
 
             if self.fullStateCallback is not None:
-                progress['currentFullState'] = self.fullStateCallback()
+                self.job.progress['currentFullState'] = self.fullStateCallback()
             else:
-                progress['currentFullState'] = ''
+                self.job.progress['currentFullState'] = ''
 
-            self.bulk_queue.append(progress)
+            self.bulk_queue.append(self.job.progress)
             self.db.update(self.bulk_queue)
             self.bulk_queue = []
 
@@ -268,7 +269,7 @@ class SimulationJob:
             'totalSteps': math.floor(simulationTime/simulationStep) + 1,
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
             'done': 0,
-            'currentStateId': ''}
+            'currentFullState': ''}
         self.project.db[jobProgressDocId] = self.progress
 
     def _initializeFromDb(self, id):
