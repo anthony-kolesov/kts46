@@ -103,8 +103,8 @@ def reportStatus(workerId, state):
     taskInfo = currentTasks[workerId]
     task = taskInfo['task']
     if state == WORKING_STATE_NAME:
-        logger.info('Task is still in progress: {0}.{1}'.format(task['project'],
-                                                                task['job']) )
+        logger.info('Task is still in progress: {0}.{1}, worker={2}'.format(
+            task['project'], task['job'], workerId) )
         taskInfo['lastUpdate'] = datetime.utcnow()
     elif state == ABORT_STATE_NAME:
         logger.info('Aborting task: {0}.{1}.'.format(task['project'], task['job']))
