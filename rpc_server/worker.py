@@ -78,6 +78,61 @@ def startNotificationThread(interval, scheduler, workerId):
     t.start()
 
 
+def runSimulationJob(job):
+    """Runs simulation job.
+
+    This function does all required stuff: gets initial state and definition,
+    simulates and stores simulation results to database."""
+
+    jobId = job.id
+
+    model = Model(ModelParams())
+    model.loadYAML(job.definition)
+    step = job.simulationParameters['stepDuration']
+    duration = job.simulationParameters['duration']
+    batchLength = job.simulationParameters['batchLength']
+
+
+    # Prepare infrastructure.
+    saver = kts46.CouchDBStorage.CouchDBStateStorage(job, model.asYAML)
+
+    # Load current state: load state and set time
+    if len(job.progress['currentFullState']) > 0:
+        model.loadYAML(job.progress['currentFullState'])
+        t = timedeltaToSeconds(model.time)
+    else:
+        t = 0.0
+
+    # Reset job progres step counter.
+    if t == 0.0:
+        # Document will be saved to database with state data.
+        job.progress['done'] = 0
+
+    # Prepare values.
+    stepAsMs = step * 1000 # step in milliseconds
+    stepsN = job.simulationParameters['duration'] / step
+    stepsCount = 0
+    # t = 0.0
+    logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
+
+
+    # Run.
+    while t <= duration and stepsCount < batchLength:
+        model.run_step(stepAsMs)
+        stepsCount += 1
+        data = model.get_state_data()
+        data['job'] = jobId
+        # Round time to milliseconds
+        saver.add(round(t, 3), data)
+        t += step
+
+    # Finilize.
+    saver.close()
+
+    #f1 = open('/tmp/kts46-state.txt', 'w')
+    #f1.write(model.asYAML())
+    #f1.close()
+
 class Scheduler(SyncManager):
     pass
 
@@ -115,53 +170,10 @@ startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=work
 
 storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
+
 job = getJob(storage, projectName, jobName)
-jobId = job.id
 
-model = Model(ModelParams())
-model.loadYAML(job.definition)
-step = job.simulationParameters['stepDuration']
-duration = job.simulationParameters['duration']
-batchLength = job.simulationParameters['batchLength']
+runSimulationJob(job)
 
-
-# Prepare infrastructure.
-saver = kts46.CouchDBStorage.CouchDBStateStorage(job, model.asYAML)
-
-# Load current state: load state and set time
-if len(job.progress['currentFullState']) > 0:
-    model.loadYAML(job.progress['currentFullState'])
-    t = timedeltaToSeconds(model.time)
-else:
-    t = 0.0
-
-# Reset job progres step counter.
-if t == 0.0:
-    # Document will be saved to database with state data.
-    job.progress['done'] = 0
-
-# Prepare values.
-stepAsMs = step * 1000 # step in milliseconds
-stepsN = job.simulationParameters['duration'] / step
-stepsCount = 0
-# t = 0.0
-logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
-
-
-# Run.
-while t <= duration and stepsCount < batchLength:
-    model.run_step(stepAsMs)
-    stepsCount += 1
-    data = model.get_state_data()
-    data['job'] = jobId
-    # Round time to milliseconds
-    saver.add(round(t, 3), data)
-    t += step
-
-# Finilize.
-saver.close()
+# Notify server.
 m.reportStatus(workerId, 'finished')
-
-f1 = open('/tmp/kts46-state.txt', 'w')
-f1.write(model.asYAML())
-f1.close()
