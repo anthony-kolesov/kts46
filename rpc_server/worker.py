@@ -66,16 +66,21 @@ def getJob(storage, projectName, jobName):
 
 def notificationThreadImplementation(interval, scheduler, workerId):
     while True:
+        g_enableNotificationEvent.wait()
         time.sleep(interval)
-        logger.info('[%s] Sending notification to server...', threading.currentThread().name)
-        scheduler.reportStatus(workerId, 'working')
+        # Event may have been disabled while we were waiting, so check here again.
+        if g_enableNotificationEvent.is_set():
+            logger.info('[%s] Sending notification to server...', threading.currentThread().name)
+            scheduler.reportStatus(workerId, 'working')
 
 
 def startNotificationThread(interval, scheduler, workerId):
+    "Starts thread to notify scheduler about worker availability and returns Thread object."
     t = threading.Thread(target=notificationThreadImplementation, kwargs={
                         'interval': interval, 'scheduler':scheduler, 'workerId':workerId})
     t.daemon = True
     t.start()
+    return t
 
 
 def runSimulationJob(job):
@@ -125,6 +130,7 @@ def runSimulationJob(job):
         # Round time to milliseconds
         saver.add(round(t, 3), data)
         t += step
+        time.sleep(1)
 
     # Finilize.
     saver.close()
@@ -150,30 +156,39 @@ class ModelParams:
 cfg = initConfig()
 logger = initLogger(cfg)
 workerId = 'worker-1' # uuid.uuid4()
+notificationRequired = False # Global variable
+g_enableNotificationEvent = threading.Event()
+# g_enableNotificationEvent.set() # Will be enabled when task running is started.
 
 # Create scheduler.
 m = getScheduler(cfg)
+startNotificationThread(interval=5, scheduler=m, workerId=workerId)
+#startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
+
+# Start run loop.
+while True:
+    task = m.getJob(workerId)
+    # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
+    # is a better way than comparing strings but that works.
+    if str(task) == "None":
+        logger.warning('Oops. Nothing to do.')
+        time.sleep(5) # Wait some time for job.
+        continue # sys.exit(0)
+    projectName = task.get('project')
+    jobName = task.get('job')
+    initialStateId = task.get('stateId')
+    logger.info('I have a task: %s.%s', projectName, jobName)
 
 
-task = m.getJob(workerId)
-# task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
-# is a better way than comparing strings but that works.
-if str(task) == "None":
-    logger.warning('Oops. Nothing to do.')
-    sys.exit(0)
-projectName = task.get('project')
-jobName = task.get('job')
-initialStateId = task.get('stateId')
-logger.info('I have a task: %s.%s', projectName, jobName)
+    g_enableNotificationEvent.set() # Start notifying scheduler about our state.
 
-startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
-
-storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+    storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
 
-job = getJob(storage, projectName, jobName)
+    job = getJob(storage, projectName, jobName)
 
-runSimulationJob(job)
+    runSimulationJob(job)
 
-# Notify server.
-m.reportStatus(workerId, 'finished')
+    # Notify server.
+    g_enableNotificationEvent.clear() # Stop notifying scheduler.
+    m.reportStatus(workerId, 'finished')
