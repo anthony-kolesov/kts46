@@ -20,6 +20,7 @@ import sys, Queue, couchdb, logging, uuid, yaml, datetime
 import time, threading # For daemon thread that will send notification to scheduler.
 from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
+from optparse import OptionParser
 
 sys.path.append('../lib/')
 import kts46.utils
@@ -142,9 +143,21 @@ class ModelParams:
 
 
 # Init app infrastructure
+cmdOpts = OptionParser()
+cmdOpts.add_option('-i', '--id', action='store', dest='id', default='',
+                       help='Worker id. Must be unique in a network of workers.')
+options, args = cmdOpts.parse_args(sys.argv[1:])
+
+
 cfg = kts46.utils.getConfiguration(('../config/worker.ini',))
 logger = kts46.utils.getLogger(cfg)
-workerId = 'worker-1' # uuid.uuid4()
+if len(options.id) > 0:
+    workerId = options.id # 'worker-1'
+elif cfg.has_option('worker', 'id'):
+    workerId = cfg.get('worker', 'id')
+else:
+    workerId = str(uuid.uuid4())
+
 g_enableNotificationEvent = threading.Event()
 
 # Create scheduler.
