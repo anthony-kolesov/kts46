@@ -22,34 +22,13 @@ from ConfigParser import SafeConfigParser
 from datetime import datetime
 
 sys.path.append('../lib/')
+import kts46.utils
 from kts46.CouchDBStorage import CouchDBStorage
 
 
-def createConfiguration():
-    "Returns SafeConfigParser for this application."
-    configFiles = ('../config/common.ini', '../config/scheduler.ini')
-    cfg = SafeConfigParser()
-    cfg.read(configFiles)
-    return cfg
 
-def createLogger():
-    logging.getLogger('').setLevel(logging.INFO)
-    logging.basicConfig(format=cfg.get('log', 'format'))
-
-    # Define a log handler for rotating files.
-    rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
-        maxBytes=cfg.get('log', 'maxBytesInFile'),
-        backupCount=cfg.get('log', 'backupCountOfFile'))
-    rfhandler.setLevel(logging.INFO)
-    rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
-    logging.getLogger('').addHandler(rfhandler)
-
-    logger = logging.getLogger(cfg.get('log', 'loggerName'))
-    logger.setLevel(logging.INFO)
-    return logger
-
-cfg = createConfiguration()
-logger = createLogger()
+cfg = kts46.utils.getConfiguration( ('../config/scheduler.ini',) )
+logger = kts46.utils.getLogger(cfg)
 storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 WORKING_STATE_NAME = cfg.get('scheduler', 'workingStateName')
 ABORT_STATE_NAME = cfg.get('scheduler', 'abortStateName')

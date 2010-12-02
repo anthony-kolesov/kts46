@@ -22,38 +22,10 @@ from ConfigParser import SafeConfigParser
 from multiprocessing.managers import SyncManager
 
 sys.path.append('../lib/')
+import kts46.utils
 from kts46 import CouchDBViewDefinitions
 from kts46.serverApi import RPCServerException
 from kts46.CouchDBStorage import CouchDBStorage
-
-
-def init():
-    """Initializes server infrastructure. Returns (SafeConfigParser, logger)."""
-
-    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
-    # Create configuration.
-    logging.debug('Reading configuration.')
-    cfg = SafeConfigParser()
-    cfg.read(configFiles)
-
-    # Configure logging.
-    logging.getLogger('').setLevel(logging.INFO)
-    logging.basicConfig(format=cfg.get('log', 'format'),
-                    datefmt=cfg.get('log', 'dateFormat'),
-                    filename=cfg.get('log', 'filename'),
-                    filemode=cfg.get('log', 'filemode'))
-
-    # Define a log handler for rotating files.
-    rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
-        maxBytes=cfg.get('log', 'maxBytesInFile'),
-        backupCount=cfg.get('log', 'backupCountOfFile'))
-    rfhandler.setLevel(logging.INFO)
-    rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
-    logging.getLogger('').addHandler(rfhandler)
-
-    logger = logging.getLogger(cfg.get('log', 'loggerName'))
-
-    return (cfg, logger)
 
 
 def hello(msg):
@@ -148,7 +120,8 @@ class CouchDBProxy:
 
 
 if __name__ == '__main__':
-    cfg, logger = init()
+    cfg = kts46.utils.getConfiguration(('../config/rpc_server.ini',))
+    logger = kts46.utils.getLogger(cfg)
 
     # Create and configure server.
     address = cfg.get('rpc-server', 'address')
