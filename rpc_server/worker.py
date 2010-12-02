@@ -22,24 +22,13 @@ from multiprocessing.managers import SyncManager
 from ConfigParser import SafeConfigParser
 
 sys.path.append('../lib/')
+import kts46.utils
 from kts46.serverApi import RPCServerException
 from kts46 import Model
 import kts46.CouchDBStorage
 
 def timedeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
-
-def initConfig():
-    configFiles = ('../config/common.ini', '../config/rpc_server.ini')
-    cfg = SafeConfigParser()
-    cfg.read(configFiles)
-    return cfg
-
-def initLogger(cfg):
-    logging.basicConfig(level=logging.INFO, format=cfg.get('log', 'format'),
-                datefmt=cfg.get('log', 'dateFormat'))
-    logger = logging.getLogger('kts46.worker')
-    return logger
 
 def getScheduler(cfg):
     # Create scheduler.
@@ -153,12 +142,10 @@ class ModelParams:
 
 
 # Init app infrastructure
-cfg = initConfig()
-logger = initLogger(cfg)
+cfg = kts46.utils.getConfiguration(('../config/worker.ini',))
+logger = kts46.utils.getLogger(cfg)
 workerId = 'worker-1' # uuid.uuid4()
-notificationRequired = False # Global variable
 g_enableNotificationEvent = threading.Event()
-# g_enableNotificationEvent.set() # Will be enabled when task running is started.
 
 # Create scheduler.
 m = getScheduler(cfg)

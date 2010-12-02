@@ -20,36 +20,13 @@ import xmlrpclib, logging, sys
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
-def init():
-    configFiles = ('../config/rpc_client.ini', '../config/common.ini')
+sys.path.append('../lib/')
+import kts46.utils
 
-    # Create configuration.
-    cfg = SafeConfigParser()
-    cfg.read(configFiles)
-
-    # Configure logging.
-    logging.basicConfig(level=logging.INFO,
-                        format=cfg.get('log', 'format'),
-                        datefmt=cfg.get('log', 'dateFormat'),
-                        filename=cfg.get('log', 'filename'),
-                        filemode=cfg.get('log', 'filemode'))
-
-    # Define a handler for console message with mode simple format.
-    console = logging.StreamHandler()
-    console.setFormatter( logging.Formatter(cfg.get('log', 'shortFormat')) )
-    logger = logging.getLogger(cfg.get('log', 'loggerName'))
-    logger.addHandler(console)
-
-    return (cfg, logger)
 
 if __name__ == '__main__':
-    cfg, logger = init()
-
-    # create project
-    # delete project
-    # add job
-    # delete job
-    # run job
+    cfg = kts46.utils.getConfiguration(('../config/rpc_client.ini',))
+    logger = kts46.utils.getLogger(cfg)
 
     usage = "usage: %prog [options] <action>"
     epilog = """<action> could be: createProject (crp), deleteProject (delp)
