@@ -16,16 +16,14 @@ License:
    limitations under the License.
 """
 
-import sys, Queue, couchdb, logging, uuid, yaml, datetime
+import sys, uuid, datetime
 import time, threading # For daemon thread that will send notification to scheduler.
 from multiprocessing.managers import SyncManager
-from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
 sys.path.append('../lib/')
 import kts46.utils
 from kts46.serverApi import RPCServerException
-from kts46 import Model
 import kts46.CouchDBStorage
 from kts46.simulationServer import SimulationServer
 
@@ -73,74 +71,8 @@ def startNotificationThread(interval, scheduler, workerId):
     t.start()
     return t
 
-
-def runSimulationJob(job):
-    """Runs simulation job.
-
-    This function does all required stuff: gets initial state and definition,
-    simulates and stores simulation results to database."""
-
-    jobId = job.id
-
-    model = Model(ModelParams())
-    model.loadYAML(job.definition)
-    step = job.simulationParameters['stepDuration']
-    duration = job.simulationParameters['duration']
-    batchLength = job.simulationParameters['batchLength']
-
-
-    # Prepare infrastructure.
-    saver = kts46.CouchDBStorage.CouchDBStateStorage(job, model.asYAML)
-
-    # Load current state: load state and set time
-    if len(job.progress['currentFullState']) > 0:
-        model.loadYAML(job.progress['currentFullState'])
-        t = timedeltaToSeconds(model.time)
-    else:
-        t = 0.0
-
-    # Reset job progres step counter.
-    if t == 0.0:
-        # Document will be saved to database with state data.
-        job.progress['done'] = 0
-
-    # Prepare values.
-    stepAsMs = step * 1000 # step in milliseconds
-    stepsN = job.simulationParameters['duration'] / step
-    stepsCount = 0
-    # t = 0.0
-    logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
-
-
-    # Run.
-    while t <= duration and stepsCount < batchLength:
-        model.run_step(stepAsMs)
-        stepsCount += 1
-        data = model.get_state_data()
-        data['job'] = jobId
-        # Round time to milliseconds
-        saver.add(round(t, 3), data)
-        t += step
-        time.sleep(1)
-
-    # Finilize.
-    saver.close()
-
-    #f1 = open('/tmp/kts46-state.txt', 'w')
-    #f1.write(model.asYAML())
-    #f1.close()
-
 class Scheduler(SyncManager):
     pass
-
-
-class ModelParams:
-
-    def __init__(self):
-        self.carGenerationInterval = 3.0
-        self.safeDistance = 5.0
-        self.maxSpeed = 20.0
-        self.minSpeed = 10.0
 
 
 # Init app infrastructure
@@ -180,12 +112,8 @@ while True:
     initialStateId = task.get('stateId')
     logger.info('I have a task: %s.%s', projectName, jobName)
 
-
     g_enableNotificationEvent.set() # Start notifying scheduler about our state.
-
     storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
-
-
     job = getJob(storage, projectName, jobName)
 
     simServer = SimulationServer()
