@@ -53,20 +53,20 @@ def getJob(storage, projectName, jobName):
     return project[jobName]
 
 
-def notificationThreadImplementation(interval, scheduler, workerId):
+def notificationThreadImplementation(scheduler, workerId):
     while True:
         g_enableNotificationEvent.wait()
-        time.sleep(interval)
+        time.sleep(g_notificationSleepTimeout)
         # Event may have been disabled while we were waiting, so check here again.
         if g_enableNotificationEvent.is_set():
             logger.info('[%s] Sending notification to server...', threading.currentThread().name)
             scheduler.reportStatus(workerId, 'working')
 
 
-def startNotificationThread(interval, scheduler, workerId):
+def startNotificationThread(scheduler, workerId):
     "Starts thread to notify scheduler about worker availability and returns Thread object."
     t = threading.Thread(target=notificationThreadImplementation, kwargs={
-                        'interval': interval, 'scheduler':scheduler, 'workerId':workerId})
+                        'scheduler':scheduler, 'workerId':workerId})
     t.daemon = True
     t.start()
     return t
@@ -92,10 +92,11 @@ else:
     workerId = str(uuid.uuid4())
 
 g_enableNotificationEvent = threading.Event()
+g_notificationSleepTimeout = 5
 
 # Create scheduler.
 m = getScheduler(cfg)
-startNotificationThread(interval=5, scheduler=m, workerId=workerId)
+startNotificationThread(scheduler=m, workerId=workerId)
 #startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
 
 # Start run loop.
@@ -105,12 +106,13 @@ while True:
     # is a better way than comparing strings but that works.
     if str(task) == "None":
         logger.warning('Oops. Nothing to do.')
-        time.sleep(5) # Wait some time for job.
-        continue # sys.exit(0)
+        time.sleep(cfg.get('worker', 'checkTimeout')) # Wait some time for job.
+        continue
     projectName = task.get('project')
     jobName = task.get('job')
     initialStateId = task.get('stateId')
     logger.info('I have a task: %s.%s', projectName, jobName)
+    g_notificationSleepTimeout = task.get('timeout')
 
     g_enableNotificationEvent.set() # Start notifying scheduler about our state.
     storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))

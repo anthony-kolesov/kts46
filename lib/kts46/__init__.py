@@ -20,7 +20,7 @@ License:
 import yaml
 from datetime import timedelta # for YAML
 import Car as CarModule,\
-    Road as RoadModule, TrafficLight as TrafficLightModule, Model as ModelModule
+    Road as RoadModule, TrafficLight as TrafficLightModule
 
 __version__ = '0.1.2'
 
@@ -29,7 +29,6 @@ __version__ = '0.1.2'
 Car = CarModule.Car
 Road = RoadModule.Road
 SimpleSemaphore = TrafficLightModule.SimpleSemaphore
-Model = ModelModule.Model
 
 # Init YAML staff.
 def _timedeltaYAMLRepresenter(dumper, data):
