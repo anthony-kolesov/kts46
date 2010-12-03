@@ -27,6 +27,7 @@ import kts46.utils
 from kts46.serverApi import RPCServerException
 from kts46 import Model
 import kts46.CouchDBStorage
+from kts46.simulationServer import SimulationServer
 
 def timedeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
@@ -187,7 +188,8 @@ while True:
 
     job = getJob(storage, projectName, jobName)
 
-    runSimulationJob(job)
+    simServer = SimulationServer()
+    simServer.runSimulationJob(job)
 
     # Notify server.
     g_enableNotificationEvent.clear() # Stop notifying scheduler.
