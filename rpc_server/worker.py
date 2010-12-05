@@ -96,9 +96,8 @@ while True:
     task = m.getJob(workerId)
     # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
     # is a better way than comparing strings but that works.
-    logger.info('task == {0}'.format(str(task)))
     if str(task) == "None":
-        logger.warning('Oops. Nothing to do.')
+        logger.debug('Oops. Nothing to do.')
         time.sleep(cfg.getfloat('worker', 'checkTimeout')) # Wait some time for job.
         continue
     projectName = task.get('project')

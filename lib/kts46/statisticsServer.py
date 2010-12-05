@@ -29,8 +29,10 @@ class StatisticsServer:
 
     def calculate(self, project, job, logger, cfg):
 
-        addCarPath = cfg.get("couchdb", "addCarView").format(project=project,job=job.id)
-        delCarPath = cfg.get("couchdb", "deleteCarView").format(project=project,job=job.id)
+        addCarPath = cfg.get("couchdb", "addCarView").format(
+            project=project, job=job.id, nextjob=job.id+1)
+        delCarPath = cfg.get("couchdb", "deleteCarView").format(
+            project=project, job=job.id, nextjob=job.id+1)
 
         logger.info('GET: ' + addCarPath)
         logger.info('GET: ' + delCarPath)
@@ -44,12 +46,15 @@ class StatisticsServer:
 
         times = {}
         moveTimes = []
+        logger.info('Add car items: {0}'.format(len(addCarTimes)))
+        logger.info('Del car items: {0}'.format(len(delCarTimes)))
         for carid, addTime in addCarTimes.items():
             if carid in delCarTimes:
                 times[carid] = {'add': addTime, 'del': delCarTimes[carid]}
                 moveTimes.append(delCarTimes[carid] - addTime)
 
         # Create numpy array and count statistics.
+        logger.info('move times len: {0}'.format(len(moveTimes)))
         arr = numpy.array(moveTimes)
         av = numpy.average(arr)
         stdd = numpy.std(arr)
