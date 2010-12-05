@@ -2,7 +2,7 @@
 simulationParameters:
     duration: 90
     stepDuration: 0.2
-    batchLength: 50
+    batchLength: 500
 
 # seconds
 carGenerationInterval: 3

@@ -274,7 +274,7 @@ class SimulationJob:
         self.project.db[self.docid] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
         self.progress = {'job': self.docid,
-            'totalSteps': math.floor(simulationTime/simulationStep) + 1,
+            'totalSteps': math.floor(simulationTime/simulationStep),
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
             'done': 0,
             'currentFullState': ''}
