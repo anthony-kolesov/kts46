@@ -1,0 +1,29 @@
+# Simulation parameters
+simulationParameters:
+    duration: 90
+    stepDuration: 0.2
+    batchLength: 50
+
+# seconds
+carGenerationInterval: 3
+# m/s
+safeDistance: 10
+# m/s
+maxSpeed: 20
+minSpeed: 10
+
+road: !road
+    length: 300
+    width: 10
+
+trafficLights:
+    -   !semaphore
+        id: 1
+        position: 80
+        greenDuration: 5
+        redDuration: 4
+    -   !semaphore
+        id: 2
+        position: 220
+        greenDuration: 5
+        redDuration: 9
