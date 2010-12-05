@@ -26,13 +26,14 @@ import kts46.utils
 from kts46.CouchDBStorage import CouchDBStorage
 
 
-
 cfg = kts46.utils.getConfiguration( ('../config/scheduler.ini',) )
 logger = kts46.utils.getLogger(cfg)
 storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 WORKING_STATE_NAME = cfg.get('scheduler', 'workingStateName')
 ABORT_STATE_NAME = cfg.get('scheduler', 'abortStateName')
 FINISHED_STATE_NAME = cfg.get('scheduler', 'finishedStateName')
+SIMULATION_JOB_TYPE = 'simulation'
+STATISTICS_JOB_TYPE = 'statistics'
 
 class Scheduler(SyncManager): pass
 
@@ -44,27 +45,33 @@ def runJob(projectName, jobName):
     with DB server check for whether this job is finished is done here. So
     simulated job won't start."""
 
-    #if currentTasks == 0:
-    #    logger.info('Creating currentTasks list.')
-    #    currentTasks = manager.dict()
-
     job = storage[projectName][jobName]
 
-    # Checl whether simulation has been finished.
+    # Check whether simulation has been finished.
     if job.progress['done'] >= job.progress['totalSteps']:
-        return
+        # Add statistics task.
+        addStatisticsTask(projectName, jobName)
+    else:
+        logger.info('Adding new job part: [project=%s, job=%s, progress:%i/%i]',
+            projectName, jobName, job.progress['done'], job.progress['totalSteps'])
+        d = {'project':projectName,
+             'job':jobName,
+             'timeout': cfg.getint('scheduler', 'timeout'),
+             'type': SIMULATION_JOB_TYPE}
+        waitingTasks.put(d)
 
-    logger.info('Adding new job part: [project=%s, job=%s, progress:%i/%i]',
-        projectName, jobName, job.progress['done'], job.progress['totalSteps'])
-    d = {'project':projectName, 'job':jobName, 'timeout': cfg.getint('scheduler', 'timeout')}
-    waitingTasks.put(d)
 
-
-#def runJob(projectName, jobName):
-#    logger.info('Adding job: project=%s, job=%s' % (projectName, jobName))
-#    d = {'project':projectName, 'job':jobName, 'stateId': '',
-#         'timeout': cfg.getint('scheduler', 'timeout') }
-#    waitingTasks.put(d)
+def addStatisticsTask(projectName, jobName):
+    if storage[projectName][jobName].statistics['finished']:
+        logger.info('Statistics already calculated. Finish')
+    else:
+        logger.info('Adding statistics task: project={0}, job={1}.'.format(
+            projectName, jobName))
+        d = {'project':projectName,
+             'job':jobName,
+             'timeout': cfg.getint('scheduler', 'timeout'),
+             'type': STATISTICS_JOB_TYPE}
+        waitingTasks.put(d)
 
 
 def getJob(workerId):
@@ -112,7 +119,3 @@ if __name__ == '__main__':
     logger.info('Scheduler is starting to serve.')
     server = manager.get_server()
     server.serve_forever()
-    #manager.start()
-    #logger.info('Creating currentTasks list.')
-    #currentTasks = manager.dict() # Queue.Queue()
-    #sys.stdin.readline()

@@ -1,6 +1,6 @@
 # Simulation parameters
 simulationParameters:
-    duration: 30
+    duration: 90
     stepDuration: 0.2
     batchLength: 50
 
