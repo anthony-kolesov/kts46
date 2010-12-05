@@ -49,20 +49,20 @@ def getJob(storage, projectName, jobName):
     return project[jobName]
 
 
-def notificationThreadImplementation(scheduler, workerId):
+def notificationThreadImplementation(scheduler, workerId, enableEvent):
     while True:
-        g_enableNotificationEvent.wait()
+        enableEvent.wait()
         time.sleep(g_notificationSleepTimeout)
         # Event may have been disabled while we were waiting, so check here again.
-        if g_enableNotificationEvent.is_set():
+        if enableEvent.is_set():
             logger.info('[%s] Sending notification to server...', threading.currentThread().name)
             scheduler.reportStatus(workerId, 'working')
 
 
-def startNotificationThread(scheduler, workerId):
+def startNotificationThread(scheduler, workerId, enableEvent):
     "Starts thread to notify scheduler about worker availability and returns Thread object."
     t = threading.Thread(target=notificationThreadImplementation, kwargs={
-                        'scheduler':scheduler, 'workerId':workerId})
+        'scheduler':scheduler, 'workerId':workerId, 'enableEvent':enableEvent })
     t.daemon = True
     t.start()
     return t
@@ -84,12 +84,13 @@ elif cfg.has_option('worker', 'id'):
 else:
     workerId = str(uuid.uuid4())
 
-g_enableNotificationEvent = threading.Event()
+enableNotificationEvent = threading.Event()
 g_notificationSleepTimeout = 5
 
 # Create scheduler.
 m = getScheduler(cfg)
-startNotificationThread(scheduler=m, workerId=workerId)
+startNotificationThread(scheduler=m, workerId=workerId,
+                        enableEvent=enableNotificationEvent)
 #startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
 
 # Start run loop.
@@ -107,7 +108,7 @@ while True:
     logger.info('I have a task: %s.%s', projectName, jobName)
     g_notificationSleepTimeout = task.get('timeout')
 
-    g_enableNotificationEvent.set() # Start notifying scheduler about our state.
+    enableNotificationEvent.set() # Start notifying scheduler about our state.
     storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
     job = getJob(storage, projectName, jobName)
 
@@ -115,5 +116,5 @@ while True:
     simServer.runSimulationJob(job)
 
     # Notify server.
-    g_enableNotificationEvent.clear() # Stop notifying scheduler.
+    enableNotificationEvent.clear() # Stop notifying scheduler.
     m.reportStatus(workerId, 'finished')
