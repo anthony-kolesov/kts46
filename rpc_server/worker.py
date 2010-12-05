@@ -18,26 +18,22 @@ License:
 
 import sys, uuid, datetime
 import time, threading # For daemon thread that will send notification to scheduler.
-from multiprocessing.managers import SyncManager
 from optparse import OptionParser
 
 sys.path.append('../lib/')
 import kts46.utils
-from kts46.serverApi import RPCServerException
 import kts46.CouchDBStorage
+import kts46.schedulerClient
+from kts46.serverApi import RPCServerException
 from kts46.simulationServer import SimulationServer
 
 def timedeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
 
 def getScheduler(cfg):
-    # Create scheduler.
-    Scheduler.register('getJob')
-    Scheduler.register('runJob')
-    Scheduler.register('reportStatus')
     schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
     schedulerAuthkey = cfg.get('scheduler', 'authkey')
-    m = Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
+    m = kts46.schedulerClient.Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
     m.connect()
     return m
 
@@ -71,9 +67,6 @@ def startNotificationThread(scheduler, workerId):
     t.start()
     return t
 
-class Scheduler(SyncManager):
-    pass
-
 
 # Init app infrastructure
 cmdOpts = OptionParser()
@@ -106,7 +99,7 @@ while True:
     # is a better way than comparing strings but that works.
     if str(task) == "None":
         logger.warning('Oops. Nothing to do.')
-        time.sleep(cfg.get('worker', 'checkTimeout')) # Wait some time for job.
+        time.sleep(cfg.getfloat('worker', 'checkTimeout')) # Wait some time for job.
         continue
     projectName = task.get('project')
     jobName = task.get('job')
