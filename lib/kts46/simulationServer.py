@@ -64,7 +64,7 @@ class SimulationServer(object):
         stepAsMs = step * 1000 # step in milliseconds
         stepsN = job.simulationParameters['duration'] / step
         stepsCount = 0
-        self.logger.info('Start time: {0}, step: {0}'.format(t, step))
+        self.logger.debug('Start time: {0}, step: {0}'.format(t, step))
 
         # Run.
         while t <= duration and stepsCount < batchLength:
@@ -78,7 +78,7 @@ class SimulationServer(object):
 
         # Finilize.
         saver.close()
-        self.logger.info('End time: {0}.'.format(t))
+        self.logger.debug('End time: {0}.'.format(t))
 
         #f1 = open('/tmp/kts46-state.txt', 'w')
         #f1.write(model.asYAML())

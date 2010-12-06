@@ -102,18 +102,18 @@ while True:
         continue
     projectName = task.get('project')
     jobName = task.get('job')
-    logger.info('I have a task: %s.%s', projectName, jobName)
     g_notificationSleepTimeout = task.get('timeout')
     enableNotificationEvent.set() # Start notifying scheduler about our state.
 
     if task.get('type') == 'simulation':
+        logger.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
         storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
         job = getJob(storage, projectName, jobName)
 
         simServer = SimulationServer()
         simServer.runSimulationJob(job)
     elif task.get('type') == 'statistics':
-        logger.info('Starting statistics task.')
+        logger.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))
         job = getJob(storage, projectName, jobName)
         stServer = StatisticsServer()
         stServer.calculate(projectName, job, logger, cfg)
