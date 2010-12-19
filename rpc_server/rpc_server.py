@@ -124,8 +124,8 @@ if __name__ == '__main__':
     logger = kts46.utils.getLogger(cfg)
 
     # Create and configure server.
-    address = cfg.get('rpc-server', 'address')
-    port = cfg.getint('rpc-server', 'port')
+    address = cfg.get('rpc-userserver', 'address')
+    port = cfg.getint('rpc-userserver', 'port')
     server = SimpleXMLRPCServer( (address, port), allow_none = True )
 
     # Register functions.
