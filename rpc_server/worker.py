@@ -31,11 +31,6 @@ def timedeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
 
 def getScheduler(cfg):
-    #schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
-    #schedulerAuthkey = cfg.get('scheduler', 'authkey')
-    #m = kts46.schedulerClient.Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
-    #m.connect()
-    #return m
     # Create RPC proxy.
     host = cfg.get('worker', 'server')
     port = cfg.getint('rpc-server', 'port')

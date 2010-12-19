@@ -16,7 +16,6 @@ License:
 """
 
 import sys, Queue
-#import threading, logging, logging.handlers, time
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from datetime import datetime
