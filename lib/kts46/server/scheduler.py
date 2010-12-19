@@ -15,9 +15,9 @@ License:
    limitations under the License.
 """
 
-import sys
-#import Queue, threading, logging, logging.handlers, time
-from multiprocessing import Queue, Manager
+import sys, Queue
+#import threading, logging, logging.handlers, time
+from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from datetime import datetime
 # Project imports.
