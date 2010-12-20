@@ -61,7 +61,7 @@ class Server:
         return self._db.getNewJobId(projectName)
 
     def createProject(self, projectName):
-        self._db.createPRoject(projectName)
+        self._db.createProject(projectName)
 
     def projectExists(self, projectName):
         return self._db.projectExists(projectName)

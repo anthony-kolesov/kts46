@@ -19,6 +19,9 @@ from kts46.Model import Model
 from kts46.modelParams import ModelParams
 from kts46.CouchDBStorage import CouchDBStateStorage
 
+def timedeltaToSeconds(td):
+    return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
+
 class SimulationServer(object):
     "A server object that does simulation of model."
 

@@ -88,18 +88,3 @@ class DatabaseServer:
         "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
         p = self.storage[projectName]
         del p[jobName]
-    #
-    #def runJob(self, projectName, jobName):
-    #    "Runs simulation job, using remote scheduler."
-    #
-    #    if not self.jobExists(projectName, jobName):
-    #        msg = "Couldn't run job %s of project %s that doesn't exist."
-    #        raise RPCServerException(msg % (jobName, projectName))
-    #
-    #    schedulerAddress = (self.cfg.get('scheduler', 'address'),
-    #                        self.cfg.getint('scheduler', 'port') )
-    #    scheduler = Scheduler(address=schedulerAddress,
-    #                          authkey=self.cfg.get('scheduler', 'authkey'))
-    #    scheduler.connect()
-    #    self.logger.info('Running job: %s.%s' % (projectName, jobName))
-    #    scheduler.runJob(projectName, jobName)
