@@ -86,16 +86,16 @@ class SchedulerServer:
     def reportStatus(self, workerId, state):
         taskInfo = self._currentTasks[workerId]
         task = taskInfo['task']
-        if state == WORKING_STATE_NAME:
+        if state == self.stateNameWorking:
             self._log.info('Task is still in progress: {0}.{1}, worker={2}'.format(
                 task['project'], task['job'], workerId) )
             taskInfo['lastUpdate'] = datetime.utcnow()
-        elif state == ABORT_STATE_NAME:
+        elif state == self.stateNameAbort:
             self._log.info('Aborting task: {0}.{1}.'.format(task['project'], task['job']))
             del self._currentTasks[workerId]
             self._waitingTasks.task_done()
             self._waitingTasks.append(task)
-        elif state == FINISHED_STATE_NAME:
+        elif state == self.stateNameFinished:
             self._log.info('Task is finished: {0}.{1}.'.format(task['project'], task['job']))
             del self._currentTasks[workerId]
             self._waitingTasks.task_done()

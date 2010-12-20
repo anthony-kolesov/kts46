@@ -27,9 +27,6 @@ import kts46.schedulerClient
 from kts46.serverApi import RPCServerException
 from kts46.simulationServer import SimulationServer
 
-def timedeltaToSeconds(td):
-    return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
-
 def getScheduler(cfg):
     # Create RPC proxy.
     host = cfg.get('worker', 'server')
