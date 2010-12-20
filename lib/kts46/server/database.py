@@ -1,5 +1,7 @@
-#!/usr/bin/python
 """
+Provides database server that is able to manage projects and jobs in the
+database.
+
 License:
    Copyright 2010 Anthony Kolesov
 
@@ -16,33 +18,17 @@ License:
    limitations under the License.
 """
 
-import logging, logging.handlers, couchdb, couchdb.client, sys, yaml, math
-from SimpleXMLRPCServer import SimpleXMLRPCServer
-from ConfigParser import SafeConfigParser
-from multiprocessing.managers import SyncManager
-
-sys.path.append('../lib/')
-import kts46.utils
-from kts46 import CouchDBViewDefinitions
-from kts46.serverApi import RPCServerException
+import sys, logging
+# Project imports.
+sys.path.append('../../../lib/')
 from kts46.CouchDBStorage import CouchDBStorage
 
 
-def hello(msg):
-    "Test method to check that server is working fine."
-    return '''Hello you too! This is simple XML-RPC server for kts46.
-            You\'ve said: [''' + msg + ']'
-
-
-# Dummy class to represent scheduler
-class Scheduler(SyncManager): pass
-Scheduler.register('runJob')
-
-class CouchDBProxy:
+class DatabaseServer:
 
     def __init__(self, cfg):
-        self.cfg = cfg
-        self.logger = logging.getLogger('kts46.rpc_server.couchdb')
+        self._cfg = cfg
+        self._log = logging.getLogger(cfg.get('loggers', 'DatabaseServer'))
         self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
 
@@ -102,37 +88,3 @@ class CouchDBProxy:
         "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
         p = self.storage[projectName]
         del p[jobName]
-
-    def runJob(self, projectName, jobName):
-        "Runs simulation job, using remote scheduler."
-
-        if not self.jobExists(projectName, jobName):
-            msg = "Couldn't run job %s of project %s that doesn't exist."
-            raise RPCServerException(msg % (jobName, projectName))
-
-        schedulerAddress = (self.cfg.get('scheduler', 'address'),
-                            self.cfg.getint('scheduler', 'port') )
-        scheduler = Scheduler(address=schedulerAddress,
-                              authkey=self.cfg.get('scheduler', 'authkey'))
-        scheduler.connect()
-        self.logger.info('Running job: %s.%s' % (projectName, jobName))
-        scheduler.runJob(projectName, jobName)
-
-
-if __name__ == '__main__':
-    cfg = kts46.utils.getConfiguration(('../config/rpc_server.ini',))
-    logger = kts46.utils.getLogger(cfg)
-
-    # Create and configure server.
-    address = cfg.get('rpc-userserver', 'address')
-    port = cfg.getint('rpc-userserver', 'port')
-    server = SimpleXMLRPCServer( (address, port), allow_none = True )
-
-    # Register functions.
-    couchdbProxy = CouchDBProxy(cfg)
-    server.register_function(hello)
-    server.register_instance(couchdbProxy)
-
-    # Run server.
-    logging.info('Serving...')
-    server.serve_forever()

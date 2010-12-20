@@ -16,7 +16,7 @@ License:
    limitations under the License.
 """
 
-import sys, uuid, datetime
+import sys, uuid, datetime, xmlrpclib
 import time, threading # For daemon thread that will send notification to scheduler.
 from optparse import OptionParser
 
@@ -29,11 +29,12 @@ from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
 
 def getScheduler(cfg):
-    schedulerAddress = (cfg.get('scheduler', 'address'), cfg.getint('scheduler', 'port'))
-    schedulerAuthkey = cfg.get('scheduler', 'authkey')
-    m = kts46.schedulerClient.Scheduler(address=schedulerAddress, authkey=schedulerAuthkey)
-    m.connect()
-    return m
+    # Create RPC proxy.
+    host = cfg.get('worker', 'server')
+    port = cfg.getint('rpc-server', 'port')
+    connString = 'http://%s:%i' % (host, port)
+    proxy = xmlrpclib.ServerProxy(connString)
+    return proxy
 
 
 def getJob(storage, projectName, jobName):
