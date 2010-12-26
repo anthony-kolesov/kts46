@@ -15,18 +15,21 @@ License:
    limitations under the License.
 """
 
+import logging
 from kts46.Model import Model
 from kts46.modelParams import ModelParams
 from kts46.CouchDBStorage import CouchDBStateStorage
 
+
 def timedeltaToSeconds(td):
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1000000.0
+
 
 class SimulationServer(object):
     "A server object that does simulation of model."
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger('kts46.SimulationServer')
 
     def runSimulationJob(self, job):
         """Runs simulation job.
@@ -52,7 +55,7 @@ class SimulationServer(object):
         else:
             t = 0.0
 
-        # Reset job progres step counter.
+        # Reset job progress step counter.
         if t == 0.0:
             # Document will be saved to database with state data.
             job.progress['done'] = 0
@@ -61,8 +64,7 @@ class SimulationServer(object):
         stepAsMs = step * 1000 # step in milliseconds
         stepsN = job.simulationParameters['duration'] / step
         stepsCount = 0
-        # t = 0.0
-        # logger.info('stepsN: %i, stepsCount: %i, stepsN/100: %i', stepsN, stepsCount, stepsN / 100)
+        self.logger.debug('Start time: {0}, step: {0}'.format(t, step))
 
         # Run.
         while t <= duration and stepsCount < batchLength:
@@ -76,6 +78,7 @@ class SimulationServer(object):
 
         # Finilize.
         saver.close()
+        self.logger.debug('End time: {0}.'.format(t))
 
         #f1 = open('/tmp/kts46-state.txt', 'w')
         #f1.write(model.asYAML())
