@@ -32,3 +32,17 @@ class StatusServer:
         msg = "{proj}.{job}: {progress} ({done}/{total}).".format(proj=projectName, job=jobName,
             progress=progressPcnt, done=progress['done'], total=progress['totalSteps'])
         return msg
+
+    def getJobsList(self, projectName):
+        return self.storage[projectName].getJobsList()
+
+    def getProjectStatus(self, projectName):
+        jobs = self.storage[projectName].getJobs()
+        r = [ ]
+        for job in jobs:
+            r.append({'name': job.name, 'done': job.progress['done'],
+                      'total': job.progress['totalSteps'] })
+        return r
+
+
+

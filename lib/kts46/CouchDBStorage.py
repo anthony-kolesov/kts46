@@ -244,6 +244,21 @@ class SimulationProject:
         return docid in self.db
 
 
+    def getJobsList(self):
+        "Gets list of project jobs names."
+        names = [ ]
+        jobs = self.db.view(SimulationProject.jobsListView)
+        for job in jobs:
+            names.append(job['key'])
+        return names
+
+    def getJobs(self):
+        "Gets project jobs."
+        jobs = [ ]
+        for jobName in self.getJobsList():
+            jobs.append(self[jobName])
+        return jobs
+
 
 class SimulationJob:
 
