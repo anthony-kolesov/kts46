@@ -139,6 +139,7 @@ class SimulationProject:
     statesView = 'manage/states'
     jobProgressDocId = '%sProgress'
     stateDocIdFormat = 's{job}_{state}'
+    statisticsDocIdFormat = '{job}Statistics'
 
     def __init__(self, couchServer, name, logger):
         self.server = couchServer
@@ -210,7 +211,8 @@ class SimulationProject:
         return len(self.db.view(SimulationProject.jobsListView)[item]) > 0
 
     def __delitem__(self, key):
-        "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
+        """Deletes job with specified name if it exists.
+        Otherwise throws CouchDBStorageException."""
         # proj = self.server[projectName]
         jobRows = self.db.view(SimulationProject.jobsListView)[key]
         if len(jobRows) == 0:
@@ -222,6 +224,8 @@ class SimulationProject:
             jobIdStr = jobRow['value']
             # Delete job progress.
             del self.db[SimulationProject.jobProgressDocId % jobIdStr]
+            # Delete job statistics.
+            del self.db[SimulationProject.statisticsDocIdFormat.format(job=jobIdStr)]
             # Delete job itself.
             del self.db[jobIdStr]
             # Delete simulated states.
@@ -246,6 +250,12 @@ class SimulationJob:
     def __init__(self, project, name, id = None):
         self.project = project
         self.name = name
+        self.id = None
+        self.docid = None
+        self.progress = None
+        self.statistics = None
+        self.progressId = None
+        self.statisticsId = None
         if id is not None:
             self._initializeFromDb(id)
 
@@ -260,28 +270,29 @@ class SimulationJob:
         simulationBatchLength = simParams['batchLength']
         self.simulationParameters = simParams
 
-        self.id = self.project.getNewJobId()
-        self.docid = 'j' + str(self.id)
+        self._setId()
         self.project.db[self.docid] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
-        jobProgressDocId = SimulationProject.jobProgressDocId % self.docid
         self.progress = {'job': self.docid,
-            'totalSteps': math.floor(simulationTime/simulationStep) + 1,
+            'totalSteps': math.floor(simulationTime/simulationStep),
             'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
             'done': 0,
             'currentFullState': ''}
-        self.project.db[jobProgressDocId] = self.progress
+        self.project.db[self.progressId] = self.progress
+
+        self.statistics = {'average': None, 'stdeviation': None, 'finished': False}
+        self.project.db[self.statisticsId] = self.statistics
 
     def _initializeFromDb(self, id):
-        self.docid = id
-        self.id = int(id[1:])
+        self._setId(None, id)
         db = self.project.db
         doc = db[id]
 
         self.definition = doc['yaml']
         self.simulationParameters = doc['simulationParameters']
 
-        self.progress = db[SimulationProject.jobProgressDocId % id]
+        self.progress = db[self.progressId]
+        self.statistics = db[self.statisticsId]
 
 
     def getStateDocumentId(self, stateId):
@@ -297,3 +308,25 @@ class SimulationJob:
     def __getitem__(self, key):
         "Gets state with specified id."
         return self.project.getDocument(self.getStateDocumentId(key))
+
+
+    def _setId(self, id = None, docid = None):
+        if id is None and docid is not None:
+            self.docid = docid
+            self.id = int(docid[1:])
+        elif id is not None and docid is None:
+            self.id = id
+            self.docid = 'j' + str(self.id)
+        elif id is None and docid is None:
+            self.id = self.project.getNewJobId()
+            self.docid = 'j' + str(self.id)
+
+        # Set child docs ids.
+        self.progressId = SimulationProject.jobProgressDocId % self.docid
+        self.statisticsId = SimulationProject.statisticsDocIdFormat.format(job=self.docid)
+
+    def save(self):
+        if self.progress is not None:
+             self.project.db[self.progressId] = self.progress
+        if self.statistics is not None:
+             self.project.db[self.statisticsId] = self.statistics

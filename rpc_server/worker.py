@@ -26,6 +26,7 @@ import kts46.CouchDBStorage
 import kts46.schedulerClient
 from kts46.serverApi import RPCServerException
 from kts46.simulationServer import SimulationServer
+from kts46.statisticsServer import StatisticsServer
 
 def getScheduler(cfg):
     # Create RPC proxy.
@@ -34,6 +35,7 @@ def getScheduler(cfg):
     connString = 'http://%s:%i' % (host, port)
     proxy = xmlrpclib.ServerProxy(connString)
     return proxy
+
 
 def getJob(storage, projectName, jobName):
     if projectName not in storage:
@@ -96,21 +98,25 @@ while True:
     # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
     # is a better way than comparing strings but that works.
     if str(task) == "None":
-        logger.warning('Oops. Nothing to do.')
+        logger.debug('Oops. Nothing to do.')
         time.sleep(cfg.getfloat('worker', 'checkTimeout')) # Wait some time for job.
         continue
     projectName = task.get('project')
     jobName = task.get('job')
-    initialStateId = task.get('stateId')
-    logger.info('I have a task: %s.%s', projectName, jobName)
     g_notificationSleepTimeout = task.get('timeout')
-
     enableNotificationEvent.set() # Start notifying scheduler about our state.
     storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
     job = getJob(storage, projectName, jobName)
-
-    simServer = SimulationServer()
-    simServer.runSimulationJob(job)
+    
+    if task.get('type') == 'simulation':
+        logger.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
+        simServer = SimulationServer()
+        simServer.runSimulationJob(job)
+    elif task.get('type') == 'statistics':
+        logger.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))
+        stServer = StatisticsServer()
+        stServer.calculate(projectName, job, logger, cfg)
+        job.save()
 
     # Notify server.
     enableNotificationEvent.clear() # Stop notifying scheduler.

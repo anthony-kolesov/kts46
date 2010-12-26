@@ -191,6 +191,10 @@ class Model(object):
         if 'lastCarGenerationTime' in objData:
             self._lastCarGenerationTime = objData['lastCarGenerationTime']
         if 'lastCarId' in objData: self._lastCarId = objData['lastCarId']
+        # cars, last send cars, enter queue
+        if 'cars' in objData: self._cars = objData['cars']
+        if 'lastSendCars' in objData: self._lastSendCars = objData['lastSendCars']
+        if 'enterQueue' in objData: self._enterQueue = objData['enterQueue']
 
 
     def asYAML(self):

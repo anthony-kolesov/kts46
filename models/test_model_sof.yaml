@@ -1,8 +1,8 @@
 # Simulation parameters
 simulationParameters:
-    duration: 90
+    duration: 7200
     stepDuration: 0.2
-    batchLength: 50
+    batchLength: 500
 
 # seconds
 carGenerationInterval: 3
@@ -13,17 +13,17 @@ maxSpeed: 20
 minSpeed: 10
 
 road: !road
-    length: 300
-    width: 10
+    length: 1677
+    width: 25
 
 trafficLights:
     -   !semaphore
         id: 1
-        position: 80
-        greenDuration: 5
-        redDuration: 4
+        position: 518
+        greenDuration: 50
+        redDuration: 25
     -   !semaphore
         id: 2
-        position: 220
-        greenDuration: 5
-        redDuration: 9
+        position: 1004
+        greenDuration: 50
+        redDuration: 25
