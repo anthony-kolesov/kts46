@@ -30,6 +30,7 @@ if PROJECT_LIB_PATH not in sys.path:
 import kts46.utils
 from kts46.server.scheduler import SchedulerServer
 from kts46.server.database import DatabaseServer
+from kts46.server.status import StatusServer
 
 __version__ = "0.1.2"
 
@@ -39,6 +40,7 @@ class Server:
     def __init__(self, cfg):
         self._scheduler = SchedulerServer(cfg)
         self._db = DatabaseServer(cfg)
+        self._status = StatusServer(cfg)
 
     def hello(self):
         "Test method to check that server is working fine."
@@ -77,6 +79,9 @@ class Server:
 
     def deleteJob(self, projectName, jobName):
         self._db.deleteJob(projectName, jobName)
+        
+    def getJobStatus(self, project, job):
+        return self._status.getJobStatus(project, job)
 
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration(('../config/server.ini',))
