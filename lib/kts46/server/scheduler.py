@@ -43,6 +43,8 @@ class SchedulerServer:
         self.stateNameWorking = configuration.get('scheduler', 'workingStateName')
         self.stateNameAbort= configuration.get('scheduler', 'abortStateName')
         self.stateNameFinished = configuration.get('scheduler', 'finishedStateName')
+        self.jobTypeSimulation = 'simulation'
+        self.jobTypeStatistics = 'statistics'
 
         # Multithreaded items.
         self._manager = SchedulerManager()
@@ -62,13 +64,26 @@ class SchedulerServer:
 
         # Check whether simulation has been finished.
         if job.progress['done'] >= job.progress['totalSteps']:
-            return
+            # Add statistics task.
+            self.addStatisticsTask(projectName, jobName)
+        else:
+            self._log.info('Adding new job part: [project=%s, job=%s, progress:%i/%i]',
+                projectName, jobName, job.progress['done'], job.progress['totalSteps'])
+            d = {'project':projectName, 'job':jobName,
+                 'timeout': self.timeout, 'type': self.jobTypeSimulation}
+            self._waitingTasks.put(d)
 
-        self._log.info('Adding new job part: [project=%s, job=%s, progress:%i/%i]',
-            projectName, jobName, job.progress['done'], job.progress['totalSteps'])
-        d = {'project':projectName, 'job':jobName,
-             'timeout': self.timeout}
-        self._waitingTasks.put(d)
+    def addStatisticsTask(self, projectName, jobName):
+        if self.storage[projectName][jobName].statistics['finished']:
+            self._log.info('Statistics already calculated. Finish')
+        else:
+            self._log.info('Adding statistics task: project={0}, job={1}.'.format(
+                projectName, jobName))
+            d = {'project':projectName,
+                'job':jobName,
+                'timeout': self.timeout,
+                'type': self.jobTypeStatistics}
+            self._waitingTasks.put(d)
 
 
     def getJob(self, workerId):
