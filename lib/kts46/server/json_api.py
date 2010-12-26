@@ -15,34 +15,47 @@ License:
    limitations under the License.
 """
 
-import logging, BaseHTTPServer, re
+import logging, BaseHTTPServer, re, xmlrpclib, json
 
 
 class JSONApiServer:
     "Provides HTTP server that provides control over simulation with JSON API."
 
     def __init__(self, cfg):
-        pass
+        self.server = self.createProxy(cfg)
+        self.cfg = cfg
 
     def server_forever(self):
         server_address = ('', 46211)
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
+        httpd.rpc_server = self.server
         httpd.serve_forever()
+
+    def createProxy(self, cfg):
+        # Create RPC proxy.
+        host = cfg.get('json_api', 'server')
+        port = cfg.getint('rpc-server', 'port')
+        connString = 'http://%s:%i' % (host, port)
+        proxy = xmlrpclib.ServerProxy(connString)
+        return proxy
 
 
 class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
-        match = re.match(r"/api/(\w+)/(\w+)/", self.path)
+        match = re.match(r"/api/(\w+)/(\w+)", self.path)
         if match is None:
             self.send_response(404)
             self.end_headers()
             return
 
-        function = match.group(1)
+        functionName = match.group(1)
         p = match.group(2)
+
+        rpc = self.server.rpc_server
+        status = rpc.getProjectStatus(p)
 
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("funct={0}, arg={1}".format(function, p))
+        self.wfile.write(json.dumps(status))
 
