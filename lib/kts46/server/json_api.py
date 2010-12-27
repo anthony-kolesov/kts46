@@ -43,19 +43,26 @@ class JSONApiServer:
 class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
-        match = re.match(r"/api/(\w+)/(\w+)", self.path)
+        match = re.match(r"/api/(\w+)/", self.path)
         if match is None:
             self.send_response(404)
             self.end_headers()
             return
 
-        functionName = match.group(1)
-        p = match.group(2)
-
         rpc = self.server.rpc_server
-        status = rpc.getProjectStatus(p)
+        functionName = match.group(1)
+        if functionName == 'projectStatus':
+            functionMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
+            projectName = functionMatch.group(2)
+            data = rpc.getProjectStatus(projectName)
+        else:
+            data = None
 
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(json.dumps(status))
+        if data is None:
+            self.send_response(404)
+            self.end_headers()
+        else:
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(json.dumps(data))
 
