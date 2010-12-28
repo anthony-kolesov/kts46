@@ -79,10 +79,11 @@ class Server:
 
     def deleteJob(self, projectName, jobName):
         self._db.deleteJob(projectName, jobName)
-        
+
     def getJobStatus(self, project, job): return self._status.getJobStatus(project, job)
     def getJobsList(self, project): return self._status.getJobsList(project)
     def getProjectStatus(self, project): return self._status.getProjectStatus(project)
+    def getServerStatus(self): return self._status.getServerStatus()
 
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration(('../config/server.ini',))
@@ -91,7 +92,7 @@ if __name__ == '__main__':
     # Create and configure server.
     address = cfg.get('rpc-server', 'address')
     port = cfg.getint('rpc-server', 'port')
-    rpcserver = SimpleXMLRPCServer( (address, port), allow_none = True )
+    rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
 
     # Register functions.
     server = Server(cfg)
