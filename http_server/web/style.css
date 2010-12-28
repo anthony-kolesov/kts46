@@ -1,0 +1,41 @@
+body {
+    font:13px/1.231 sans-serif;
+    *font-size:small;
+}
+
+body, select, input, textarea {
+    color: #444;
+    font-family: Georgia, serif;
+}
+
+.project-block {
+    border: 1px dotted #444;
+    margin: 5px;
+}
+
+.project-name {
+    padding-left: 20px;
+    padding-top: 0.5em;
+    border-bottom: 1px dotted #444;
+    background: #eee;
+    margin-top: 0px;
+}
+
+.job-name, .progress-num, .progressbar {
+    height: 1.3em;
+}
+
+.job-name {
+    float: left;
+    width: 100px;
+    text-align: right;
+}
+
+.progress-num {
+    float: left;
+    margin-left: 45%;
+}
+
+.progressbar {
+    margin-left: 130px;
+}
