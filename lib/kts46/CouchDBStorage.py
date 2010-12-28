@@ -25,7 +25,7 @@ class CouchDBStateStorage:
     is equal to that is in job.simulationParameters.
     """
 
-    def __init__(self, job, fullStateCallback = None):
+    def __init__(self, job, fullStateCallback=None):
         "Initializes new instance of CouchDB state storage."
         self.server = job.project.server
         self.db = job.project.db
@@ -40,7 +40,7 @@ class CouchDBStateStorage:
         d = dict(data)
         d['time'] = time
         d['type'] = 'state'
-        d['_id'] = ''.join(('s', str(self.jobId), '_', str(time) ))
+        d['_id'] = ''.join(('s', str(self.jobId), '_', str(time)))
         doc = couchdb.Document(d)
 
         self.bulk_queue.append(doc)
@@ -115,7 +115,15 @@ class CouchDBStorage:
         return SimulationProject(self.server, key, self.logger)
 
     def __contains__(self, item):
-        return item in self.server
+        # Explicitly skip internal databases, because they are recognised as
+        # databases, but throws an error while creation of db.
+        if item[0] == '_':
+            return False
+        if item in self.server:
+            db = self.server[item]
+            if SimulationProject.jobsCountDocId in db:
+                return True
+        return False
 
     def __delitem__(self, key):
         """Deletes project with specified name if it exists. Otherwise raises
@@ -128,6 +136,12 @@ class CouchDBStorage:
             msg = "Couldn't delete project '%s' because it doesn't exists." % key
             self.logger.warning(msg)
             raise KeyError(msg)
+
+
+    def getProjects(self):
+        "Returns list of projects in storage."
+        # 'in self' returns true only for projects, not any databases.
+        return filter(lambda x: x in self, [p for p in self.server])
 
 
 class SimulationProject:
@@ -218,7 +232,7 @@ class SimulationProject:
         if len(jobRows) == 0:
             raise CouchDBStorageException(
                 "Couldn't delete job '%s' in project '%s' because it doesn't exist." %
-                (key, self.name) )
+                (key, self.name))
         for jobRow in jobRows:
             jobId = int(jobRow['value'][1:]) # Skip first 'j' letter.
             jobIdStr = jobRow['value']
@@ -262,7 +276,7 @@ class SimulationProject:
 
 class SimulationJob:
 
-    def __init__(self, project, name, id = None):
+    def __init__(self, project, name, id=None):
         self.project = project
         self.name = name
         self.id = None
@@ -289,8 +303,8 @@ class SimulationJob:
         self.project.db[self.docid] = {'name': self.name, 'yaml': self.definition,
                                 'type': 'job', 'simulationParameters': simParams}
         self.progress = {'job': self.docid,
-            'totalSteps': math.floor(simulationTime/simulationStep),
-            'batches': math.floor(simulationTime/simulationStep/simulationBatchLength),
+            'totalSteps': math.floor(simulationTime / simulationStep),
+            'batches': math.floor(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
             'currentFullState': ''}
         self.project.db[self.progressId] = self.progress
@@ -325,7 +339,7 @@ class SimulationJob:
         return self.project.getDocument(self.getStateDocumentId(key))
 
 
-    def _setId(self, id = None, docid = None):
+    def _setId(self, id=None, docid=None):
         if id is None and docid is not None:
             self.docid = docid
             self.id = int(docid[1:])
