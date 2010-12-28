@@ -15,7 +15,7 @@ License:
    limitations under the License.
 """
 
-import logging, BaseHTTPServer, re, xmlrpclib, json
+import logging, BaseHTTPServer, re, xmlrpclib, json, os.path
 
 
 class JSONApiServer:
@@ -43,6 +43,26 @@ class JSONApiServer:
 class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
+        # check for file request.
+        fileMatch = re.match(r"/(web/.*)", self.path)
+        if fileMatch is not None:
+            path = fileMatch.group(1)
+            if path.find("..") != -1:
+                self.send_response(400)
+                self.end_headers()
+                return
+            if not os.path.exists(path):
+                self.send_response(404)
+                self.end_headers()
+                return
+            self.send_response(200)
+            self.end_headers()
+            f = open(path)
+            lines = f.readlines()
+            f.close()
+            self.wfile.writelines(lines)
+            return
+
         match = re.match(r"/api/(\w+)/", self.path)
         if match is None:
             self.send_response(404)
