@@ -1,0 +1,9 @@
+CACHE MANIFEST
+js/jquery-ui-1.8.7.custom.min.js
+js/jquery-1.4.4.min.js
+css/ui-lightness/jquery-ui-1.8.7.custom.css
+css/ui-lightness/images/ui-bg_highlight-soft_100_eeeeee_1x100.png
+css/ui-lightness/images/ui-bg_gloss-wave_35_f6a828_500x100.png
+
+NETWORK:
+/api/serverStatus/

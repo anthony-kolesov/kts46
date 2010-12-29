@@ -43,11 +43,13 @@ class StatusServer:
             r.append({'name': job.name, 'done': job.progress['done'],
                       'total': job.progress['totalSteps'],
                       'project': projectName})
+        # If project contains nothing - add dummy job to display project in interface.
+        if len(r) == 0:
+            r.append({'visible': False, 'project': projectName})
         return r
 
     def getServerStatus(self):
         projects = self.storage.getProjects()
-        logging.getLogger('AAA').info(projects)
         results = []
         for project in projects:
             results.extend(self.getProjectStatus(project))
