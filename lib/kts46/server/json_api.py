@@ -26,7 +26,7 @@ class JSONApiServer:
         self.cfg = cfg
 
     def server_forever(self):
-        server_address = ('', 46211)
+        server_address = ('', 46210)
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
         httpd.serve_forever()
@@ -56,6 +56,9 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.end_headers()
                 return
             self.send_response(200)
+            # Specific check for cache manifests.
+            if path.find("cache-manifest") != -1:
+                self.send_header('Content-Type', "text/cache-manifest")
             self.end_headers()
             f = open(path)
             lines = f.readlines()
@@ -77,6 +80,11 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             data = rpc.getProjectStatus(projectName)
         elif functionName == 'serverStatus':
             data = rpc.getServerStatus()
+        elif functionName == 'addProject':
+            projectNameMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
+            projectName = projectNameMatch.group(2)
+            rpc.createProject(projectName)
+            data = {'result': 'success'}
         else:
             data = None
 
@@ -87,4 +95,3 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(data))
-
