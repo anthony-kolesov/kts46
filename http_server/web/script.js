@@ -1,7 +1,61 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 5000; 
+    var serverPollInterval = 50000; 
+    
+    var addJob = function(projectName) {
+        var allFields = $('#add-job-name, #add-job-definition');
+    
+        $("#add-job-form").dialog({
+            //autoOpen: false,
+            height: 300,
+            width: 350,
+            modal: true,
+            buttons: {
+                "Add job": function() {
+                    // Taken from jqueryui.com
+                    var checkRegexp = function( o, regexp, n ) {
+                        if ( !( regexp.test( o.val() ) ) ) {
+                            o.addClass( "ui-state-error" );
+                            //updateTips( n );
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }
+                
+                    var bValid = true;
+                    
+                    allFields.removeClass( "ui-state-error" );
+                    bValid = bValid && checkRegexp($('#add-job-name'), /^[a-zA-Z]([0-9a-zA-Z_])+$/i, "Job name may consist of a-z, A-Z, 0-9, underscores, begin with a letter." );
+        
+                    if ( bValid ) {
+                        var file = document.getElementById('add-job-definition').files[0];
+                        var reader = new FileReader();
+                        var dialog = $(this);
+                        reader.onload = function(e) {
+                            var definition = e.target.result;
+                            var params = JSON.stringify({
+                                project: projectName,
+                                job:  $('#add-job-name').val(),
+                                definition: definition
+                            }) + "\n\n";
+                            $.post('/api/addJob/', params, function(data) {});
+                            dialog.dialog( "close" );
+                        };
+                        reader.readAsText(file);
+                    }
+                },
+                Cancel: function() {
+                    $( this ).dialog( "close" );
+                }
+            },
+            close: function() {
+                allFields.val( "" ).removeClass( "ui-state-error" );
+            }
+        });
+    };
+    
     
     var updateStatus = function() {
         $.getJSON('/api/serverStatus/', function(data) {
@@ -17,9 +71,41 @@ var kts46 = (function($){
                         progressBlock.append(projectBlock);
                         
                         // Add project name
-                        var projNameBlock = $('<h2 class="project-name"></h2>');
+                        var projNameBlock = $('<div class="project-name"></div>');
                         projNameBlock.text(projectName);
                         projectBlock.append(projNameBlock);
+                        
+                        // Project deleter.
+                        var projDeleteButton = $('<button>Delete</button>').button();
+                        projNameBlock.append(projDeleteButton);
+                        projDeleteButton.data('project', projectName);
+                        projDeleteButton.click( function(){
+                            var buttonProject = $(this).data('project');
+                            $( "#delete-project-confirm" ).dialog({
+                                resizable: false,
+                                height:200,
+                                modal: true,
+                                buttons: {
+                                    "Delete project": function() {
+                                        $( this ).dialog( "close" );
+                                        $('#add-project-name').text('Deleting project...');
+                                        var projName = buttonProject;
+                                        $.getJSON('/api/deleteProject/' + projName + '/', function(data) {
+                                            $('#add-project-name').text('Project deleted.');
+                                        });
+                                    },
+                                    Cancel: function() {
+                                        $( this ).dialog( "close" );
+                                    }
+                                }
+                            });
+                        } );
+                        
+                        // Button to add job
+                        var jobAddButton = $('<button>Add job</button>').button();
+                        projNameBlock.append(jobAddButton);
+                        jobAddButton.data('project', projectName);
+                        jobAddButton.click( function(){ addJob( $(this).data('project') ); });
                     }
                 
                     // Check. If dummy job - skip it. But project will still be created. That is the point of dummy jobs.

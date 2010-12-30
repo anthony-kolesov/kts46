@@ -5,6 +5,7 @@
             @import url("css/ui-lightness/jquery-ui-1.8.7.custom.css");
             @import url("style.css");
         </style>
+        <script type="text/javascript" src="js/json2.js"></script>
         <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
         <script type="text/javascript" src="js/jquery-ui-1.8.7.custom.min.js"></script>
         <script type="text/javascript" src="script.js"></script>
@@ -17,5 +18,25 @@
         </div>
         <div class="progress-block">
         </div>
+        
+        <div id="delete-project-confirm" title="Delete project?" style="display: none;">
+            <p>
+                <span class="ui-icon ui-icon-alert" style="float:left; margin:0 7px 20px 0;"></span>
+                These project will be permanently deleted and cannot be recovered. Are you sure?
+            </p>
+        </div>
+        
+        <div id="add-job-form" title="Add job user" style="display: none;">
+            <p class="validateTips">All form fields are required.</p>
+            <form>
+            <fieldset>
+                <label for="add-job-name">Name</label>
+                <input type="text" name="add-job-name" id="add-job-name" class="text ui-widget-content ui-corner-all" />
+                <label for="add-job-definition">Definition file</label>
+                <input type="file" name="add-job-definition" id="add-job-definition" class="ui-widget-content ui-corner-all" />
+            </fieldset>
+            </form>
+        </div>
+        
     </body>
 </html>

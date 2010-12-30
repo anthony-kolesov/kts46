@@ -29,6 +29,7 @@ class JSONApiServer:
         server_address = ('', 46210)
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
+        httpd.logger = logging.getLogger('HTTPServer')
         httpd.serve_forever()
 
     def createProxy(self, cfg):
@@ -59,6 +60,11 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             # Specific check for cache manifests.
             if path.find("cache-manifest") != -1:
                 self.send_header('Content-Type', "text/cache-manifest")
+            ext = os.path.splitext(path)[1]
+            if ext == '.js':
+                self.send_header('Content-Type', "text/javascript")
+            elif ext == '.css':
+                self.send_header('Content-Type', "text/css")
             self.end_headers()
             f = open(path)
             lines = f.readlines()
@@ -80,10 +86,13 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             data = rpc.getProjectStatus(projectName)
         elif functionName == 'serverStatus':
             data = rpc.getServerStatus()
-        elif functionName == 'addProject':
+        elif functionName == 'addProject' or functionName == 'deleteProject':
             projectNameMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
             projectName = projectNameMatch.group(2)
-            rpc.createProject(projectName)
+            if functionName == 'addProject':
+                rpc.createProject(projectName)
+            else:
+                rpc.deleteProject(projectName)
             data = {'result': 'success'}
         else:
             data = None
@@ -95,3 +104,21 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(data))
+
+    def do_POST(self):
+        self.log_message('POST request')
+
+        match = re.match(r"/api/(\w+)/", self.path)
+        functionName = match.group(1)
+
+        if functionName == 'addJob':
+            rpc = self.server.rpc_server
+            data = json.loads(self.rfile.readline())
+            rpc.addJob(data['project'], data['job'], data['definition'])
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'result':'success'}))
+        else:
+            self.send_response(404)
+            self.end_headers()
