@@ -14,11 +14,19 @@ body, select, input, textarea {
 }
 
 .project-name {
-    padding-left: 20px;
-    padding-top: 0.5em;
+    padding: 20px 0.5em 0% 0.5em;
     border-bottom: 1px dotted #444;
     background: #eee;
     margin-top: 0px;
+}
+
+.project-name button {
+    margin-left: 20px;
+}
+
+.project-name button .ui-button-text { 
+    padding: 5px;
+    line-height: 1em;
 }
 
 .job-name, .progress-num, .progressbar {
