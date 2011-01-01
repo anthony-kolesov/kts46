@@ -45,7 +45,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_GET(self):
         # check for file request.
-        fileMatch = re.match(r"/(web/.*)", self.path)
+        fileMatch = re.match(r"/(web/[^\?]*)(\?v=([0-9]\.?)+)?$", self.path)
         if fileMatch is not None:
             path = fileMatch.group(1)
             if path.find("..") != -1:
@@ -111,14 +111,33 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         match = re.match(r"/api/(\w+)/", self.path)
         functionName = match.group(1)
 
+        success = True
+        found = True
+
         if functionName == 'addJob':
             rpc = self.server.rpc_server
             data = json.loads(self.rfile.readline())
             rpc.addJob(data['project'], data['job'], data['definition'])
+        elif functionName == 'deleteJob':
+            data = json.loads(self.rfile.readline())
+            self.server.rpc_server.deleteJob(data['project'], data['job'])
+        elif functionName == 'runJob':
+            data = json.loads(self.rfile.readline())
+            self.server.rpc_server.runJob(data['project'], data['job'])
+        else:
+            success = False
+            found = False
+
+        if success:
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'result':'success'}))
+        elif not success and found:
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'result':'fail'}))
         else:
             self.send_response(404)
             self.end_headers()

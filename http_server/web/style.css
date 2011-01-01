@@ -8,42 +8,75 @@ body, select, input, textarea {
     font-family: Georgia, serif;
 }
 
+/* ****** Project ****** */
 .project-block {
     border: 1px dotted #444;
     margin: 5px;
 }
 
 .project-name {
-    padding: 20px 0.5em 0% 0.5em;
+    padding-top: 5px;
+    padding-bottom: 5px;
     border-bottom: 1px dotted #444;
     background: #eee;
     margin-top: 0px;
 }
 
+.project-name span.name {
+}
+
 .project-name button {
-    margin-left: 20px;
+    margin-left: 5px;
+    margin-bottom: 0px;
 }
 
 .project-name button .ui-button-text { 
-    padding: 5px;
-    line-height: 1em;
+    padding: 1px;
+    /*line-height: 1em;*/
 }
 
-.job-name, .progress-num, .progressbar {
-    height: 1.3em;
+/* ****** Job ****** */
+.job-container {
+    /*height: 28px;*/
+}
+
+.job-start, .job-delete {
+    float: left;
+    height: 2.0em;
+}
+
+.job-delete {
+    left: 30px;
 }
 
 .job-name {
     float: left;
     width: 100px;
     text-align: right;
+    margin-left: 10px;
+    padding-right: 20px;
 }
 
 .progress-num {
     float: left;
-    margin-left: 45%;
+    margin-left: 40%;
+}
+
+.job-name, .progress-num {
+    line-height: 2.0em;
+    height: 2.0em;
 }
 
 .progressbar {
-    margin-left: 130px;
+    margin-left: 200px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    height: 1.7em;    
+}
+
+/* ****** Dialogs ****** */
+#delete-project-confirm span.ui-icon-alert,
+#delete-job-confirm span.ui-icon-alert {
+    float:left;
+    margin:0 7px 20px 0;
 }
