@@ -86,8 +86,9 @@ class Server:
     def getServerStatus(self): return self._status.getServerStatus()
 
 if __name__ == '__main__':
-    cfg = kts46.utils.getConfiguration(('../config/server.ini',))
-    logger = kts46.utils.getLogger(cfg)
+    cfg = kts46.utils.getConfiguration()
+    kts46.utils.configureLogging(cfg)
+    logger = logging.getLogger(cfg.get('loggers', 'RPCServer'))
 
     # Create and configure server.
     address = cfg.get('rpc-server', 'address')

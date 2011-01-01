@@ -26,7 +26,8 @@ import kts46.utils
 
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration(('../config/rpc_client.ini',))
-    logger = kts46.utils.getLogger(cfg)
+    kts46.utils.configureLogging(cfg)
+    logger = logging.getLogger(cfg.get('log', 'loggerName'))
 
     usage = "usage: %prog [options] <action>"
     epilog = """<action> could be: createProject (crp), deleteProject (delp)
@@ -46,7 +47,7 @@ addJob (a), deleteJob (delj), runJob (r), shutdown."""
         cmdOpts.error('Project name must be specified. See options -p and --project')
 
     # Create RPC proxy.
-    host = cfg.get('rpc-client', 'server')
+    host = cfg.get('rpc-server', 'server')
     port = cfg.getint('rpc-server', 'port')
     connString = 'http://%s:%i' % (host, port)
     logger.info('Connecting to server %s' % connString)

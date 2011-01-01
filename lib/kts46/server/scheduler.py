@@ -15,7 +15,7 @@ License:
    limitations under the License.
 """
 
-import sys, Queue
+import sys, Queue, logging
 from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from datetime import datetime
@@ -36,12 +36,12 @@ class SchedulerServer:
         Arguments:
           configuration - ConfigParser of application configuration."""
         self._cfg = configuration
-        self._log = kts46.utils.getLogger(configuration)
+        self._log = logging.getLogger(configuration.get('loggers', 'Scheduler'))
         self.storage = CouchDBStorage(configuration.get('couchdb', 'dbaddress'))
         self.timeout = configuration.getint('scheduler', 'timeout')
         # Task statuses.
         self.stateNameWorking = configuration.get('scheduler', 'workingStateName')
-        self.stateNameAbort= configuration.get('scheduler', 'abortStateName')
+        self.stateNameAbort = configuration.get('scheduler', 'abortStateName')
         self.stateNameFinished = configuration.get('scheduler', 'finishedStateName')
         self.jobTypeSimulation = 'simulation'
         self.jobTypeStatistics = 'statistics'
@@ -103,7 +103,7 @@ class SchedulerServer:
         task = taskInfo['task']
         if state == self.stateNameWorking:
             self._log.info('Task is still in progress: {0}.{1}, worker={2}'.format(
-                task['project'], task['job'], workerId) )
+                task['project'], task['job'], workerId))
             taskInfo['lastUpdate'] = datetime.utcnow()
         elif state == self.stateNameAbort:
             self._log.info('Aborting task: {0}.{1}.'.format(task['project'], task['job']))

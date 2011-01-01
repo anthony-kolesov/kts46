@@ -8,10 +8,21 @@ body, select, input, textarea {
     font-family: Georgia, serif;
 }
 
+#top-container {
+	max-width: 1000px;
+	min-width: 400px;
+    width: 90%;
+    margin: 0px auto;	
+}
+
+#header {
+    border: 1px dotted #444;
+}
+
 /* ****** Project ****** */
 .project-block {
     border: 1px dotted #444;
-    margin: 5px;
+    margin: 5px 0px;
 }
 
 .project-name {

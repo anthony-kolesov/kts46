@@ -11,12 +11,13 @@
         <script type="text/javascript" src="script.js"></script>
     </head>
     <body>
-        <div class="project-name">
-            <button class="jqueryui-button add-project-button">Add project</button>
-            <input id="add-project-name" type="text" value="new_project_1" />
-            <span id="add-project-status"></span>
-        </div>
-        <div class="progress-block">
+        <div id="top-container">
+	        <div class="project-name" id="header">
+	            <button class="jqueryui-button add-project-button">Add project</button>
+	            <input id="add-project-name" type="text" value="new_project_1" />
+	            <span id="add-project-status"></span>
+	        </div>
+	        <div class="progress-block"></div>
         </div>
         
         <div id="delete-project-confirm" title="Delete project?" style="display: none;">
@@ -43,7 +44,6 @@
                 <input type="file" name="add-job-definition" id="add-job-definition" class="ui-widget-content ui-corner-all" />
             </fieldset>
             </form>
-        </div>
-        
+        </div>        
     </body>
 </html>
