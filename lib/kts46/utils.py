@@ -19,7 +19,7 @@ import logging, logging.handlers
 from ConfigParser import SafeConfigParser
 
 
-def getConfiguration(customConfigFiles = []):
+def getConfiguration(customConfigFiles=[]):
     """Returns ConfigParser for application.
 
     Loads configuration from default files and custom application files if
@@ -31,10 +31,10 @@ def getConfiguration(customConfigFiles = []):
     cfg.read(configFiles)
     return cfg
 
-def getLogger(cfg):
-    "Gets logger configurad according to data from ConfigParser"
 
-    # Setup logging for third party modules.
+def configureLogging(cfg):
+    "Setups logging module."
+
     logging.getLogger('').setLevel(logging.INFO)
     logging.basicConfig(format=cfg.get('log', 'format'),
                         datefmt=cfg.get('log', 'dateFormat'))
@@ -47,6 +47,10 @@ def getLogger(cfg):
     rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
     logging.getLogger('').addHandler(rfhandler)
 
+
+
+def getLogger(cfg):
+    "Gets logger configured according to data from ConfigParser"
     logger = logging.getLogger(cfg.get('log', 'loggerName'))
     logger.setLevel(logging.INFO)
     return logger

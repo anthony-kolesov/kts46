@@ -26,7 +26,7 @@ class JSONApiServer:
         self.cfg = cfg
 
     def server_forever(self):
-        server_address = ('', 46210)
+        server_address = ('', 46211)
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
         httpd.logger = logging.getLogger('HTTPServer')
