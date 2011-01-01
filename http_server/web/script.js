@@ -1,13 +1,13 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 50000; 
+    var serverPollInterval = 3000; 
     
     var addJob = function(projectName) {
         var allFields = $('#add-job-name, #add-job-definition');
     
         $("#add-job-form").dialog({
-            //autoOpen: false,
+            // autoOpen: false,
             height: 300,
             width: 350,
             modal: true,
@@ -17,7 +17,7 @@ var kts46 = (function($){
                     var checkRegexp = function( o, regexp, n ) {
                         if ( !( regexp.test( o.val() ) ) ) {
                             o.addClass( "ui-state-error" );
-                            //updateTips( n );
+                            // updateTips( n );
                             return false;
                         } else {
                             return true;
@@ -57,6 +57,42 @@ var kts46 = (function($){
     };
     
     
+    var deleteJob = function() {
+        var buttonProject = $(this).data('project');
+        var buttonJob = $(this).data('job');
+        $( "#delete-job-confirm" ).dialog({
+            resizable: false,
+            height:200,
+            modal: true,
+            buttons: {
+                "Delete job": function() {
+                    var dialog = $(this);
+                    var params = JSON.stringify({
+                        project: buttonProject,
+                        job:  buttonJob
+                    }) + "\n";
+                    console.log(params);
+                    $.post('/api/deleteJob/', params, function(data) {
+                        dialog.dialog("close");
+                    });
+                },
+                Cancel: function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    };
+    
+    
+    var runJob = function() {
+        var params = JSON.stringify({
+            project: $(this).data('project'),
+            job:  $(this).data('job')
+        }) + "\n";
+        $.post('/api/runJob/', params, function(data) {});
+    };    
+    
+    
     var updateStatus = function() {
         $.getJSON('/api/serverStatus/', function(data) {
             var progressBlock = $('.progress-block');
@@ -72,11 +108,17 @@ var kts46 = (function($){
                         
                         // Add project name
                         var projNameBlock = $('<div class="project-name"></div>');
-                        projNameBlock.text(projectName);
+                        projNameBlock.append('<span class="name">'+projectName+'</span>');
                         projectBlock.append(projNameBlock);
                         
+                        // Button to add job
+                        var jobAddButton = $('<button><span class="ui-icon ui-icon-plusthick"></span></button>').button();
+                        projNameBlock.append(jobAddButton);
+                        jobAddButton.data('project', projectName);
+                        jobAddButton.click( function(){ addJob( $(this).data('project') ); });
+                        
                         // Project deleter.
-                        var projDeleteButton = $('<button>Delete</button>').button();
+                        var projDeleteButton = $('<button><span class="ui-icon ui-icon-closethick"></span></button>').button();
                         projNameBlock.append(projDeleteButton);
                         projDeleteButton.data('project', projectName);
                         projDeleteButton.click( function(){
@@ -100,30 +142,41 @@ var kts46 = (function($){
                                 }
                             });
                         } );
-                        
-                        // Button to add job
-                        var jobAddButton = $('<button>Add job</button>').button();
-                        projNameBlock.append(jobAddButton);
-                        jobAddButton.data('project', projectName);
-                        jobAddButton.click( function(){ addJob( $(this).data('project') ); });
                     }
                 
-                    // Check. If dummy job - skip it. But project will still be created. That is the point of dummy jobs.
+                    // Check. If dummy job - skip it. But project will still be
+                    // created. That is the point of dummy jobs.
                     if (typeof data[i].visible === "undefined" || data[i].visible) {
+                        // Job wrapper
+                        var jobContainer = $('<div class="job-container"></div>');
+                        projectBlock.append(jobContainer);
+                        
+                        // Job runner
+                        var jobRunner = $('<button><span class="ui-icon ui-icon-play"></span></button>');
+                        jobContainer.append(jobRunner);
+                        jobRunner.addClass('job-start').click(runJob)
+                            .data('project', projectName).data('job', data[i].name);
+                        
+                        // Job deleter
+                        var jobDeleter = $('<button><span class="ui-icon ui-icon-closethick"></span></button>');
+                        jobContainer.append(jobDeleter);
+                        jobDeleter.addClass('job-delete').click(deleteJob)
+                            .data('project', projectName).data('job', data[i].name);;
+                        
                         // Job name
                         var name = $('<div class="job-name"></div>');
                         name.text(data[i].name);
-                        projectBlock.append(name);
+                        jobContainer.append(name);
                     
                         // Job progress value
                         var progressNum = $('<div class="progress-num"></div>');
-                        projectBlock.append(progressNum);
+                        jobContainer.append(progressNum);
                         progressNum.text([data[i].done, '/', data[i].total].join(""));
                         
                         // Job progressbar
                         var bar = $('<div class="progressbar"></div>');
                         bar.attr('id', data[i].name + '-progressbar')
-                        projectBlock.append(bar);
+                        jobContainer.append(bar);
                         var progress = Math.round(data[i].done / data[i].total * 100);
                         bar.progressbar({value:  progress});
                     }
