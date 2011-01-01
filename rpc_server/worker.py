@@ -30,7 +30,7 @@ from kts46.statisticsServer import StatisticsServer
 
 def getScheduler(cfg):
     # Create RPC proxy.
-    host = cfg.get('worker', 'server')
+    host = cfg.get('rpc-server', 'server')
     port = cfg.getint('rpc-server', 'port')
     connString = 'http://%s:%i' % (host, port)
     proxy = xmlrpclib.ServerProxy(connString)
@@ -75,7 +75,8 @@ options, args = cmdOpts.parse_args(sys.argv[1:])
 
 
 cfg = kts46.utils.getConfiguration(('../config/worker.ini',))
-logger = kts46.utils.getLogger(cfg)
+kts46.utils.configureLogging(cfg)
+logger = logging.getLogger(cfg.get('loggers', 'Worker'))
 if len(options.id) > 0:
     workerId = options.id # 'worker-1'
 elif cfg.has_option('worker', 'id'):
@@ -107,7 +108,7 @@ while True:
     enableNotificationEvent.set() # Start notifying scheduler about our state.
     storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
     job = getJob(storage, projectName, jobName)
-    
+
     if task.get('type') == 'simulation':
         logger.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
         simServer = SimulationServer()
