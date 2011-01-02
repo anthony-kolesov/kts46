@@ -91,7 +91,7 @@ if __name__ == '__main__':
     logger = logging.getLogger(cfg.get('loggers', 'RPCServer'))
 
     # Create and configure server.
-    address = cfg.get('rpc-server', 'address')
+    address = cfg.get('rpc-server', 'bind-address')
     port = cfg.getint('rpc-server', 'port')
     try:
         rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
@@ -99,9 +99,13 @@ if __name__ == '__main__':
         logger.fatal("Couldn't bind to specified IP address: {0}.".format(address))
         sys.exit(1)
 
-    # Register functions.
-    server = Server(cfg)
-    rpcserver.register_instance(server)
+    # Check whether RPC server is actually enabled in this instance.
+    if cfg.getboolean('servers', 'rpc-server'):
+        logger.info('RPC server is enabled.')
+        server = Server(cfg)
+        rpcserver.register_instance(server)
+    else:
+        logger.info('RPC server is disabled, but will be started as a dummy.')
 
     # Run server.
     logger.info('Starting RPC server...')
