@@ -31,15 +31,20 @@ if PROJECT_LIB_PATH not in sys.path:
 import kts46.utils
 from kts46.server.worker import Worker
 from kts46.server.rpc import RPCServer
+from kts46.server.json_api import JSONApiServer
 
 
 def startWorker(cfg, id=None):
     worker = Worker(cfg, id)
     worker.run()
 
+def startHTTPServer(cfg):
+    apiServer = JSONApiServer(cfg)
+    apiServer.serve_forever()
+
 def configureCmdOptions():
     usage = "usage: %prog [options] <server type>*"
-    epilog = """<server type> could be: rpc-server or worker."""
+    epilog = """<server type> could be: rpc-server, worker and/or http."""
 
     cmdOpts = OptionParser(usage=usage, epilog=epilog)
     cmdOpts.add_option('-i', '--worker-id', action='store', dest='wid', default=None,
@@ -79,6 +84,14 @@ if __name__ == '__main__':
         p.start()
     else:
         logger.info('Worker is disabled.')
+
+    # Start HTTP API server if required.
+    if 'http' in args:
+        logger.info('HTTP server is enabled.')
+        httpServerProcess = Process(target=startHTTPServer, args=(cfg,))
+        httpServerProcess.start()
+    else:
+        logger.info('HTTP server is disabled.')
 
     # Run server.
     logger.info('Starting RPC server...')

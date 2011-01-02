@@ -25,11 +25,12 @@ class JSONApiServer:
         self.server = self.createProxy(cfg)
         self.cfg = cfg
 
-    def server_forever(self):
-        server_address = ('', 46211)
+    def serve_forever(self):
+        server_address = ('', self.cfg.getint('http-api', 'port'))
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
         httpd.logger = logging.getLogger('HTTPServer')
+        httpd.filesDir = self.cfg.get('http-api', 'filesDir')
         httpd.serve_forever()
 
     def createProxy(self, cfg):
@@ -52,11 +53,16 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 self.send_response(400)
                 self.end_headers()
                 return
+
+            # Convert path to actual path on the disk.
+            path = os.path.join(self.server.filesDir, path)
+
             if not os.path.exists(path):
                 self.send_response(404)
                 self.end_headers()
                 return
             self.send_response(200)
+
             # Specific check for cache manifests.
             if path.find("cache-manifest") != -1:
                 self.send_header('Content-Type', "text/cache-manifest")
@@ -66,6 +72,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             elif ext == '.css':
                 self.send_header('Content-Type', "text/css")
             self.end_headers()
+
             f = open(path)
             lines = f.readlines()
             f.close()
