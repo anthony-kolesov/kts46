@@ -15,11 +15,14 @@ License:
    limitations under the License.
 """
 
-import json, math, numpy
+import json, math, numpy, logging
 from urllib2 import urlopen
 
 class StatisticsServer:
 
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
     def _getJSON(self, url):
         a = urlopen(url)
@@ -27,39 +30,37 @@ class StatisticsServer:
         a.close()
         return json.loads(text)
 
-    def calculate(self, project, job, logger, cfg):
+    def calculate(self, project, job):
 
-        addCarPath = cfg.get("couchdb", "addCarView").format(
-            project=project, job=job.id, nextjob=job.id+1)
-        delCarPath = cfg.get("couchdb", "deleteCarView").format(
-            project=project, job=job.id, nextjob=job.id+1)
+        addCarPath = self.cfg.get("couchdb", "addCarView").format(
+            project=project, job=job.id, nextjob=job.id + 1)
+        delCarPath = self.cfg.get("couchdb", "deleteCarView").format(
+            project=project, job=job.id, nextjob=job.id + 1)
 
-        logger.info('GET: ' + addCarPath)
-        logger.info('GET: ' + delCarPath)
+        self.log.info('GET: ' + addCarPath)
+        self.log.info('GET: ' + delCarPath)
 
         # Connect to CouchDB and get data.
         addCarData = self._getJSON(addCarPath)
         delCarData = self._getJSON(delCarPath)
 
-        addCarTimes = dict( (x['key'][1], x['value']['time']) for x in addCarData['rows'])
-        delCarTimes = dict( (x['key'][1], x['value']['time']) for x in delCarData['rows'])
+        addCarTimes = dict((x['key'][1], x['value']['time']) for x in addCarData['rows'])
+        delCarTimes = dict((x['key'][1], x['value']['time']) for x in delCarData['rows'])
 
         times = {}
         moveTimes = []
-        logger.info('Add car items: {0}'.format(len(addCarTimes)))
-        logger.info('Del car items: {0}'.format(len(delCarTimes)))
         for carid, addTime in addCarTimes.items():
             if carid in delCarTimes:
                 times[carid] = {'add': addTime, 'del': delCarTimes[carid]}
                 moveTimes.append(delCarTimes[carid] - addTime)
 
         # Create numpy array and count statistics.
-        logger.info('move times len: {0}'.format(len(moveTimes)))
         arr = numpy.array(moveTimes)
         av = numpy.average(arr)
         stdd = numpy.std(arr)
-        logger.info("Average: {0}".format(av))
-        logger.info("Standard deviation: {0}".format(stdd))
-        job.statistics['average'] = av if not math.isnan(av) else -1
+        self.log.info("Average: {0}".format(av))
+        self.log.info("Standard deviation: {0}".format(stdd))
+        job.statistics['average'] = av if not math.isnan(av) else - 1
         job.statistics['stdeviation'] = stdd
         job.statistics['finished'] = True
+        job.save()
