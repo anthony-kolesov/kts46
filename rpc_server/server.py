@@ -19,9 +19,8 @@ License:
    limitations under the License.
 """
 
-import logging, logging.handlers, sys, socket
+import logging, sys, socket
 from ConfigParser import SafeConfigParser
-from multiprocessing.managers import SyncManager
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from multiprocessing import Process
 # Project imports
@@ -29,63 +28,8 @@ PROJECT_LIB_PATH = '../lib/'
 if PROJECT_LIB_PATH not in sys.path:
     sys.path.append(PROJECT_LIB_PATH)
 import kts46.utils
-from kts46.server.scheduler import SchedulerServer
-from kts46.server.database import DatabaseServer
-from kts46.server.status import StatusServer
 from kts46.server.worker import Worker
-
-__version__ = "0.1.2"
-
-class Server:
-    # Currently all subservers are used by delegating calls to them.
-
-    def __init__(self, cfg):
-        self._scheduler = SchedulerServer(cfg)
-        self._db = DatabaseServer(cfg)
-        self._status = StatusServer(cfg)
-
-    def hello(self):
-        "Test method to check that server is working fine."
-        msg = "Hello you too! This is XML-RPC server for kts46. Version: {0}."
-        msg = msg.format(__version__)
-        return msg
-
-    # Scheduler functions.
-    def runJob(self, projectName, jobName):
-        self._scheduler.runJob(projectName, jobName)
-
-    def getJob(self, workerId):
-        return self._scheduler.getJob(workerId)
-
-    def reportStatus(self, workerId, state):
-        self._scheduler.reportStatus(workerId, state)
-
-    # Database functions.
-    def getNewJobId(self, projectName):
-        return self._db.getNewJobId(projectName)
-
-    def createProject(self, projectName):
-        self._db.createProject(projectName)
-
-    def projectExists(self, projectName):
-        return self._db.projectExists(projectName)
-
-    def deleteProject(self, projectName):
-        self._db.deleteProject(projectName)
-
-    def addJob(self, projectName, jobName, definition):
-        self._db.addJob(projectName, jobName, definition)
-
-    def jobExists(self, projectName, jobName):
-        return self._db.jobExists(projectName, jobName)
-
-    def deleteJob(self, projectName, jobName):
-        self._db.deleteJob(projectName, jobName)
-
-    def getJobStatus(self, project, job): return self._status.getJobStatus(project, job)
-    def getJobsList(self, project): return self._status.getJobsList(project)
-    def getProjectStatus(self, project): return self._status.getProjectStatus(project)
-    def getServerStatus(self): return self._status.getServerStatus()
+from kts46.server.rpc import RPCServer
 
 
 def startWorker(cfg):
@@ -109,7 +53,7 @@ if __name__ == '__main__':
     # Check whether RPC server is actually enabled in this instance.
     if cfg.getboolean('servers', 'rpc-server'):
         logger.info('RPC server is enabled.')
-        server = Server(cfg)
+        server = RPCServer(cfg)
         rpcserver.register_instance(server)
     else:
         logger.info('RPC server is disabled, but will be started as a dummy.')
@@ -119,8 +63,6 @@ if __name__ == '__main__':
         logger.info('Worker is enabled.')
         p = Process(target=startWorker, args=(cfg,))
         p.start()
-        #worker = Worker(cfg, None)
-        #worker.run()
     else:
         logger.info('Worker is disabled.')
 
