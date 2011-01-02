@@ -4,7 +4,7 @@ Description:
     Runs all kts46 server processes.
 
 License:
-   Copyright 2010 Anthony Kolesov
+   Copyright 2010-2011 Anthony Kolesov
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import logging, logging.handlers, sys, socket
 from ConfigParser import SafeConfigParser
 from multiprocessing.managers import SyncManager
 from SimpleXMLRPCServer import SimpleXMLRPCServer
+from multiprocessing import Process
 # Project imports
 PROJECT_LIB_PATH = '../lib/'
 if PROJECT_LIB_PATH not in sys.path:
@@ -31,6 +32,7 @@ import kts46.utils
 from kts46.server.scheduler import SchedulerServer
 from kts46.server.database import DatabaseServer
 from kts46.server.status import StatusServer
+from kts46.server.worker import Worker
 
 __version__ = "0.1.2"
 
@@ -85,6 +87,11 @@ class Server:
     def getProjectStatus(self, project): return self._status.getProjectStatus(project)
     def getServerStatus(self): return self._status.getServerStatus()
 
+
+def startWorker(cfg):
+    worker = Worker(cfg)
+    worker.run()
+
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration()
     kts46.utils.configureLogging(cfg)
@@ -106,6 +113,16 @@ if __name__ == '__main__':
         rpcserver.register_instance(server)
     else:
         logger.info('RPC server is disabled, but will be started as a dummy.')
+
+    # Check whether worker is enabled in this instance.
+    if cfg.getboolean('servers', 'worker'):
+        logger.info('Worker is enabled.')
+        p = Process(target=startWorker, args=(cfg,))
+        p.start()
+        #worker = Worker(cfg, None)
+        #worker.run()
+    else:
+        logger.info('Worker is disabled.')
 
     # Run server.
     logger.info('Starting RPC server...')

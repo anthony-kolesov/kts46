@@ -19,6 +19,8 @@ import threading, time, logging, uuid, xmlrpclib
 from xmlrpclib import ServerProxy
 from kts46.serverApi import RPCServerException
 from kts46.CouchDBStorage import CouchDBStorage
+from kts46.simulationServer import SimulationServer
+from kts46.statisticsServer import StatisticsServer
 
 def _notificationThreadImplementation(worker):
     while True:
