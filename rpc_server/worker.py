@@ -27,45 +27,7 @@ import kts46.schedulerClient
 from kts46.serverApi import RPCServerException
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
-
-def getScheduler(cfg):
-    # Create RPC proxy.
-    host = cfg.get('rpc-server', 'server')
-    port = cfg.getint('rpc-server', 'port')
-    connString = 'http://%s:%i' % (host, port)
-    proxy = xmlrpclib.ServerProxy(connString)
-    return proxy
-
-
-def getJob(storage, projectName, jobName):
-    if projectName not in storage:
-        raise RPCServerException("Project '%s' doesn't exist." % projectName)
-    project = storage[projectName]
-
-    if jobName not in project:
-        raise RPCServerException("Job with name '{0}' doesn't exist in project '{1}'.".format(
-            jobName, projectName))
-    return project[jobName]
-
-
-def notificationThreadImplementation(scheduler, workerId, enableEvent):
-    while True:
-        enableEvent.wait()
-        time.sleep(g_notificationSleepTimeout)
-        # Event may have been disabled while we were waiting, so check here again.
-        if enableEvent.is_set():
-            logger.info('[%s] Sending notification to server...', threading.currentThread().name)
-            scheduler.reportStatus(workerId, 'working')
-
-
-def startNotificationThread(scheduler, workerId, enableEvent):
-    "Starts thread to notify scheduler about worker availability and returns Thread object."
-    t = threading.Thread(target=notificationThreadImplementation, kwargs={
-        'scheduler':scheduler, 'workerId':workerId, 'enableEvent':enableEvent })
-    t.daemon = True
-    t.start()
-    return t
-
+from kts46.server.worker import Worker
 
 # Init app infrastructure
 cmdOpts = OptionParser()
@@ -76,49 +38,10 @@ options, args = cmdOpts.parse_args(sys.argv[1:])
 
 cfg = kts46.utils.getConfiguration(('../config/worker.ini',))
 kts46.utils.configureLogging(cfg)
-logger = logging.getLogger(cfg.get('loggers', 'Worker'))
 if len(options.id) > 0:
     workerId = options.id # 'worker-1'
-elif cfg.has_option('worker', 'id'):
-    workerId = cfg.get('worker', 'id')
 else:
-    workerId = str(uuid.uuid4())
+    workerId = None
 
-enableNotificationEvent = threading.Event()
-g_notificationSleepTimeout = 5
-
-# Create scheduler.
-m = getScheduler(cfg)
-startNotificationThread(scheduler=m, workerId=workerId,
-                        enableEvent=enableNotificationEvent)
-#startNotificationThread(interval=task.get('timeout'), scheduler=m, workerId=workerId)
-
-# Start run loop.
-while True:
-    task = m.getJob(workerId)
-    # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
-    # is a better way than comparing strings but that works.
-    if str(task) == "None":
-        logger.debug('Oops. Nothing to do.')
-        time.sleep(cfg.getfloat('worker', 'checkTimeout')) # Wait some time for job.
-        continue
-    projectName = task.get('project')
-    jobName = task.get('job')
-    g_notificationSleepTimeout = task.get('timeout')
-    enableNotificationEvent.set() # Start notifying scheduler about our state.
-    storage = kts46.CouchDBStorage.CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
-    job = getJob(storage, projectName, jobName)
-
-    if task.get('type') == 'simulation':
-        logger.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
-        simServer = SimulationServer()
-        simServer.runSimulationJob(job)
-    elif task.get('type') == 'statistics':
-        logger.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))
-        stServer = StatisticsServer()
-        stServer.calculate(projectName, job, logger, cfg)
-        job.save()
-
-    # Notify server.
-    enableNotificationEvent.clear() # Stop notifying scheduler.
-    m.reportStatus(workerId, 'finished')
+w = Worker(cfg, workerId)
+w.run()

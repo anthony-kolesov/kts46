@@ -15,17 +15,17 @@ License:
    limitations under the License.
 """
 
-import threading, time
+import threading, time, logging, uuid, xmlrpclib
 from xmlrpclib import ServerProxy
 from kts46.serverApi import RPCServerException
 from kts46.CouchDBStorage import CouchDBStorage
 
 def _notificationThreadImplementation(worker):
     while True:
-        worker.enableEvent.wait()
+        worker.enableNotificationEvent.wait()
         time.sleep(worker.notificationSleepTimeout)
         # Event may have been disabled while we were waiting, so check here again.
-        if worker.enableEvent.is_set():
+        if worker.enableNotificationEvent.is_set():
             logger.info('[%s] Sending notification to server...', threading.currentThread().name)
             worker.server.reportStatus(worker.workerId, 'working')
 
@@ -59,7 +59,7 @@ class Worker:
 
 
     def run(self):
-        "Runs a worker."
+        "Runs a worker loop."
 
         # Start run loop.
         while True:
@@ -70,8 +70,8 @@ class Worker:
             # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
             # is a better way than comparing strings but that works.
             if str(task) == "None":
-                sleepTime = cfg.getfloat('worker', 'checkTimeout')
-                logger.debug('Worker has nothing to do. Sleeping for %f s.', sleepTime)
+                sleepTime = self.cfg.getfloat('worker', 'checkTimeout')
+                self.log.debug('Worker has nothing to do. Sleeping for %f s.', sleepTime)
                 time.sleep(sleepTime) # Wait some time for new job.
                 continue
 
@@ -96,15 +96,15 @@ class Worker:
             self.server.reportStatus(self.workerId, 'finished')
 
 
-
     def getServer(self):
         "Creates proxy for RPC server with scheduler."
         # Create RPC proxy.
-        host = self.cfg.get('rpc-server', 'server')
+        host = self.cfg.get('rpc-server', 'address')
         port = self.cfg.getint('rpc-server', 'port')
         connString = 'http://%s:%i' % (host, port)
         proxy = xmlrpclib.ServerProxy(connString)
         return proxy
+
 
     def startNotificationThread(self):
         "Starts thread to notify scheduler about worker availability and returns Thread object."
@@ -112,6 +112,7 @@ class Worker:
         t.daemon = True
         t.start()
         return t
+
 
     def getJob(self, projectName, jobName):
         if projectName not in self.storage:
@@ -122,4 +123,3 @@ class Worker:
             msg = "Job with name '{0}' doesn't exist in project '{1}'."
             raise WorkerException(msg.format(jobName, projectName))
         return project[jobName]
-
