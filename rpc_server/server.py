@@ -23,6 +23,7 @@ import logging, sys, socket
 from ConfigParser import SafeConfigParser
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from multiprocessing import Process
+from optparse import OptionParser
 # Project imports
 PROJECT_LIB_PATH = '../lib/'
 if PROJECT_LIB_PATH not in sys.path:
@@ -32,14 +33,25 @@ from kts46.server.worker import Worker
 from kts46.server.rpc import RPCServer
 
 
-def startWorker(cfg):
-    worker = Worker(cfg)
+def startWorker(cfg, id=None):
+    worker = Worker(cfg, id)
     worker.run()
+
+def configureCmdOptions():
+    usage = "usage: %prog [options] <server type>*"
+    epilog = """<server type> could be: rpc-server or worker."""
+
+    cmdOpts = OptionParser(usage=usage, epilog=epilog)
+    cmdOpts.add_option('-i', '--worker-id', action='store', dest='wid', default=None,
+                       help='Worker id. Must be unique in a network of workers.')
+    return cmdOpts.parse_args(sys.argv[1:])
+
 
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration()
     kts46.utils.configureLogging(cfg)
     logger = logging.getLogger(cfg.get('loggers', 'RPCServer'))
+    options, args = configureCmdOptions()
 
     # Create and configure server.
     address = cfg.get('rpc-server', 'bind-address')
@@ -51,7 +63,8 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Check whether RPC server is actually enabled in this instance.
-    if cfg.getboolean('servers', 'rpc-server'):
+    #if cfg.getboolean('servers', 'rpc-server'):
+    if 'rpc-server' in args:
         logger.info('RPC server is enabled.')
         server = RPCServer(cfg)
         rpcserver.register_instance(server)
@@ -59,9 +72,10 @@ if __name__ == '__main__':
         logger.info('RPC server is disabled, but will be started as a dummy.')
 
     # Check whether worker is enabled in this instance.
-    if cfg.getboolean('servers', 'worker'):
+    #if cfg.getboolean('servers', 'worker'):
+    if 'worker' in args:
         logger.info('Worker is enabled.')
-        p = Process(target=startWorker, args=(cfg,))
+        p = Process(target=startWorker, args=(cfg, options.wid))
         p.start()
     else:
         logger.info('Worker is disabled.')
