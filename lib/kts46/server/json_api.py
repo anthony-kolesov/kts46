@@ -34,7 +34,7 @@ class JSONApiServer:
 
     def createProxy(self, cfg):
         # Create RPC proxy.
-        host = cfg.get('json_api', 'server')
+        host = cfg.get('rpc-server', 'address')
         port = cfg.getint('rpc-server', 'port')
         connString = 'http://%s:%i' % (host, port)
         proxy = xmlrpclib.ServerProxy(connString)
