@@ -19,7 +19,7 @@ License:
    limitations under the License.
 """
 
-import logging, logging.handlers, sys
+import logging, logging.handlers, sys, socket
 from ConfigParser import SafeConfigParser
 from multiprocessing.managers import SyncManager
 from SimpleXMLRPCServer import SimpleXMLRPCServer
@@ -93,7 +93,11 @@ if __name__ == '__main__':
     # Create and configure server.
     address = cfg.get('rpc-server', 'address')
     port = cfg.getint('rpc-server', 'port')
-    rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
+    try:
+        rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
+    except socket.error:
+        logger.fatal("Couldn't bind to specified IP address: {0}.".format(address))
+        sys.exit(1)
 
     # Register functions.
     server = Server(cfg)
