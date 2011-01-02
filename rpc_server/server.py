@@ -19,7 +19,7 @@ License:
    limitations under the License.
 """
 
-import logging, sys, socket
+import logging, sys, socket, signal
 from ConfigParser import SafeConfigParser
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from multiprocessing import Process
@@ -58,24 +58,6 @@ if __name__ == '__main__':
     logger = logging.getLogger(cfg.get('loggers', 'RPCServer'))
     options, args = configureCmdOptions()
 
-    # Create and configure server.
-    address = cfg.get('rpc-server', 'bind-address')
-    port = cfg.getint('rpc-server', 'port')
-    try:
-        rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
-    except socket.error:
-        logger.fatal("Couldn't bind to specified IP address: {0}.".format(address))
-        sys.exit(1)
-
-    # Check whether RPC server is actually enabled in this instance.
-    #if cfg.getboolean('servers', 'rpc-server'):
-    if 'rpc-server' in args:
-        logger.info('RPC server is enabled.')
-        server = RPCServer(cfg)
-        rpcserver.register_instance(server)
-    else:
-        logger.info('RPC server is disabled, but will be started as a dummy.')
-
     # Check whether worker is enabled in this instance.
     #if cfg.getboolean('servers', 'worker'):
     if 'worker' in args:
@@ -93,6 +75,24 @@ if __name__ == '__main__':
     else:
         logger.info('HTTP server is disabled.')
 
-    # Run server.
-    logger.info('Starting RPC server...')
-    rpcserver.serve_forever()
+    # Check whether RPC server is actually enabled in this instance.
+    if 'rpc-server' in args:
+        logger.info('RPC server is enabled.')
+
+        # Create and configure server.
+        address = cfg.get('rpc-server', 'bind-address')
+        port = cfg.getint('rpc-server', 'port')
+        try:
+            rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
+        except socket.error:
+            logger.fatal("Couldn't bind to specified IP address: {0}.".format(address))
+            sys.exit(1)
+
+        server = RPCServer(cfg)
+        rpcserver.register_instance(server)
+        # Run server.
+        logger.info('Starting RPC server...')
+        rpcserver.serve_forever()
+    else:
+        logger.info('RPC server is disabled.')
+        signal.pause()
