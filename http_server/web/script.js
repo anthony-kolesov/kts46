@@ -198,6 +198,12 @@ var kts46 = (function($){
     $(document).ready(function(){
         $('.jqueryui-button').button();
         $('.add-project-button').click(addProject);
+        $('#progress-table').grid('initialize', {columns: [
+            {name:'Run'},
+            {name:'Delete'},
+            {name:'Name'},
+            {name:'Progress'}
+        ] });
         kts46.updateStatus();
         setInterval("kts46.updateStatus();", serverPollInterval);
     });

@@ -32,6 +32,7 @@ import kts46.utils
 from kts46.server.worker import Worker
 from kts46.server.rpc import RPCServer
 from kts46.server.json_api import JSONApiServer
+from kts46.server.supervisor import Supervisor
 
 
 def startWorker(cfg, id=None):
@@ -42,9 +43,14 @@ def startHTTPServer(cfg):
     apiServer = JSONApiServer(cfg)
     apiServer.serve_forever()
 
+def startSupervisor(cfg):
+    supervisor = Supervisor(cfg)
+    supervisor.start()
+
+
 def configureCmdOptions():
     usage = "usage: %prog [options] <server type>*"
-    epilog = """<server type> could be: rpc-server, worker and/or http."""
+    epilog = """<server type> could be: rpc-server, worker, supervisor and/or http."""
 
     cmdOpts = OptionParser(usage=usage, epilog=epilog)
     cmdOpts.add_option('-i', '--worker-id', action='store', dest='wid', default=None,
@@ -74,6 +80,14 @@ if __name__ == '__main__':
         httpServerProcess.start()
     else:
         logger.info('HTTP server is disabled.')
+
+    # Start supervisor if required.
+    if "supervisor" in args:
+        logger.info("Supervisor is enabled.")
+        supervisorProcess = Process(target=startSupervisor, args=(cfg,))
+        supervisorProcess.start()
+    else:
+        logger.info("Supervisor is disabled.")
 
     # Check whether RPC server is actually enabled in this instance.
     if 'rpc-server' in args:

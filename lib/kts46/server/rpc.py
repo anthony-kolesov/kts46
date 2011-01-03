@@ -43,6 +43,11 @@ class RPCServer:
     def reportStatus(self, workerId, state):
         self._scheduler.reportStatus(workerId, state)
 
+    def getCurrentTasks(self): return self._scheduler.getCurrentTasks()
+
+    def restartTask(self, workerId, lastUpdate):
+        return self._scheduler.restartTask(workerId, lastUpdate)
+
     # Database functions.
     def getNewJobId(self, projectName):
         return self._db.getNewJobId(projectName)
