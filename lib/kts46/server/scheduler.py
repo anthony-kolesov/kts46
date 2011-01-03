@@ -115,3 +115,38 @@ class SchedulerServer:
             del self._currentTasks[workerId]
             self._waitingTasks.task_done()
             self.runJob(task['project'], task['job'])
+
+    def getCurrentTasks(self):
+        """Gets status of current tasks. This function is used by supervisor to
+        find staled tasks."""
+
+        r = []
+        for workerId in self._currentTasks.keys():
+            task = self._currentTasks[workerId]
+            info = {'workerId': workerId,
+                    'lastUpdate': task['lastUpdate'],
+                    'project': task['task']['project'],
+                    'job': task['task']['job']}
+            r.append(info)
+        return r
+
+    def restartTask(self, workerId, lastUpdate):
+        if workerId not in self._currentTasks:
+            msg = "Couldn't restart task because workerId `{wid}` is unknown."
+            msg = msg.format(wid=workerId)
+            self._log.error(msg)
+            return False
+
+        taskInfo = self._currentTasks[workerId]
+        task = taskInfo['task']
+
+        if taskInfo['lastUpdate'] != lastUpdate:
+            msg = "Couldn't restart task `{p}.{j}` because `lastUpdate` is invalid."
+            msg = msg.format(p=task['project'], j=task['job'])
+            self._log.error(msg)
+            return False
+
+        # Report tasks as aborted and add it to queue again.
+        self.reportStatus(workerId, self.stateNameAbort)
+        self.runJob(task['project'], task['job'])
+        return True

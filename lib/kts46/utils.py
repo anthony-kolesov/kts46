@@ -15,7 +15,7 @@ License:
    limitations under the License.
 """
 
-import logging, logging.handlers
+import logging, logging.handlers, xmlrpclib
 from ConfigParser import SafeConfigParser
 
 
@@ -54,3 +54,11 @@ def getLogger(cfg):
     logger = logging.getLogger(cfg.get('log', 'loggerName'))
     logger.setLevel(logging.INFO)
     return logger
+
+def getRPCServerProxy(cfg):
+    # Create RPC proxy.
+    host = cfg.get('rpc-server', 'address')
+    port = cfg.getint('rpc-server', 'port')
+    connString = 'http://{host}:{port}'.format(host=host, port=port)
+    proxy = xmlrpclib.ServerProxy(connString)
+    return proxy

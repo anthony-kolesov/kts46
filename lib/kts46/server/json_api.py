@@ -15,14 +15,15 @@ License:
    limitations under the License.
 """
 
-import logging, BaseHTTPServer, re, xmlrpclib, json, os.path
+import logging, BaseHTTPServer, re, json, os.path
+import kts46.utils
 
 
 class JSONApiServer:
     "Provides HTTP server that provides control over simulation with JSON API."
 
     def __init__(self, cfg):
-        self.server = self.createProxy(cfg)
+        self.server = kts46.utils.getRPCServerProxy(cfg)
         self.cfg = cfg
 
     def serve_forever(self):
@@ -32,14 +33,6 @@ class JSONApiServer:
         httpd.logger = logging.getLogger('HTTPServer')
         httpd.filesDir = self.cfg.get('http-api', 'filesDir')
         httpd.serve_forever()
-
-    def createProxy(self, cfg):
-        # Create RPC proxy.
-        host = cfg.get('rpc-server', 'address')
-        port = cfg.getint('rpc-server', 'port')
-        connString = 'http://%s:%i' % (host, port)
-        proxy = xmlrpclib.ServerProxy(connString)
-        return proxy
 
 
 class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
