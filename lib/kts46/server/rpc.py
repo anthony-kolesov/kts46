@@ -99,5 +99,9 @@ class RPCServer:
         return self._status.getProjectStatus(project)
 
     def getServerStatus(self):
-        self._log.info('Method: getServerStatus')
-        return self._status.getServerStatus()
+        self._log.debug('Method: getServerStatus')
+        try:
+            return self._status.getServerStatus()
+        except AttributeError as ex:
+            self._log.error('Method `getServerStatus`: ' + str(ex))
+            return []

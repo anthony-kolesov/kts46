@@ -3,7 +3,7 @@ Provides database server that is able to manage projects and jobs in the
 database.
 
 License:
-   Copyright 2010 Anthony Kolesov
+   Copyright 2010-2011 Anthony Kolesov
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
