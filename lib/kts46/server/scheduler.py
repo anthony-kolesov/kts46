@@ -28,6 +28,9 @@ from kts46.CouchDBStorage import CouchDBStorage
 class SchedulerManager(SyncManager): pass
 
 
+class SchedulerException(Exception): pass
+
+
 class SchedulerServer:
 
     def __init__(self, configuration):
@@ -94,22 +97,34 @@ class SchedulerServer:
             return None
 
         self._log.info('Starting task: project={0}, job={1}'.format(task['project'], task['job']))
-        self._currentTasks[workerId] = {'task': task, 'lastUpdate': datetime.utcnow()}
+        task['lastUpdate'] = datetime.utcnow()
+        self._currentTasks[workerId] = task
         return task
 
 
-    def reportStatus(self, workerId, state):
-        taskInfo = self._currentTasks[workerId]
-        task = taskInfo['task']
+    def reportStatus(self, workerId, state, lastUpdate):
+        # Check that worker id is available.
+        if workerId not in self._currentTasks:
+            raise SchedulerException("There is no current tasks for specified worker id.")
+
+        task = self._currentTasks[workerId]
+
+        if lastUpdate != task['lastUpdate']:
+            raise SchedulerException("""Last update timestamps doesn't match.
+Is seems that something changed state of the task. Your: {0}. Has: {1}.""".format(
+            lastUpdate, task['lastUpdate']))
+
         if state == self.stateNameWorking:
             self._log.info('Task is still in progress: {0}.{1}, worker={2}'.format(
                 task['project'], task['job'], workerId))
-            taskInfo['lastUpdate'] = datetime.utcnow()
+            task['lastUpdate'] = datetime.utcnow()
+            self._currentTasks[workerId] = task
+            return task['lastUpdate']
         elif state == self.stateNameAbort:
             self._log.info('Aborting task: {0}.{1}.'.format(task['project'], task['job']))
             del self._currentTasks[workerId]
             self._waitingTasks.task_done()
-            self._waitingTasks.append(task)
+            self._waitingTasks.put(task)
         elif state == self.stateNameFinished:
             self._log.info('Task is finished: {0}.{1}.'.format(task['project'], task['job']))
             del self._currentTasks[workerId]
@@ -125,8 +140,8 @@ class SchedulerServer:
             task = self._currentTasks[workerId]
             info = {'workerId': workerId,
                     'lastUpdate': task['lastUpdate'],
-                    'project': task['task']['project'],
-                    'job': task['task']['job']}
+                    'project': task['project'],
+                    'job': task['job']}
             r.append(info)
         return r
 
@@ -137,16 +152,15 @@ class SchedulerServer:
             self._log.error(msg)
             return False
 
-        taskInfo = self._currentTasks[workerId]
-        task = taskInfo['task']
+        task = self._currentTasks[workerId]
 
-        if taskInfo['lastUpdate'] != lastUpdate:
+        if task['lastUpdate'] != lastUpdate:
             msg = "Couldn't restart task `{p}.{j}` because `lastUpdate` is invalid."
             msg = msg.format(p=task['project'], j=task['job'])
             self._log.error(msg)
             return False
 
         # Report tasks as aborted and add it to queue again.
-        self.reportStatus(workerId, self.stateNameAbort)
+        self.reportStatus(workerId, self.stateNameAbort, lastUpdate)
         self.runJob(task['project'], task['job'])
         return True
