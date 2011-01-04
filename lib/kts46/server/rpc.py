@@ -15,6 +15,7 @@ License:
    limitations under the License.
 """
 
+import logging
 from kts46.server.scheduler import SchedulerServer
 from kts46.server.database import DatabaseServer
 from kts46.server.status import StatusServer
@@ -27,50 +28,76 @@ class RPCServer:
         self._scheduler = SchedulerServer(cfg)
         self._db = DatabaseServer(cfg)
         self._status = StatusServer(cfg)
+        self._log = logging.getLogger(cfg.get('loggers', 'RPCServer'))
 
     def hello(self):
         "Test method to check that server is working fine."
+        self._log.info('Method: hello')
         msg = "Hello you too! This is XML-RPC server for kts46."
         return msg
 
     # Scheduler functions.
     def runJob(self, projectName, jobName):
+        self._log.info('Method: runJob %s %s', projectName, jobName)
         self._scheduler.runJob(projectName, jobName)
 
     def getJob(self, workerId):
+        self._log.info('Method: getJob %s', workerId)
         return self._scheduler.getJob(workerId)
 
-    def reportStatus(self, workerId, state):
-        self._scheduler.reportStatus(workerId, state)
+    def reportStatus(self, workerId, state, lastUpdate):
+        self._log.info('Method: reportStatus %s %s %s', workerId, state, lastUpdate)
+        return self._scheduler.reportStatus(workerId, state, lastUpdate)
 
-    def getCurrentTasks(self): return self._scheduler.getCurrentTasks()
+    def getCurrentTasks(self):
+        self._log.info('Method: getCurrentTasks')
+        return self._scheduler.getCurrentTasks()
 
     def restartTask(self, workerId, lastUpdate):
+        self._log.info('Method: restartTask %s %s', workerId, lastUpdate)
         return self._scheduler.restartTask(workerId, lastUpdate)
 
     # Database functions.
     def getNewJobId(self, projectName):
+        self._log.info('Method: getNewJobId %s', projectName)
         return self._db.getNewJobId(projectName)
 
     def createProject(self, projectName):
+        self._log.info('Method: createProject %s', projectName)
         self._db.createProject(projectName)
 
     def projectExists(self, projectName):
+        self._log.info('Method: projectExists %s', projectName)
         return self._db.projectExists(projectName)
 
     def deleteProject(self, projectName):
+        self._log.info('Method: deleteProject %s', projectName)
         self._db.deleteProject(projectName)
 
     def addJob(self, projectName, jobName, definition):
+        self._log.info('Method: addJob %s %s ...', projectName, jobName)
         self._db.addJob(projectName, jobName, definition)
 
     def jobExists(self, projectName, jobName):
+        self._log.info('Method: jobExists %s %s', projectName, jobName)
         return self._db.jobExists(projectName, jobName)
 
     def deleteJob(self, projectName, jobName):
+        self._log.info('Method: deleteJob %s %s', projectName, jobName)
         self._db.deleteJob(projectName, jobName)
 
-    def getJobStatus(self, project, job): return self._status.getJobStatus(project, job)
-    def getJobsList(self, project): return self._status.getJobsList(project)
-    def getProjectStatus(self, project): return self._status.getProjectStatus(project)
-    def getServerStatus(self): return self._status.getServerStatus()
+    def getJobStatus(self, project, job):
+        self._log.info('Method: getJobStatus %s %s', project, job)
+        return self._status.getJobStatus(project, job)
+
+    def getJobsList(self, project):
+        self._log.info('Method: getJobsList %s', project)
+        return self._status.getJobsList(project)
+
+    def getProjectStatus(self, project):
+        self._log.info('Method: getProjectStatus %s', project)
+        return self._status.getProjectStatus(project)
+
+    def getServerStatus(self):
+        self._log.info('Method: getServerStatus')
+        return self._status.getServerStatus()

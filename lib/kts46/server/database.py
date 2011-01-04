@@ -86,5 +86,6 @@ class DatabaseServer:
 
     def deleteJob(self, projectName, jobName):
         "Deletes job with specified name if it exists. Otherwise throws RPCServerException."
+        self._log.info("Deleting job: {0}.{1}.".format(projectName, jobName))
         p = self.storage[projectName]
         del p[jobName]

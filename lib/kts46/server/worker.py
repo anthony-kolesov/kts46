@@ -17,6 +17,7 @@ License:
 
 import threading, time, logging, uuid, xmlrpclib
 from xmlrpclib import ServerProxy
+import kts46.utils
 from kts46.serverApi import RPCServerException
 from kts46.CouchDBStorage import CouchDBStorage
 from kts46.simulationServer import SimulationServer
@@ -26,10 +27,15 @@ def _notificationThreadImplementation(worker):
     while True:
         worker.enableNotificationEvent.wait()
         time.sleep(worker.notificationSleepTimeout)
+
+        # Acquire lock here so worker will not remove it after condition test.
+        worker.lastUpdateLock.acquire()
         # Event may have been disabled while we were waiting, so check here again.
         if worker.enableNotificationEvent.is_set():
-            logger.info('[%s] Sending notification to server...', threading.currentThread().name)
-            worker.server.reportStatus(worker.workerId, 'working')
+            worker.log.info('[%s] Sending notification to server...', threading.currentThread().name)
+            lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
+            worker.lastUpdate = lu
+        worker.lastUpdateLock.release()
 
 
 class WorkerException(Exception): pass
@@ -49,11 +55,12 @@ class Worker:
             self.workerId = str(uuid.uuid4())
 
         self.enableNotificationEvent = threading.Event()
+        self.lastUpdateLock = threading.Lock()
         # Take default timeout from scheduler configuration.
         self.notificationSleepTimeout = cfg.getint('scheduler', 'timeout')
 
         # Create server proxy.
-        self.server = self.getServer()
+        self.server = kts46.utils.getRPCServerProxy(cfg)
         self.startNotificationThread()
 
         # Create db storage.
@@ -80,6 +87,9 @@ class Worker:
             # There is a task.
             projectName = task.get('project')
             jobName = task.get('job')
+            # Report status isn't enabled at this time, so no need to lock.
+            self.lastUpdate = task.get('lastUpdate')
+
             self.notificationSleepTimeout = task.get('timeout')
             self.enableNotificationEvent.set() # Start notifying scheduler about our state.
             job = self.getJob(projectName, jobName)
@@ -94,18 +104,11 @@ class Worker:
                 stServer.calculate(projectName, job)
 
             # Notify server.
+            # Lock here so if condition in sync thread will be correct.
+            self.lastUpdateLock.acquire()
             self.enableNotificationEvent.clear() # Stop notifying scheduler.
-            self.server.reportStatus(self.workerId, 'finished')
-
-
-    def getServer(self):
-        "Creates proxy for RPC server with scheduler."
-        # Create RPC proxy.
-        host = self.cfg.get('rpc-server', 'address')
-        port = self.cfg.getint('rpc-server', 'port')
-        connString = 'http://%s:%i' % (host, port)
-        proxy = xmlrpclib.ServerProxy(connString)
-        return proxy
+            self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
+            self.lastUpdateLock.release()
 
 
     def startNotificationThread(self):

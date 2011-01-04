@@ -61,7 +61,7 @@ def configureCmdOptions():
 if __name__ == '__main__':
     cfg = kts46.utils.getConfiguration()
     kts46.utils.configureLogging(cfg)
-    logger = logging.getLogger(cfg.get('loggers', 'RPCServer'))
+    logger = logging.getLogger(cfg.get('loggers', 'Node'))
     options, args = configureCmdOptions()
 
     # Check whether worker is enabled in this instance.
