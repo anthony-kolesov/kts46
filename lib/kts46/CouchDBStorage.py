@@ -1,6 +1,6 @@
 """
 License:
-   Copyright 2010 Anthony Kolesov
+   Copyright 2010-2011 Anthony Kolesov
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -174,8 +174,16 @@ class SimulationProject:
         defs = [ ]
         for defStr in defsStr:
             defs.append(couchdb.design.ViewDefinition(defStr['doc'], defStr['view'], defStr['map']))
-        couchdb.design.ViewDefinition.sync_many(self.
-                                                db, defs)
+        couchdb.design.ViewDefinition.sync_many(self.db, defs)
+
+        # To speed things upon first request here I will try to call each view
+        # manually, so while inserting values indexes will be updated and first
+        # query to views will be fast.
+        len(self.db.view("basicStats/addCar"))
+        len(self.db.view("basicStats/deleteCar"))
+        len(self.db.view("manage/jobs"))
+        len(self.db.view("manage/states"))
+
 
     def getNewJobId(self):
         """Creates new job id.
