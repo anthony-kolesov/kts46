@@ -1,6 +1,6 @@
 """
 License:
-   Copyright 2010 Anthony Kolesov
+   Copyright 2010-2011 Anthony Kolesov
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ License:
 
 import threading, time, logging, uuid, xmlrpclib
 from xmlrpclib import ServerProxy
+from socket import error as SocketException
 import kts46.utils
 from kts46.serverApi import RPCServerException
 from kts46.CouchDBStorage import CouchDBStorage
@@ -33,7 +34,12 @@ def _notificationThreadImplementation(worker):
         # Event may have been disabled while we were waiting, so check here again.
         if worker.enableNotificationEvent.is_set():
             worker.log.info('[%s] Sending notification to server...', threading.currentThread().name)
-            lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
+            try:
+                lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
+            except SocketException, msg:
+                # Continue to work even if connection failed. Hope that next
+                # time will be successful.
+                worker.log.warning("Connection to RPC server failed. Couldn't notify server about task status. Continue to work.")
             worker.lastUpdate = lu
         worker.lastUpdateLock.release()
 
@@ -73,7 +79,11 @@ class Worker:
         # Start run loop.
         while True:
             # Try to get a task.
-            task = self.server.getJob(self.workerId)
+            try:
+                task = self.server.getJob(self.workerId)
+            except SocketException, msg:
+                self.log.error("Couldn't connect to RPC server. Message: %s", msg)
+                task = None
 
             # Sleep if there is nothing to do.
             # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
@@ -107,7 +117,14 @@ class Worker:
             # Lock here so if condition in sync thread will be correct.
             self.lastUpdateLock.acquire()
             self.enableNotificationEvent.clear() # Stop notifying scheduler.
-            self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
+            finishedSent = False
+            while not finishedSent:
+                try:
+                    self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
+                    finishedSent = True
+                except SocketException, msg:
+                    self.log.error("Connection to RPC server failed. Waiting for it.")
+                    time.sleep(self.cfg.getfloat('worker', 'checkInterval'))
             self.lastUpdateLock.release()
 
 
