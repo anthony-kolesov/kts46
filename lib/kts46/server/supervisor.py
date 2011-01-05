@@ -17,6 +17,7 @@ License:
 
 import logging, time
 from datetime import datetime, timedelta
+from socket import error as SocketException
 import kts46.utils
 
 
@@ -38,19 +39,28 @@ class Supervisor:
             self.checkTasks()
 
     def checkTasks(self):
-        tasks = self.server.getCurrentTasks()
+        self.log.info('Starting to check scheduler for staled tasks.')
+
+        try:
+            tasks = self.server.getCurrentTasks()
+        except SocketException, msg:
+            self.log.error("Couldn't connect to RPC server. Message: %s", msg)
+            return
+
         # Get current border of deletion: utcnow() - restartTaskTimeout.
         # utcnow() is used in scheduler for lastUpdate so it here also.
-
-        self.log.info('Starting to check scheduler for staled tasks.')
         deadline = datetime.utcnow() - self.restartTaskTimeout
         for task in tasks:
             lastUpdate = task['lastUpdate'] # is a datetime instance.
             if lastUpdate < deadline:
                 # Restart it!
                 self.log.info('Restarting staled task for worker %s.', task['workerId'])
-                r = self.server.restartTask(task['workerId'], lastUpdate)
-                if r:
-                    self.log.debug("Task successfully restarted.")
+                try:
+                    r = self.server.restartTask(task['workerId'], lastUpdate)
+                except SocketException, msg:
+                    self.log.error("Couldn't connect to RPC server. Skipping message.")
                 else:
-                    self.log.warning("Scheduler didn't restarted job. Check its log for reason.")
+                    if r:
+                        self.log.debug("Task successfully restarted.")
+                    else:
+                        self.log.warning("Scheduler didn't restarted job. Check its log for reason.")
