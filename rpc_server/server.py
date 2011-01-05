@@ -85,7 +85,7 @@ if __name__ == '__main__':
 
     rpcProcess, workerProcess = (None, None)
     supervisorProcess, httpProcess = (None, None)
-    checkInterval = cfg.get('node', 'deadChildCheckInterval')
+    checkInterval = cfg.getfloat('node', 'deadChildCheckInterval')
 
     while True:
         if 'rpc-server' in args:

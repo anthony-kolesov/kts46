@@ -16,6 +16,7 @@ License:
 """
 
 import logging, BaseHTTPServer, re, json, os.path
+from socket import error as SocketException
 import kts46.utils
 
 
@@ -78,24 +79,29 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             return
 
-        rpc = self.server.rpc_server
-        functionName = match.group(1)
-        if functionName == 'projectStatus':
-            functionMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
-            projectName = functionMatch.group(2)
-            data = rpc.getProjectStatus(projectName)
-        elif functionName == 'serverStatus':
-            data = rpc.getServerStatus()
-        elif functionName == 'addProject' or functionName == 'deleteProject':
-            projectNameMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
-            projectName = projectNameMatch.group(2)
-            if functionName == 'addProject':
-                rpc.createProject(projectName)
+        try:
+            rpc = self.server.rpc_server
+            functionName = match.group(1)
+            if functionName == 'projectStatus':
+                functionMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
+                projectName = functionMatch.group(2)
+                data = rpc.getProjectStatus(projectName)
+            elif functionName == 'serverStatus':
+                data = rpc.getServerStatus()
+            elif functionName == 'addProject' or functionName == 'deleteProject':
+                projectNameMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
+                projectName = projectNameMatch.group(2)
+                if functionName == 'addProject':
+                    rpc.createProject(projectName)
+                else:
+                    rpc.deleteProject(projectName)
+                data = {'result': 'success'}
             else:
-                rpc.deleteProject(projectName)
-            data = {'result': 'success'}
-        else:
-            data = None
+                data = None
+        except SocketException, msg:
+            self.log_error('Error connecting with RPC-server: %s', msg)
+            data = {'result': 'fail',
+                    'error': "Couldn't connect to RPC server." }
 
         if data is None:
             self.send_response(404)
@@ -114,19 +120,24 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         success = True
         found = True
 
-        if functionName == 'addJob':
-            rpc = self.server.rpc_server
-            data = json.loads(self.rfile.readline())
-            rpc.addJob(data['project'], data['job'], data['definition'])
-        elif functionName == 'deleteJob':
-            data = json.loads(self.rfile.readline())
-            self.server.rpc_server.deleteJob(data['project'], data['job'])
-        elif functionName == 'runJob':
-            data = json.loads(self.rfile.readline())
-            self.server.rpc_server.runJob(data['project'], data['job'])
-        else:
-            success = False
-            found = False
+        try:
+            if functionName == 'addJob':
+                rpc = self.server.rpc_server
+                data = json.loads(self.rfile.readline())
+                rpc.addJob(data['project'], data['job'], data['definition'])
+            elif functionName == 'deleteJob':
+                data = json.loads(self.rfile.readline())
+                self.server.rpc_server.deleteJob(data['project'], data['job'])
+            elif functionName == 'runJob':
+                data = json.loads(self.rfile.readline())
+                self.server.rpc_server.runJob(data['project'], data['job'])
+            else:
+                success = False
+                found = False
+        except SocketException, msg:
+            self.log_error('Error connecting with RPC-server: %s', msg)
+            data = {'result': 'fail',
+                    'error': "Couldn't connect to RPC server." }
 
         if success:
             self.send_response(200)

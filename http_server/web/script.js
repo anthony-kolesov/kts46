@@ -95,6 +95,10 @@ var kts46 = (function($){
     
     var updateStatus = function() {
         $.getJSON('/api/serverStatus/', function(data) {
+            if (data.result === "fail") {
+                return;
+            }
+            
             var progressBlock = $('.progress-block');
             progressBlock.empty(); // remove previous
             for (var i in data) {
