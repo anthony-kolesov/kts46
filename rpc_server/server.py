@@ -24,6 +24,7 @@ from ConfigParser import SafeConfigParser
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from multiprocessing import Process
 from optparse import OptionParser
+from time import sleep
 # Project imports
 PROJECT_LIB_PATH = '../lib/'
 if PROJECT_LIB_PATH not in sys.path:
@@ -48,6 +49,24 @@ def startSupervisor(cfg):
     supervisor.start()
 
 
+def startRPCServer(cfg, log):
+    logger.info('RPC server is enabled.')
+
+    # Create and configure server.
+    address = cfg.get('rpc-server', 'bind-address')
+    port = cfg.getint('rpc-server', 'port')
+    try:
+        rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
+    except socket.error:
+        log.fatal("Couldn't bind to specified IP address: {0}.".format(address))
+        sys.exit(1)
+
+    server = RPCServer(cfg)
+    rpcserver.register_instance(server)
+    # Run server.
+    log.info('Starting RPC server...')
+    rpcserver.serve_forever()
+
 def configureCmdOptions():
     usage = "usage: %prog [options] <server type>*"
     epilog = """<server type> could be: rpc-server, worker, supervisor and/or http."""
@@ -64,49 +83,28 @@ if __name__ == '__main__':
     logger = logging.getLogger(cfg.get('loggers', 'Node'))
     options, args = configureCmdOptions()
 
-    # Check whether worker is enabled in this instance.
-    #if cfg.getboolean('servers', 'worker'):
-    if 'worker' in args:
-        logger.info('Worker is enabled.')
-        p = Process(target=startWorker, args=(cfg, options.wid))
-        p.start()
-    else:
-        logger.info('Worker is disabled.')
+    rpcProcess, workerProcess = (None, None)
+    supervisorProcess, httpProcess = (None, None)
 
-    # Start HTTP API server if required.
-    if 'http' in args:
-        logger.info('HTTP server is enabled.')
-        httpServerProcess = Process(target=startHTTPServer, args=(cfg,))
-        httpServerProcess.start()
-    else:
-        logger.info('HTTP server is disabled.')
-
-    # Start supervisor if required.
-    if "supervisor" in args:
-        logger.info("Supervisor is enabled.")
-        supervisorProcess = Process(target=startSupervisor, args=(cfg,))
-        supervisorProcess.start()
-    else:
-        logger.info("Supervisor is disabled.")
-
-    # Check whether RPC server is actually enabled in this instance.
-    if 'rpc-server' in args:
-        logger.info('RPC server is enabled.')
-
-        # Create and configure server.
-        address = cfg.get('rpc-server', 'bind-address')
-        port = cfg.getint('rpc-server', 'port')
-        try:
-            rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
-        except socket.error:
-            logger.fatal("Couldn't bind to specified IP address: {0}.".format(address))
-            sys.exit(1)
-
-        server = RPCServer(cfg)
-        rpcserver.register_instance(server)
-        # Run server.
-        logger.info('Starting RPC server...')
-        rpcserver.serve_forever()
-    else:
-        logger.info('RPC server is disabled.')
-        signal.pause()
+    while True:
+        if 'rpc-server' in args:
+            if rpcProcess is None or not rpcProcess.is_alive():
+                logger.info("Starting RPC server process.")
+                rpcProcess = Process(target=startRPCServer, args=(cfg, logger))
+                rpcProcess.start()
+        if 'worker' in args:
+            if workerProcess is None or not workerProcess.is_alive():
+                logger.info("Starting worker process.")
+                workerProcess = Process(target=startWorker, args=(cfg, options.wid))
+                workerProcess.start()
+        if 'http' in args:
+            if httpProcess is None or not httpProcess.is_alive():
+                logger.info("Starting http process.")
+                httpProcess = Process(target=startHTTPServer, args=(cfg,))
+                httpProcess.start()
+        if 'supervisor' in args:
+            if supervisorProcess is None or not supervisorProcess.is_alive():
+                logger.info("Starting supervisor process.")
+                supervisorProcess = Process(target=startSupervisor, args=(cfg,))
+                supervisorProcess.start()
+        sleep(30)
