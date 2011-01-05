@@ -57,7 +57,7 @@ class Worker:
         self.enableNotificationEvent = threading.Event()
         self.lastUpdateLock = threading.Lock()
         # Take default timeout from scheduler configuration.
-        self.notificationSleepTimeout = cfg.getint('scheduler', 'timeout')
+        self.notificationSleepTimeout = cfg.getint('scheduler', 'notifyInterval')
 
         # Create server proxy.
         self.server = kts46.utils.getRPCServerProxy(cfg)
@@ -79,7 +79,7 @@ class Worker:
             # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
             # is a better way than comparing strings but that works.
             if str(task) == "None":
-                sleepTime = self.cfg.getfloat('worker', 'checkTimeout')
+                sleepTime = self.cfg.getfloat('worker', 'checkInterval')
                 self.log.debug('Worker has nothing to do. Sleeping for %f s.', sleepTime)
                 time.sleep(sleepTime) # Wait some time for new job.
                 continue

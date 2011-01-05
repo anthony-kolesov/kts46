@@ -28,8 +28,8 @@ class Supervisor:
         # self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'Supervisor'))
         self.server = kts46.utils.getRPCServerProxy(cfg)
-        self.checkTimeout = cfg.getint('supervisor', 'checkTimeout')
-        restartTaskTimeout = cfg.getint('supervisor', 'restartTaskTimeout')
+        self.checkTimeout = cfg.getint('supervisor', 'checkInterval')
+        restartTaskTimeout = cfg.getint('supervisor', 'restartTaskInterval')
         self.restartTaskTimeout = timedelta(seconds=restartTaskTimeout)
 
     def start(self):
