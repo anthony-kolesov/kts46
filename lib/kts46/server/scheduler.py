@@ -41,7 +41,7 @@ class SchedulerServer:
         self._cfg = configuration
         self._log = logging.getLogger(configuration.get('loggers', 'Scheduler'))
         self.storage = CouchDBStorage(configuration.get('couchdb', 'dbaddress'))
-        self.timeout = configuration.getint('scheduler', 'timeout')
+        self.timeout = configuration.getint('scheduler', 'notifyInterval')
         # Task statuses.
         self.stateNameWorking = configuration.get('scheduler', 'workingStateName')
         self.stateNameAbort = configuration.get('scheduler', 'abortStateName')

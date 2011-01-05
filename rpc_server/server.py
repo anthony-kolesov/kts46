@@ -85,6 +85,7 @@ if __name__ == '__main__':
 
     rpcProcess, workerProcess = (None, None)
     supervisorProcess, httpProcess = (None, None)
+    checkInterval = cfg.get('node', 'deadChildCheckInterval')
 
     while True:
         if 'rpc-server' in args:
@@ -107,4 +108,4 @@ if __name__ == '__main__':
                 logger.info("Starting supervisor process.")
                 supervisorProcess = Process(target=startSupervisor, args=(cfg,))
                 supervisorProcess.start()
-        sleep(30)
+        sleep(checkInterval)
