@@ -3,6 +3,58 @@ var kts46 = (function($){
     // cfg
     var serverPollInterval = 3000; 
     
+    var addJobAction = function(projectName, allFields, dialog) {
+        // Taken from jqueryui.com
+        var checkRegexp = function( o, regexp, n ) {
+            if ( !( regexp.test( o.val() ) ) ) {
+                o.addClass( "ui-state-error" );
+                // updateTips( n );
+                return false;
+            } else {
+                return true;
+            }
+        }
+    
+        var bValid = true;
+        
+        allFields.removeClass( "ui-state-error" );
+        bValid = bValid && checkRegexp($('#add-job-name'), /^[a-zA-Z][0-9a-zA-Z_]+$/i, "Job name may consist of a-z, A-Z, 0-9, underscores, begin with a letter." );
+        bValid = bValid && checkRegexp($('#add-job-count'), /^[0-9]+$/i, "Jobs count must be a number." );
+
+        if ( bValid ) {
+            var seriesLength = 1;
+            
+            // Check series identifier
+            var isSeriesDOM = document.getElementById("add-job-is-series");
+            if (isSeriesDOM.checked) {
+                seriesLength = parseInt($('#add-job-count').val());
+            }
+            
+            var file = document.getElementById('add-job-definition').files[0];
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var definition = e.target.result;
+                var jobName = $('#add-job-name').val();
+                
+                for(var i=1; i<=seriesLength; i++){
+                    var efficientName = jobName;
+                    if (seriesLength > 1) {
+                        efficientName += '-s' + i; 
+                    }
+                    
+                    var params = JSON.stringify({
+                        project: projectName,
+                        job:  efficientName,
+                        definition: definition
+                    }) + "\n";
+                    $.post('/api/addJob/', params, function(data) {});
+                }
+                dialog.dialog( "close" );
+            };
+            reader.readAsText(file);
+        }
+    };
+    
     var addJob = function(projectName) {
         var allFields = $('#add-job-name, #add-job-definition');
     
@@ -12,47 +64,10 @@ var kts46 = (function($){
             width: 350,
             modal: true,
             buttons: {
-                "Add job": function() {
-                    // Taken from jqueryui.com
-                    var checkRegexp = function( o, regexp, n ) {
-                        if ( !( regexp.test( o.val() ) ) ) {
-                            o.addClass( "ui-state-error" );
-                            // updateTips( n );
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-                
-                    var bValid = true;
-                    
-                    allFields.removeClass( "ui-state-error" );
-                    bValid = bValid && checkRegexp($('#add-job-name'), /^[a-zA-Z]([0-9a-zA-Z_])+$/i, "Job name may consist of a-z, A-Z, 0-9, underscores, begin with a letter." );
-        
-                    if ( bValid ) {
-                        var file = document.getElementById('add-job-definition').files[0];
-                        var reader = new FileReader();
-                        var dialog = $(this);
-                        reader.onload = function(e) {
-                            var definition = e.target.result;
-                            var params = JSON.stringify({
-                                project: projectName,
-                                job:  $('#add-job-name').val(),
-                                definition: definition
-                            }) + "\n\n";
-                            $.post('/api/addJob/', params, function(data) {});
-                            dialog.dialog( "close" );
-                        };
-                        reader.readAsText(file);
-                    }
-                },
-                Cancel: function() {
-                    $( this ).dialog( "close" );
-                }
+                "Add job": function(){ addJobAction(projectName, allFields, $(this)); },
+                Cancel: function() { $(this).dialog("close"); }
             },
-            close: function() {
-                allFields.val( "" ).removeClass( "ui-state-error" );
-            }
+            close: function() { allFields.val("").removeClass("ui-state-error"); }
         });
     };
     
