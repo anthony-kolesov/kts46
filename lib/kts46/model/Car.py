@@ -1,6 +1,6 @@
 """
 License:
-   Copyright 2010 Anthony Kolesov
+   Copyright 2010-2011 Anthony Kolesov
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ class Car(yaml.YAMLObject):
     def move(self, distance):
         "Moves car on specified distance forward. Distance couldn't be negative."
         if distance < 0:
-            msg = "Distance of car moving can't be negative. " +\
+            msg = "Distance of car moving can't be negative. " + \
                 "Backwards moving isn't currently allowed."
             logging.getLogger('roadModel').error(msg)
             raise Exception(msg)
