@@ -39,13 +39,25 @@
         </div>
         
         <div id="add-job-form" title="Add job user" style="display: none;">
-            <p class="validateTips">All form fields are required.</p>
+            <p class="validateTips"><!-- All form fields are required. --></p>
             <form>
             <fieldset>
                 <label for="add-job-name">Name</label>
                 <input type="text" name="add-job-name" id="add-job-name" class="text ui-widget-content ui-corner-all" />
+                <br />
+                
                 <label for="add-job-definition">Definition file</label>
                 <input type="file" name="add-job-definition" id="add-job-definition" class="ui-widget-content ui-corner-all" />
+                <br />
+                
+                <label for="add-job-is-series">Add as a series?</label>
+                <input type="checkbox" name="add-job-is-series" id="add-job-is-series" class="ui-widget-content ui-corner-all"/>
+                <br />          
+
+                <label for="add-job-count">Job series length</label>
+                <input type="text" name="add-job-count" id="add-job-count"
+                    class="text ui-widget-content ui-corner-all" value="1" />
+                <br />
             </fieldset>
             </form>
         </div>        
