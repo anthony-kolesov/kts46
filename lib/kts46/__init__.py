@@ -19,16 +19,16 @@ License:
 
 import yaml
 from datetime import timedelta # for YAML
-import Car as CarModule,\
-    Road as RoadModule, TrafficLight as TrafficLightModule
+#import Car as CarModule,\
+#    Road as RoadModule, TrafficLight as TrafficLightModule
 
 __version__ = '0.1.2'
 
 # Create aliases.
 #CouchDBStorage = CouchDBStorageModule.CouchDBStorage
-Car = CarModule.Car
-Road = RoadModule.Road
-SimpleSemaphore = TrafficLightModule.SimpleSemaphore
+#Car = CarModule.Car
+#Road = RoadModule.Road
+#SimpleSemaphore = TrafficLightModule.SimpleSemaphore
 
 # Init YAML staff.
 def _timedeltaYAMLRepresenter(dumper, data):
