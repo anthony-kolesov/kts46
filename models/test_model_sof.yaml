@@ -15,6 +15,7 @@ minSpeed: 14
 road: !road
     length: 1677
     width: 25
+    lines: 3
 
 trafficLights:
     -   !semaphore

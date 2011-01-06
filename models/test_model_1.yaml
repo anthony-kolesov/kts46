@@ -15,6 +15,7 @@ minSpeed: 10
 road: !road
     length: 300
     width: 10
+    lines: 3
 
 trafficLights:
     -   !semaphore
