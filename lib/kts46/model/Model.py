@@ -32,7 +32,7 @@ class Model(object):
         self._road = None
         self._lastCarGenerationTime = timedelta()
         self.params = params
-        self._loggerName = 'roadModel'
+        self._loggerName = 'kts46.roadModel'
         self._logger = logging.getLogger(self._loggerName)
         self._lastCarId = -1
 
@@ -65,7 +65,7 @@ class Model(object):
                             distanceToMove = 0.0
 
                 # Check for leading car.
-                nearestCar = self.get_nearest_car(car.get_position())
+                nearestCar = self.get_nearest_car(car.get_position(), car.line)
                 if nearestCar is not None:
                     nearestCarBack = nearestCar.get_position() - nearestCar.get_length()
                     possiblePosition = nearestCarBack - stopDistance
@@ -75,34 +75,48 @@ class Model(object):
                             distanceToMove = 0.0
 
                 car.move(distanceToMove)
-                if self._road.get_length() < car.get_position():
+                if self._road.length < car.get_position():
                     # self._cars.remove(car)
                     car.state = Car.DELETED
             else:
                 self._cars.remove(car)
 
-        # If there is a car in the queue, then send it.
-        if len(self._enterQueue) > 0 and self.canAddCar():
-            self._addCar(self._enterQueue[0])
-            del self._enterQueue[0]
-
         # Generate new car.
-        # If car was added from the queue then there is no possibility to add
-        # car to the road, but it can be added to the queue so we still need to
-        # run this step.
+        # It is always added to the queue and if there is enough place then
+        # it will be instantly added to the road.
         if self._lastCarGenerationTime + newCarGenRate <= newTime:
             speedMultiplier = self.params.maxSpeed - self.params.minSpeed
             speedAdder = self.params.minSpeed
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             self._lastCarId += 1
-            newCar = Car(id=self._lastCarId, speed=speed)
+            line = math.floor(random.random() * self._road.lines)
+
+            newCar = Car(id=self._lastCarId, speed=speed, line=line)
             self._lastCarGenerationTime = newTime
-            self._logger.debug('Created car: {speed: %f}.', speed)
-            if self.canAddCar():
-                self._addCar(newCar)
+            self._logger.debug('Created car: [speed: %f].', speed)
+            #if self.canAddCar():
+            #    self._addCar(newCar)
+            #else:
+            self._enterQueue.append(newCar)
+            #    self._logger.info("Couldn't add car to the road, put in the queue.")
+
+        # If there is a car in the queue, then send it.
+        if len(self._enterQueue) > 0:
+            # Start with generated line and if it is busy try others.
+            addCar = False
+            if self.canAddCar(self._enterQueue[0].line):
+               addCar = True
             else:
-                self._enterQueue.append(newCar)
-                self._logger.info("Couldn't add car to the road, put in the queue.")
+                # This algorithms favorites first lines. That is considered
+                # logical in most cases.
+                for i in range(0, self._road.lines):
+                    if self.canAddCar(i):
+                        self._enterQueue[0].line = i
+                        addCar = False
+                        break
+            if addCar:
+                self._addCar(self._enterQueue[0])
+                del self._enterQueue[0]
 
         # Update time.
         self.time = newTime
@@ -111,25 +125,34 @@ class Model(object):
     def get_nearest_traffic_light(self, position):
         return self.get_nearest_object_in_array(self._lights, position)
 
-    def get_nearest_car(self, position):
-        return self.get_nearest_object_in_array(self._cars, position)
+    def get_nearest_car(self, position, line=0):
+        return self.get_nearest_object_in_array(self._cars, position, line)
 
-    def get_nearest_object_in_array(self, array, position):
+    def get_nearest_object_in_array(self, array, position, line=0):
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
+
+            # Check if it is in our line and skip it if not.
+            # Objects that has not line attribute affect all lines,
+            # like traffic lights. 
+            if hasattr(i, "line") and i.line != line:
+                continue
+
             # Rule out deleted cars.
-            if not hasattr(i, "state") or i.state != Car.DELETED:
-                pos = i.get_position()
-                if hasattr(i, "get_length"):
-                    pos -= i.get_length()
-                if pos > position and ((current is None) or current_pos > pos):
-                    current = i
-                    current_pos = pos
+            if hasattr(i, "state") and i.state == Car.DELETED:
+                continue
+
+            pos = i.get_position()
+            if hasattr(i, "get_length"):
+                pos -= i.get_length()
+            if pos > position and ((current is None) or current_pos > pos):
+                current = i
+                current_pos = pos
         return current
 
-    def canAddCar(self):
-        lastCar = self.get_nearest_car(-100.0) # Detect cars which are comming on the road.
+    def canAddCar(self, line=0):
+        lastCar = self.get_nearest_car(-100.0, line) # Detect cars which are comming on the road.
         return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
 
     def _addCar(self, car):
@@ -146,19 +169,6 @@ class Model(object):
         cars = {}
         for car in self._cars:
             cars[car.get_id()] = car.get_state_data()
-        #for car in self._cars:
-        #    if car.get_id() in self._lastSendCars:
-        #        cars[car.get_id()] = car.get_state_data()
-        #        del self._lastSendCars[car.get_id()]
-        #    else:
-        #        state = car.get_state_data()
-        #        state['action'] = 'add'
-        #        cars[car.get_id()] = state
-        ## Delete old cars.
-        #for carId, carValue in self._lastSendCars.iteritems():
-        #    if ("action" not in carValue) or carValue["action"] != "del":
-        #        cars[carId] = {'action': 'del'} # No need to send invalid state.
-        #self._lastSendCars = cars
         # Result.
         return {'cars': cars, 'lights': lights}
 
@@ -168,7 +178,7 @@ class Model(object):
         for light in self._lights:
             data['lights'][light.get_id()] = light.get_description_data()
         if self._road is not None:
-            data['road'] = {'length': self._road.get_length(), 'width': self._road.get_width()}
+            data['road'] = self._road.getDescriptionData()
         return json.dumps(data)
 
     def loadYAML(self, yamlData):

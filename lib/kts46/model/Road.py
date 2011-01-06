@@ -21,11 +21,13 @@ class Road(yaml.YAMLObject):
     yaml_tag = u"!road"
     yaml_loader = yaml.SafeLoader
 
-    def __init__(self, length=1000, width=10, linesCount=1):
+    def __init__(self, length=1000, width=10, lines=1):
         self.length = length
         self.width = width
-        self.linesCount = linesCount
+        self.lines = lines
 
-    def get_length(self): return self.length
-    def get_width(self): return self.width
-    def get_lines_count(self): return self.linesCount
+    def getDescriptionData(self):
+        return {'length': self.length,
+                'width': self.width,
+                'lines': self.lines
+               }

@@ -30,11 +30,11 @@ class Car(yaml.YAMLObject):
     DELETED = 'del'
 
     def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0,
-                linePosition=0):
+                line=0):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
-        width and position in metres.
+        width and position in metrs.
         """
         if id is None:
             self._id = str(uuid4())
@@ -44,7 +44,7 @@ class Car(yaml.YAMLObject):
         self._length = length
         self._width = width
         self._position = position
-        self.linePosition = linePosition
+        self.line = line
         self.state = Car.INACTIVE
 
     def move(self, distance):
@@ -65,12 +65,13 @@ class Car(yaml.YAMLObject):
     def get_description_data(self):
         return {'id': self.get_id(),
                 'length': self.get_length(),
-                'width': self.get_width()
+                'width': self.get_width(),
+                'line': self.line
         }
 
     def get_state_data(self):
         d = {'pos': round(self.get_position(), 2),
-                'line': self.linePosition
+             'line': self.line
         }
         if self.state != Car.DEFAULT:
             d['state'] = self.state
