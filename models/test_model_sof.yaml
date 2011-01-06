@@ -7,10 +7,10 @@ simulationParameters:
 # seconds
 carGenerationInterval: 3
 # m/s
-safeDistance: 10
+safeDistance: 20
 # m/s
-maxSpeed: 20
-minSpeed: 10
+maxSpeed: 22
+minSpeed: 14
 
 road: !road
     length: 1677
