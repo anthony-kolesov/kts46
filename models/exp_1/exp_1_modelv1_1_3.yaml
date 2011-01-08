@@ -2,7 +2,7 @@
 simulationParameters:
     duration: 7200
     stepDuration: 0.2
-    batchLength: 200
+    batchLength: 1000
 
 # seconds
 carGenerationInterval: 3
@@ -22,9 +22,9 @@ trafficLights:
         id: 1
         position: 518
         greenDuration: 50
-        redDuration: 25
+        redDuration: 0
     -   !semaphore
         id: 2
         position: 1004
         greenDuration: 50
-        redDuration: 25
+        redDuration: 0
