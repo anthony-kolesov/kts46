@@ -29,6 +29,7 @@ class SimulationJob:
         self.statistics = None
         self.progressId = None
         self.statisticsId = None
+        self.definition = None
         if id is not None:
             self._initializeFromDb(id)
 
@@ -53,7 +54,11 @@ class SimulationJob:
             'currentFullState': ''}
         self.project.db[self.progressId] = self.progress
 
-        self.statistics = {'average': None, 'stdeviation': None, 'finished': False}
+        self.statistics = {
+            'average': None,
+            'stdeviation': None,
+            'averageSpeed': None,
+            'finished': False }
         self.project.db[self.statisticsId] = self.statistics
 
     def _initializeFromDb(self, id):

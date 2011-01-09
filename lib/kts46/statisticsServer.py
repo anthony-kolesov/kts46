@@ -16,6 +16,7 @@ License:
 """
 
 import json, math, numpy, logging
+import yaml
 
 class StatisticsServer:
 
@@ -41,10 +42,15 @@ class StatisticsServer:
         arr = numpy.array(moveTimes)
         av = numpy.average(arr)
         stdd = numpy.std(arr)
+        
+        definition = yaml.safe_load(job.definition)
+        avgSpeed = definition['road']['length'] / av
+        
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
         job.statistics['average'] = av if not math.isnan(av) else - 1
         job.statistics['stdeviation'] = stdd
+        job.statistics['averageSpeed'] = avgSpeed
         job.statistics['finished'] = True
         job.save()
 
