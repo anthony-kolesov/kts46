@@ -15,10 +15,8 @@ License:
    limitations under the License.
 """
 
-import couchdb, couchdb.design, json, logging, yaml, math
-import CouchDBViewDefinitions
+import couchdb, logging
 from . import *
-from SimulationJob import SimulationJob
 from SimulationProject import SimulationProject
 
 class CouchDBStorage:
