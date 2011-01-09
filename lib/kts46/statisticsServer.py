@@ -17,12 +17,14 @@ License:
 
 import json, math, numpy, logging
 from urllib2 import urlopen
+from kts46.CouchDBStorage import CouchDBStorage
 
 class StatisticsServer:
 
     def __init__(self, cfg):
         self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
+        self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
     def _getJSON(self, url):
         a = urlopen(url)
@@ -30,22 +32,14 @@ class StatisticsServer:
         a.close()
         return json.loads(text)
 
-    def calculate(self, project, job):
+    def calculate(self, job):
+        startKey = [job.id]
+        endKey = [job.id + 1]
+        addCarData = job.project.db.view("basicStats/addCar")[startKey:endKey]
+        delCarData = job.project.db.view("basicStats/deleteCar")[startKey:endKey]
 
-        addCarPath = self.cfg.get("couchdb", "addCarView").format(
-            project=project, job=job.id, nextjob=job.id + 1)
-        delCarPath = self.cfg.get("couchdb", "deleteCarView").format(
-            project=project, job=job.id, nextjob=job.id + 1)
-
-        self.log.info('GET: ' + addCarPath)
-        self.log.info('GET: ' + delCarPath)
-
-        # Connect to CouchDB and get data.
-        addCarData = self._getJSON(addCarPath)
-        delCarData = self._getJSON(delCarPath)
-
-        addCarTimes = dict((x['key'][1], x['value']['time']) for x in addCarData['rows'])
-        delCarTimes = dict((x['key'][1], x['value']['time']) for x in delCarData['rows'])
+        addCarTimes = dict((x['key'][1], x['value']['time']) for x in addCarData)
+        delCarTimes = dict((x['key'][1], x['value']['time']) for x in delCarData)
 
         times = {}
         moveTimes = []
@@ -64,3 +58,4 @@ class StatisticsServer:
         job.statistics['stdeviation'] = stdd
         job.statistics['finished'] = True
         job.save()
+

@@ -111,7 +111,7 @@ class Worker:
             elif task.get('type') == 'statistics':
                 self.log.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))
                 stServer = StatisticsServer(self.cfg)
-                stServer.calculate(projectName, job)
+                stServer.calculate(job)
 
             # Notify server.
             # Lock here so if condition in sync thread will be correct.
