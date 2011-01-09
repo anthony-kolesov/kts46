@@ -44,6 +44,20 @@ definitions = (
         """
     },
     {
+        "doc": "basicStats", "view": "carPositions",
+        "map": """
+        function(doc) {
+            if (doc.type === 'state'){
+                for (var id in doc.cars){
+                    emit([doc.job, id, doc.time], {
+                        "pos": doc.cars[id].pos, "line": doc.cars[id].line
+                    });
+                }
+            }
+        }
+        """
+    },
+    {
         "doc": "manage", "view": "jobs",
         "map": """
         function(doc) {

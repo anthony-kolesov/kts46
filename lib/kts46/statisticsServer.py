@@ -25,8 +25,8 @@ class StatisticsServer:
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
     def calculate(self, job):
-        addCarData = job.project.db.view("basicStats2/addCar")[job.id]
-        delCarData = job.project.db.view("basicStats2/deleteCar")[job.id]
+        addCarData = job.project.db.view("basicStats/addCar")[job.id]
+        delCarData = job.project.db.view("basicStats/deleteCar")[job.id]
 
         addCarTimes = dict((x['value']['car'], x['value']['time']) for x in addCarData)
         delCarTimes = dict((x['value']['car'], x['value']['time']) for x in delCarData)
@@ -44,7 +44,7 @@ class StatisticsServer:
         stdd = numpy.std(arr)
         
         definition = yaml.safe_load(job.definition)
-        avgSpeed = definition['road']['length'] / av
+        avgSpeed = definition['road'].length / av
         
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
