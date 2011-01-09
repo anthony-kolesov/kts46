@@ -16,7 +16,6 @@ License:
 """
 
 import json, math, numpy, logging
-from urllib2 import urlopen
 
 class StatisticsServer:
 

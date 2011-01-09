@@ -20,9 +20,9 @@ from multiprocessing import Manager
 from multiprocessing.managers import SyncManager
 from datetime import datetime
 # Project imports.
-sys.path.append('../../../lib/')
+#sys.path.append('../../../lib/')
 import kts46.utils
-from kts46.CouchDBStorage import CouchDBStorage
+from kts46.db.CouchDBStorage import CouchDBStorage
 
 
 class SchedulerManager(SyncManager): pass

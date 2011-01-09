@@ -20,7 +20,7 @@ from xmlrpclib import ServerProxy
 from socket import error as SocketException
 import kts46.utils
 from kts46.serverApi import RPCServerException
-from kts46.CouchDBStorage import CouchDBStorage
+from kts46.db.CouchDBStorage import CouchDBStorage
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
 

@@ -20,8 +20,8 @@ License:
 
 import sys, logging
 # Project imports.
-sys.path.append('../../../lib/')
-from kts46.CouchDBStorage import CouchDBStorage
+#sys.path.append('../../../lib/')
+from kts46.db.CouchDBStorage import CouchDBStorage
 
 
 class DatabaseServer:
