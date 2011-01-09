@@ -16,7 +16,7 @@ License:
 """
 
 import logging
-from kts46.CouchDBStorage import CouchDBStorage
+from kts46.db.CouchDBStorage import CouchDBStorage
 
 class StatusServer:
     "A server that enables view of simulation status."
