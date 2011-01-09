@@ -18,26 +18,18 @@ License:
 
 
 import logging, sys
-#import socket, signal
-#from ConfigParser import SafeConfigParser
-#from SimpleXMLRPCServer import SimpleXMLRPCServer
-#from multiprocessing import Process
-#from optparse import OptionParser
-#from time import sleep
 # Project imports
 PROJECT_LIB_PATH = '../lib/'
 if PROJECT_LIB_PATH not in sys.path:
     sys.path.append(PROJECT_LIB_PATH)
 from kts46.statisticsServer import StatisticsServer
 import kts46.utils
-#from kts46.server.worker import Worker
-#from kts46.server.rpc import RPCServer
-#from kts46.server.json_api import JSONApiServer
-#from kts46.server.supervisor import Supervisor
+from kts46.CouchDBStorage import CouchDBStorage
 
 cfg = kts46.utils.getConfiguration()
 kts46.utils.configureLogging(cfg)
 log = logging.getLogger('kts46.probe')
+storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
 
 s = StatisticsServer(cfg)
-s.calculate2('model_v2', 'exp_1_1')
+s.calculate(storage['model_v2']['exp_1_1'])

@@ -23,7 +23,7 @@ definitions = (
                 // car creations
                 for (var id in doc.cars){
                     if (doc.cars[id].state && doc.cars[id].state === 'add') {
-                        emit( [doc.job, id], {'time': doc.time});
+                        emit(doc.job, {'car': id, 'time': doc.time});
                     }
                 }
             }
@@ -36,7 +36,7 @@ definitions = (
             if (doc.type === 'state'){
                 for (var id in doc.cars){
                     if (doc.cars[id].state && doc.cars[id].state === 'del') {
-                        emit([doc.job, id], {'time': doc.time});
+                        emit(doc.job, {'car': id, 'time': doc.time});
                     }
                 }
             }
