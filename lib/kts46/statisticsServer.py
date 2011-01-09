@@ -47,5 +47,5 @@ class StatisticsServer:
         job.statistics['average'] = av if not math.isnan(av) else - 1
         job.statistics['stdeviation'] = stdd
         job.statistics['finished'] = True
-        #job.save()
+        job.save()
 
