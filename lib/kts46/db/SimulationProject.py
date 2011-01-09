@@ -15,7 +15,7 @@ License:
    limitations under the License.
 """
 
-import couchdb, couchdb.design, json, logging, yaml, math
+import couchdb.design
 import CouchDBViewDefinitions
 from . import *
 from SimulationJob import SimulationJob
@@ -60,7 +60,7 @@ class SimulationProject:
         return countDoc[LAST_ID]
 
     def addJob(self, jobName, definition):
-        """Adds job with sepcified YAML definition to project.
+        """Adds job with specified YAML definition to project.
 
         CouchDBStorageException will be raised if job with specified name already exists.
         Arguments:

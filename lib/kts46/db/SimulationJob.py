@@ -15,9 +15,8 @@ License:
    limitations under the License.
 """
 
-import couchdb, couchdb.design, json, logging, yaml, math
+import yaml, math
 from . import *
-#import kts46.CouchDBStorage
 
 class SimulationJob:
 
