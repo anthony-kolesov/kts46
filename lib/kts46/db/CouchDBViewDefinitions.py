@@ -20,9 +20,8 @@ definitions = (
         "map": """
         function(doc) {
             if (doc.type === 'state'){
-                // car creations
-                for (var id in doc.cars){
-                    if (doc.cars[id].state && doc.cars[id].state === 'add') {
+                for (var id in doc.cars) {
+                    if (doc.cars[id].state === 'add') {
                         emit(doc.job, {'car': id, 'time': doc.time});
                     }
                 }
@@ -34,8 +33,8 @@ definitions = (
         "map": """
         function(doc) {
             if (doc.type === 'state'){
-                for (var id in doc.cars){
-                    if (doc.cars[id].state && doc.cars[id].state === 'del') {
+                for (var id in doc.cars) {
+                    if (doc.cars[id].state === 'del') {
                         emit(doc.job, {'car': id, 'time': doc.time});
                     }
                 }
@@ -48,10 +47,26 @@ definitions = (
         "map": """
         function(doc) {
             if (doc.type === 'state'){
-                for (var id in doc.cars){
-                    emit([doc.job, id, doc.time], {
-                        "pos": doc.cars[id].pos, "line": doc.cars[id].line
+                for (var id in doc.cars) {
+                    var c = doc.cars[id];
+                    emit([doc.job, id], {
+                        "pos": c.pos, "line": c.line, "time": doc.time
                     });
+                }
+            }
+        }
+        """
+    },
+    {
+        "doc": "basicStats", "view": "cars",
+        "map": """
+        function(doc){
+            if (doc.type === "state") {
+                for (var i in doc.cars) {
+                    var v = [];
+                    v[0] = i;
+                    if (doc.cars[i].state === 'del') { v[1] = 'del'; } 
+                    emit(doc.job, v);
                 }
             }
         }
@@ -60,10 +75,10 @@ definitions = (
     {
         "doc": "manage", "view": "states",
         "map":"""
-            function(doc) {
-                if (doc.type === 'state')
-                    emit(doc.job, doc._id);
-            }
+        function(doc) {
+            if (doc.type === 'state')
+                emit(doc.job, doc._id);
+        }
         """
     }
 )
