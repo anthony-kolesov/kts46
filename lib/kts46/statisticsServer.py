@@ -53,4 +53,3 @@ class StatisticsServer:
         job.statistics['averageSpeed'] = avgSpeed
         job.statistics['finished'] = True
         job.save()
-

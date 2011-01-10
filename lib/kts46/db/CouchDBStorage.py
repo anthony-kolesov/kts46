@@ -47,9 +47,6 @@ class CouchDBStorage:
             raise CouchDBStorageException(msg)
 
         project = self.server.create(projectName)
-        # Create special document to store amount of jobs created.
-        #project[SimulationProject.jobsCountDocId] = {'lastId' : 0}
-        #self._createViews(projectName)
         p = SimulationProject(self.server, projectName, self.logger)
         p.initialize()
         return p
@@ -68,7 +65,7 @@ class CouchDBStorage:
             return False
         if item in self.server:
             db = self.server[item]
-            if JOBS_COUNT_DOCID in db:
+            if PROJECT_DOCID in db:
                 return True
         return False
 
