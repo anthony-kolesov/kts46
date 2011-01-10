@@ -55,9 +55,9 @@ class SimulationJob:
         self.project.db[self.progressId] = self.progress
 
         self.statistics = {
-            'average': None,
-            'stdeviation': None,
+            'average': None, 'stdeviation': None,
             'averageSpeed': None,
+            'stallTimes': None,
             'finished': False }
         self.project.db[self.statisticsId] = self.statistics
 

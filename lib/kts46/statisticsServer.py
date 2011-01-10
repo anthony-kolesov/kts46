@@ -52,4 +52,60 @@ class StatisticsServer:
         job.statistics['stdeviation'] = stdd
         job.statistics['averageSpeed'] = avgSpeed
         job.statistics['finished'] = True
+        
+        self.calculateStops(job)
+        
         job.save()
+
+    def calculateStops(self, job):
+        # Get cars indexes.
+        carsNotUniqueView = job.project.db.view("basicStats/cars")[job.id]
+        
+        # Filter cars that haven't finished distance.
+        carsNotUnique = []
+        deletedCars = []
+        for it in carsNotUniqueView:
+            v = it['value']
+            if len(v) > 1 and v[1] == 'del':
+                deletedCars.append(v[0])
+            else:
+                carsNotUnique.append(v[0]) 
+        
+        
+        cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))        
+        
+        results = {}
+        resultValues = []
+        
+        for carId in cars:
+            # Get positions.
+            positionsView = job.project.db.view("basicStats/carPositions")
+            positionsView = positionsView[ [job.id, carId] ]
+            # Convert them to python list.
+            positions = [ it['value'] for it in positionsView ]
+            # Sort them by time.
+            positions.sort(key = lambda a: a['time'])
+            # Calculate stand-still time.
+            standTime = 0.0
+            for pos in xrange(1, len(positions) ):
+                if positions[pos]['pos'] == positions[pos-1]['pos']:
+                    standTime += positions[pos]['time'] - positions[pos-1]['time']
+            results[carId] = standTime
+            resultValues.append(standTime)
+        
+        # Calculate mean and standard deviation.
+        resultValues = numpy.array(resultValues)
+        mean = numpy.average(resultValues)
+        stdev = numpy.std(resultValues) 
+        
+        # Store results
+        d = {'values': results, 'average': mean, 'stdev': stdev}
+        job.statistics['stallTimes'] = d
+            
+
+    #def calculate(self, job):
+    #    view = job.project.db.view('_all_docs', {'include_docs': True})
+    #    startkey = 's' + job.id
+    #    endkey = 's' + (job.id + 1)
+    #    for state in view[startkey:endkey]:
+            
