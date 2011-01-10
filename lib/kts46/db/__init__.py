@@ -19,7 +19,6 @@ class CouchDBStorageException(Exception): pass
 
 JOBS_COUNT_DOCID = 'jobsCount'
 LAST_ID = 'lastId'
-JOBS_LIST_VIEW = 'manage/jobs'
 STATES_VIEW = 'manage/states'
 JOB_PROGRESS_DOCID_FORMAT = '{job}Progress'
 STATE_DOCID_FORMAT = 's{job}_{state}'
