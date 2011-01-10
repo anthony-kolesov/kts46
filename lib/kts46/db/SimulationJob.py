@@ -100,7 +100,7 @@ class SimulationJob:
             self.docid = 'j' + str(self.id)
 
         # Set child docs ids.
-        self.progressId = JOB_PROGRESS_DOCID_FORMAT % self.docid
+        self.progressId = JOB_PROGRESS_DOCID_FORMAT.format(job=self.docid)
         self.statisticsId = STATISTICS_DOCID_FORMAT.format(job=self.docid)
 
     def save(self):
