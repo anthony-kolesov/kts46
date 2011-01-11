@@ -19,6 +19,7 @@ import logging, BaseHTTPServer, re, json, os.path
 from socket import error as SocketException
 import kts46.utils
 
+JSON_CONTENT_TYPE = 'application/json'
 
 class JSONApiServer:
     "Provides HTTP server that provides control over simulation with JSON API."
@@ -88,14 +89,6 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
-            elif functionName == 'addProject' or functionName == 'deleteProject':
-                projectNameMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
-                projectName = projectNameMatch.group(2)
-                if functionName == 'addProject':
-                    rpc.createProject(projectName)
-                else:
-                    rpc.deleteProject(projectName)
-                data = {'result': 'success'}
             else:
                 data = None
         except SocketException, msg:
@@ -113,6 +106,10 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.log_message('POST request')
+
+        if self.path.startswith("/json-rpc/"):
+            self.handleCall()
+            return
 
         match = re.match(r"/api/(\w+)/", self.path)
         functionName = match.group(1)
@@ -152,3 +149,57 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
+
+    def sendRPCResponse(self, result, id, error, httpcode=200):
+        self.send_response(httpcode)
+        self.send_header('Content-Type', JSON_CONTENT_TYPE)
+        self.end_headers()
+        self.wfile.write(json.dumps({'result':result, 'id':id, 'error': error}))
+
+
+    def exceptBadRequest(self, msg, id=None):
+        self.sendRPCResponse(None, id, msg, 400)
+
+    def checkJSONArgsNumber(self, params, amount):
+        if len(params) != amount:
+            self.exceptBadRequest("""Provided number of parameters is invalid.
+Required number of params: {0}, but has: {1}.""".format(amount, len(params)), id)
+
+    def handleCall(self):
+        # JSON RPC request must be in one line o
+        request = json.loads(self.rfile.readline())
+        
+        if "id" not in request:
+            self.exceptBadRequest("""`id` field is missing from JSON RPC request body.
+It must be `null` if you want to send notification.""")
+            
+        id = request['id']
+            
+        if "method" not in request:
+            self.exceptBadRequest("`method` field is missing from JSON RPC request body.", id)
+        if "params" not in request:
+            self.exceptBadRequest("""`params` field is missing from JSON RPC request body.
+It must be an empty array if method has no params.""", id)
+
+        methodName = request['method']
+        params = request['params']
+        
+        if not isinstance(params, type( [] )):
+            self.exceptBadRequest("`params` fields must be an array.", id)
+
+        xmlrpc = self.server.rpc_server
+        result = "success" # Methods can overwrite this variable.
+        try:
+            if methodName == "addProject":
+                self.checkJSONArgsNumber(params, 1)
+                xmlrpc.createProject(params[0])
+            elif methodName == "deleteProject":
+                self.checkJSONArgsNumber(params, 1)
+                xmlrpc.deleteProject(params[0])
+        except SocketException, msg:
+            self.log_error('Error connecting with RPC-server: %s', msg)
+            publicMessage = "Couldn't connect to RPC server."
+            self.sendRPCResponse(None, id, publicMessage, 500)
+
+        # If we are here than all was a success.
+        self.sendRPCResponse(result, id, None)

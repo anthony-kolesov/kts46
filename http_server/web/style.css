@@ -86,6 +86,7 @@ body, select, input, textarea {
 }
 
 /* ****** Dialogs ****** */
+#add-project-confirm span.ui-icon-alert,
 #delete-project-confirm span.ui-icon-alert,
 #delete-job-confirm span.ui-icon-alert {
     float:left;
