@@ -1,7 +1,58 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 3000; 
+    var serverPollInterval = 3000;
+    var jsonRpcPath = "/json-rpc/";
+    
+    var addProject = function(){
+        $("#add-project-confirm").dialog({
+            resizable: false,
+            height: 200,
+            modal: true,
+            buttons: {
+                "Add project": function() {
+                    var projectName = $('#add-project-name').val();
+                    var data = JSON.stringify({
+                        "method": "addProject",
+                        "id": "add_project_" + projectName,
+                        "params": [ projectName ]
+                    }) + "\n";
+                    var $dialog = $(this);
+                    $.post(jsonRpcPath, data, function(data) {
+                        $dialog.dialog("close");
+                    });
+                },
+                Cancel: function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    };
+    
+    var deleteProject = function(projectName){
+        $("#delete-project-confirm").dialog({
+            resizable: false,
+            height: 200,
+            modal: true,
+            buttons: {
+                "Delete project": function() {
+                    var data = JSON.stringify({
+                        "method": "deleteProject",
+                        "id": "delete_project_" + projectName,
+                        "params": [ projectName ]
+                    }) + "\n";
+                    var $dialog = $(this);
+                    $.post(jsonRpcPath, data, function(data) {
+                        $dialog.dialog("close");
+                    });
+                },
+                Cancel: function() {
+                    $(this).dialog("close");
+                }
+            }
+        });
+    };
+
     
     var addJobAction = function(projectName, allFields, dialog) {
         // Taken from jqueryui.com
@@ -141,25 +192,7 @@ var kts46 = (function($){
                         projNameBlock.append(projDeleteButton);
                         projDeleteButton.data('project', projectName);
                         projDeleteButton.click( function(){
-                            var buttonProject = $(this).data('project');
-                            $( "#delete-project-confirm" ).dialog({
-                                resizable: false,
-                                height:200,
-                                modal: true,
-                                buttons: {
-                                    "Delete project": function() {
-                                        $( this ).dialog( "close" );
-                                        $('#add-project-name').text('Deleting project...');
-                                        var projName = buttonProject;
-                                        $.getJSON('/api/deleteProject/' + projName + '/', function(data) {
-                                            $('#add-project-name').text('Project deleted.');
-                                        });
-                                    },
-                                    Cancel: function() {
-                                        $( this ).dialog( "close" );
-                                    }
-                                }
-                            });
+                            deleteProject($(this).data('project'));
                         } );
                     }
                 
@@ -206,14 +239,6 @@ var kts46 = (function($){
         });
     };
     
-    var addProject = function(){
-        $('#add-project-name').text('Adding project...');
-        var projName = $('#add-project-name').val();
-        $.getJSON('/api/addProject/' + projName + '/', function(data) {
-            $('#add-project-name').text('Project added.');
-        });
-    };
-
     $(document).ready(function(){
         $('.jqueryui-button').button();
         $('.add-project-button').click(addProject);
