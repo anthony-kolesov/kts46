@@ -87,7 +87,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             rpc = self.server.rpc_server
             functionName = match.group(1)
             if functionName == 'projectStatus':
-                functionMatch = re.match(r"/api/(\w+)/(\w+)/", self.path)
+                functionMatch = re.match(r"^/api/projectStatus/([-\w]+)/", self.path)
                 projectName = functionMatch.group(2)
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
