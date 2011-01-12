@@ -71,8 +71,10 @@ class StatisticsServer:
             else:
                 carsNotUnique.append(v[0]) 
         
-        
-        cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))        
+        cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))
+        del carsNotUniqueView
+        del carsNotUnique
+        del deletedCars
         
         results = {}
         resultValues = []
@@ -92,6 +94,13 @@ class StatisticsServer:
                     standTime += positions[pos]['time'] - positions[pos-1]['time']
             results[carId] = standTime
             resultValues.append(standTime)
+            
+            # Store results
+            d = {'values': results, 'average': None, 'stdev': None}
+            job.statistics['stallTimes'] = d
+            job.save()
+            self.log.info("Calculated stops for car: %s", carId)
+            
         
         # Calculate mean and standard deviation.
         resultValues = numpy.array(resultValues)

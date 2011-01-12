@@ -39,6 +39,9 @@ class JSONApiServer:
 
 class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
+    def log_message(self, format, *args):
+        pass
+
     def do_GET(self):
         # check for file request.
         fileMatch = re.match(r"/(web/[^\?]*)(\?v=([0-9]\.?)+)?$", self.path)
