@@ -105,47 +105,8 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(data))
 
     def do_POST(self):
-        self.log_message('POST request')
-
         if self.path.startswith("/json-rpc/"):
             self.handleCall()
-            return
-
-        match = re.match(r"/api/(\w+)/", self.path)
-        functionName = match.group(1)
-
-        success = True
-        found = True
-
-        try:
-            if functionName == 'addJob':
-                rpc = self.server.rpc_server
-                data = json.loads(self.rfile.readline())
-                rpc.addJob(data['project'], data['job'], data['definition'])
-            elif functionName == 'deleteJob':
-                data = json.loads(self.rfile.readline())
-                self.server.rpc_server.deleteJob(data['project'], data['job'])
-            elif functionName == 'runJob':
-                data = json.loads(self.rfile.readline())
-                self.server.rpc_server.runJob(data['project'], data['job'])
-            else:
-                success = False
-                found = False
-        except SocketException, msg:
-            self.log_error('Error connecting with RPC-server: %s', msg)
-            data = {'result': 'fail',
-                    'error': "Couldn't connect to RPC server." }
-
-        if success:
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'result':'success'}))
-        elif not success and found:
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'result':'fail'}))
         else:
             self.send_response(404)
             self.end_headers()
@@ -164,6 +125,8 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         if len(params) != amount:
             self.exceptBadRequest("""Provided number of parameters is invalid.
 Required number of params: {0}, but has: {1}.""".format(amount, len(params)), id)
+            return False
+        return True
 
     def handleCall(self):
         # JSON RPC request must be in one line o
@@ -172,30 +135,46 @@ Required number of params: {0}, but has: {1}.""".format(amount, len(params)), id
         if "id" not in request:
             self.exceptBadRequest("""`id` field is missing from JSON RPC request body.
 It must be `null` if you want to send notification.""")
+            return
             
         id = request['id']
             
         if "method" not in request:
             self.exceptBadRequest("`method` field is missing from JSON RPC request body.", id)
+            return
         if "params" not in request:
             self.exceptBadRequest("""`params` field is missing from JSON RPC request body.
 It must be an empty array if method has no params.""", id)
-
+            return
+        
         methodName = request['method']
         params = request['params']
         
         if not isinstance(params, type( [] )):
             self.exceptBadRequest("`params` fields must be an array.", id)
+            return
 
         xmlrpc = self.server.rpc_server
         result = "success" # Methods can overwrite this variable.
         try:
             if methodName == "addProject":
-                self.checkJSONArgsNumber(params, 1)
+                if not self.checkJSONArgsNumber(params, 1): return
                 xmlrpc.createProject(params[0])
             elif methodName == "deleteProject":
-                self.checkJSONArgsNumber(params, 1)
+                if not self.checkJSONArgsNumber(params, 1): return
                 xmlrpc.deleteProject(params[0])
+            elif methodName == 'addJob':
+                if not self.checkJSONArgsNumber(params, 3): return
+                xmlrpc.addJob(params[0], params[1], params[2])
+            elif methodName == 'deleteJob':
+                if not self.checkJSONArgsNumber(params, 2): return
+                xmlrpc.deleteJob(params[0], params[1])
+            elif methodName == 'runJob':
+                if not self.checkJSONArgsNumber(params, 2): return
+                xmlrpc.runJob(params[0], params[1])
+            else:
+                self.sendRPCResponse(None, id, "Unknown method: " + methodName)
+                return
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             publicMessage = "Couldn't connect to RPC server."

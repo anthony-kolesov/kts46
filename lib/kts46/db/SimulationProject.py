@@ -106,10 +106,6 @@ class SimulationProject:
                 "Couldn't delete job '%s' in project '%s' because it doesn't exist." %
                 (key, self.name))
 
-        # Remove record from project description.            
-        del p['jobs'][key]
-        self.db.update([p])
-
         jobIdStr = p['jobs'][key]
         jobId = jobIdStr[1:] # Skip first 'j' letter.
         # Delete job progress.
@@ -122,6 +118,11 @@ class SimulationProject:
         states = self.db.view(STATES_VIEW)[jobId]
         for s in states:
             del self.db[s['value']]
+            
+        # Remove record from project description.
+        # This must be last because other delete actions rely on it.            
+        del p['jobs'][key]
+        self.db.update([p])
 
 
     def getDocument(self, docid):
