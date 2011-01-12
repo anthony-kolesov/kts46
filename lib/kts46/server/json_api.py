@@ -94,11 +94,11 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
             elif functionName == 'jobStatistics':
-                paramsMatch = re.match(r"/api/jobStatistics/([-\w]+)/([-\w]+)/")
+                paramsMatch = re.match(r"/api/jobStatistics/([-\w]+)/([-\w]+)/", self.path)
                 if paramsMatch is not None:
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
-                    data = rpc.getJobStatistic(p,j)
+                    data = rpc.getJobStatistics(p,j)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',
