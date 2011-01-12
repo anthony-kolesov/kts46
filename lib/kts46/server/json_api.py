@@ -83,6 +83,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             return
 
+        data = None
         try:
             rpc = self.server.rpc_server
             functionName = match.group(1)
@@ -92,8 +93,12 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
-            else:
-                data = None
+            elif functionName == 'jobStatistics':
+                paramsMatch = re.match(r"/api/jobStatistics/([-\w]+)/([-\w]+)/")
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    data = rpc.getJobStatistic(p,j)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',
@@ -107,12 +112,14 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(data))
 
+
     def do_POST(self):
         if self.path.startswith("/json-rpc/"):
             self.handleCall()
         else:
             self.send_response(404)
             self.end_headers()
+
 
     def sendRPCResponse(self, result, id, error, httpcode=200):
         self.send_response(httpcode)

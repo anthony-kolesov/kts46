@@ -105,3 +105,11 @@ class RPCServer:
         except AttributeError as ex:
             self._log.error('Method `getServerStatus`: ' + str(ex))
             return []
+        
+    def getJobStatistics(self, project, job):
+        self._log.debug("Method getJobStatistics %s %s", project, job)
+        try:
+            return self._status.getJobStatistics(project, job)
+        except KeyError:
+            self._log.error("getJobStatistics: invalid project or job name: %s, %s.", project, job)
+            return { }
