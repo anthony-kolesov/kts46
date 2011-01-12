@@ -54,3 +54,10 @@ class StatusServer:
         for project in projects:
             results.extend(self.getProjectStatus(project))
         return results
+    
+    def getJobStatistics(self, projectName, jobName):
+        """Returns job statistics dictionary. It is always dictionary and if
+        statistics hasn't been already calculated it fields will be set to None."""
+        project = self.storage[projectName]
+        job = project[jobName]
+        return job.statistics
