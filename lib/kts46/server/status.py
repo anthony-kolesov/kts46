@@ -60,4 +60,8 @@ class StatusServer:
         statistics hasn't been already calculated it fields will be set to None."""
         project = self.storage[projectName]
         job = project[jobName]
-        return job.statistics
+        d = dict(job.statistics)
+        # Remove utility fields.
+        del d['_id']
+        del d['_rev']
+        return d

@@ -85,6 +85,15 @@ body, select, input, textarea {
     height: 1.7em;    
 }
 
+.jobstatistics {
+    clear: left;
+    
+    /* like pre */
+    font-family: monospace, sans-serif;
+    padding: 15px;
+	
+}
+
 /* ****** Dialogs ****** */
 #add-project-confirm span.ui-icon-alert,
 #delete-project-confirm span.ui-icon-alert,
