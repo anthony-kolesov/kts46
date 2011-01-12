@@ -53,7 +53,8 @@ class StatisticsServer:
         job.statistics['averageSpeed'] = avgSpeed
         job.statistics['finished'] = True
         
-        self.calculateStops(job)
+        if self.cfg.getboolean("worker", "calculateStops"):
+            self.calculateStops(job)
         
         job.save()
 
@@ -72,9 +73,6 @@ class StatisticsServer:
                 carsNotUnique.append(v[0]) 
         
         cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))
-        del carsNotUniqueView
-        del carsNotUnique
-        del deletedCars
         
         results = {}
         resultValues = []
@@ -98,7 +96,7 @@ class StatisticsServer:
             # Store results
             d = {'values': results, 'average': None, 'stdev': None}
             job.statistics['stallTimes'] = d
-            job.save()
+            #job.save()
             self.log.info("Calculated stops for car: %s", carId)
             
         
