@@ -14,7 +14,7 @@ var kts46 = (function($){
                     var projectName = $('#add-project-name').val();
                     var data = JSON.stringify({
                         "method": "addProject",
-                        "id": "add_project_" + projectName,
+                        "id": "addProject_" + projectName,
                         "params": [ projectName ]
                     }) + "\n";
                     var $dialog = $(this);
@@ -38,7 +38,7 @@ var kts46 = (function($){
                 "Delete project": function() {
                     var data = JSON.stringify({
                         "method": "deleteProject",
-                        "id": "delete_project_" + projectName,
+                        "id": "deleteProject_" + projectName,
                         "params": [ projectName ]
                     }) + "\n";
                     var $dialog = $(this);
@@ -94,11 +94,11 @@ var kts46 = (function($){
                     }
                     
                     var params = JSON.stringify({
-                        project: projectName,
-                        job:  efficientName,
-                        definition: definition
+                        method: "addJob",
+                        id: "addJob_" + projectName + "_" + "efficientName",
+                        params: [projectName, efficientName, definition]
                     }) + "\n";
-                    $.post('/api/addJob/', params, function(data) {});
+                    $.post(jsonRpcPath, params, function(data) {});
                 }
                 dialog.dialog( "close" );
             };
@@ -134,11 +134,12 @@ var kts46 = (function($){
                 "Delete job": function() {
                     var dialog = $(this);
                     var params = JSON.stringify({
-                        project: buttonProject,
-                        job:  buttonJob
+                        method: "deleteJob",
+                        id: "deleteJob_" + buttonProject + "_" + buttonJob,
+                        params: [buttonProject, buttonJob]
                     }) + "\n";
                     console.log(params);
-                    $.post('/api/deleteJob/', params, function(data) {
+                    $.post(jsonRpcPath, params, function(data) {
                         dialog.dialog("close");
                     });
                 },
@@ -151,11 +152,14 @@ var kts46 = (function($){
     
     
     var runJob = function() {
+        var p = $(this).data('project');
+        var j = $(this).data('job');
         var params = JSON.stringify({
-            project: $(this).data('project'),
-            job:  $(this).data('job')
+            method: "runJob",
+            id: "runJob_" + p + "_" + j,
+            params: [p, j]
         }) + "\n";
-        $.post('/api/runJob/', params, function(data) {});
+        $.post(jsonRpcPath, params, function(data) {});
     };    
     
     
