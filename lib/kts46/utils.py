@@ -25,7 +25,7 @@ def getConfiguration(customConfigFiles=[]):
     Loads configuration from default files and custom application files if
     provided.
     """
-    configFiles = ['../config/common.ini']
+    configFiles = ['../config/default.ini', '../config/local.ini']
     configFiles.extend(customConfigFiles)
     cfg = SafeConfigParser()
     cfg.read(configFiles)
