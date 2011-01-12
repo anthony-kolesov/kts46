@@ -36,8 +36,14 @@ def configureLogging(cfg):
     "Setups logging module."
 
     logging.getLogger('').setLevel(logging.INFO)
-    logging.basicConfig(format=cfg.get('log', 'format'),
-                        datefmt=cfg.get('log', 'dateFormat'))
+    #logging.basicConfig(format=cfg.get('log', 'format'),
+    #                    datefmt=cfg.get('log', 'dateFormat'))
+
+    # Define a log handler for console.
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setLevel(logging.INFO)
+    consoleHandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
+    logging.getLogger('kts46').addHandler(consoleHandler)
 
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
@@ -46,7 +52,6 @@ def configureLogging(cfg):
     rfhandler.setLevel(logging.INFO)
     rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
     logging.getLogger('').addHandler(rfhandler)
-
 
 
 def getLogger(cfg):
