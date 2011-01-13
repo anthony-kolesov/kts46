@@ -74,14 +74,23 @@ def configureCmdOptions():
     cmdOpts = OptionParser(usage=usage, epilog=epilog)
     cmdOpts.add_option('-i', '--worker-id', action='store', dest='wid', default=None,
                        help='Worker id. Must be unique in a network of workers.')
+    cmdOpts.add_option('--cfg', action='store', dest='cfg', default='',
+                       help="Configuration file that will override default.ini and local.ini." )
+    
     return cmdOpts.parse_args(sys.argv[1:])
 
 
 if __name__ == '__main__':
-    cfg = kts46.utils.getConfiguration()
+    options, args = configureCmdOptions()
+    
+    # Create ConfigParser
+    configFiles = []
+    if len(options.cfg) != 0: configFiles.append(options.cfg) 
+    cfg = kts46.utils.getConfiguration(configFiles)
+    
+    # Logging
     kts46.utils.configureLogging(cfg)
     logger = logging.getLogger(cfg.get('loggers', 'Node'))
-    options, args = configureCmdOptions()
 
     rpcProcess, workerProcess = (None, None)
     supervisorProcess, httpProcess = (None, None)
