@@ -56,7 +56,8 @@ def startRPCServer(cfg, log):
     address = cfg.get('rpc-server', 'bind-address')
     port = cfg.getint('rpc-server', 'port')
     try:
-        rpcserver = SimpleXMLRPCServer((address, port), allow_none=True)
+        rpcserver = SimpleXMLRPCServer((address, port), allow_none=True,
+            logRequest=cfg.getboolean('rpc-server','logRequest'))
     except socket.error:
         log.fatal("Couldn't bind to specified IP address: {0}.".format(address))
         sys.exit(1)
