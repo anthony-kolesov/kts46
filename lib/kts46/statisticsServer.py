@@ -24,19 +24,19 @@ class StatisticsServer:
         self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
-    def calculate(self, job):
+    def calculate1(self, job):
         job.statistics['finished'] = True
         #self.log.info('Save job progress.')
         #self.log.info(repr(job.progress))
         #job.db.progresses.save(job.progress)
         job.save()
         
-    def calculate2(self, job):
-        addCarData = job.project.db.view("basicStats/addCar")[job.id]
-        delCarData = job.project.db.view("basicStats/deleteCar")[job.id]
+    def calculate(self, job):
+        addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
+        delCarData = job.db.cars.find({'job':job.name, 'state': 'del'},['carid','time'])
 
-        addCarTimes = dict((x['value']['car'], x['value']['time']) for x in addCarData)
-        delCarTimes = dict((x['value']['car'], x['value']['time']) for x in delCarData)
+        addCarTimes = dict((x['carid'], x['time']) for x in addCarData)
+        delCarTimes = dict((x['carid'], x['time']) for x in delCarData)
 
         times = {}
         moveTimes = []
@@ -55,14 +55,19 @@ class StatisticsServer:
         
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
-        job.statistics['average'] = av if not math.isnan(av) else - 1
-        job.statistics['stdeviation'] = stdd
-        job.statistics['averageSpeed'] = avgSpeed
+        job.statistics['average'] = round(av if not math.isnan(av) else - 1, 4)
+        job.statistics['stdeviation'] = round(stdd, 4)
+        job.statistics['averageSpeed'] = round(avgSpeed, 4)
         job.statistics['finished'] = True
         
         if self.cfg.getboolean("worker", "calculateStops"):
             self.calculateStops(job)
         
+        #job.db.statistics.update({'_id':job.name}, {"$set": {
+        #    "average": round(job.statistics['average'], 2),
+        #    "stdeviation": round(job.statistics['stdeviation'], 2),
+        #    "averageSpeed": round(job.statistics['averageSpeed'], 2),
+        #    "finished": True}})
         job.save()
 
     def calculateStops(self, job):
