@@ -18,7 +18,8 @@ License:
 import logging
 from kts46.model.Model import Model
 from kts46.modelParams import ModelParams
-from kts46.db.CouchDBStateStorage import CouchDBStateStorage
+#from kts46.db.CouchDBStateStorage import CouchDBStateStorage
+from kts46.mongodb import StateStorage
 
 
 def timedeltaToSeconds(td):
@@ -37,7 +38,7 @@ class SimulationServer(object):
         This function does all required stuff: gets initial state and definition,
         simulates and stores simulation results to database."""
 
-        jobId = job.id
+        jobId = job.name
 
         model = Model(ModelParams())
         model.loadYAML(job.definition)
@@ -46,7 +47,8 @@ class SimulationServer(object):
         batchLength = job.simulationParameters['batchLength']
 
         # Prepare infrastructure.
-        saver = CouchDBStateStorage(job, model.asYAML)
+        #saver = CouchDBStateStorage(job, model.asYAML)
+        saver = StateStorage(job, model.asYAML)
 
         # Load current state: load state and set time
         if len(job.progress['currentFullState']) > 0:
@@ -76,7 +78,7 @@ class SimulationServer(object):
             saver.add(round(t, 3), data)
             t += step
 
-        # Finilize.
+        # Finalize.
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
 

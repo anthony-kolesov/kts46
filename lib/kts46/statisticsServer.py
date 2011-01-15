@@ -25,6 +25,13 @@ class StatisticsServer:
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
     def calculate(self, job):
+        job.statistics['finished'] = True
+        #self.log.info('Save job progress.')
+        #self.log.info(repr(job.progress))
+        #job.db.progresses.save(job.progress)
+        job.save()
+        
+    def calculate2(self, job):
         addCarData = job.project.db.view("basicStats/addCar")[job.id]
         delCarData = job.project.db.view("basicStats/deleteCar")[job.id]
 

@@ -71,7 +71,7 @@ class CouchDBStorage:
 
     def __delitem__(self, key):
         """Deletes project with specified name if it exists. Otherwise raises
-        RPCServerException."""
+        KeyError."""
         if key in self:
             self.logger.debug("Deleting project '%s'." % key)
             del self.server[key]
