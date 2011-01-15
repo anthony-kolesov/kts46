@@ -21,7 +21,8 @@ License:
 import sys, logging
 # Project imports.
 #sys.path.append('../../../lib/')
-from kts46.db.CouchDBStorage import CouchDBStorage
+#from kts46.db.CouchDBStorage import CouchDBStorage
+from kts46.mongodb import Storage
 
 
 class DatabaseServer:
@@ -29,13 +30,14 @@ class DatabaseServer:
     def __init__(self, cfg):
         self._cfg = cfg
         self._log = logging.getLogger(cfg.get('loggers', 'DatabaseServer'))
-        self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+        #self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+        self.storage = Storage(cfg.get('mongodb','host'))
 
 
     def getNewJobId(self, projectName):
         """Creates new job id.
 
-        It is guaranteed that there will be no dublicates, because after
+        It is guaranteed that there will be no duplicates, because after
         generation new id is written to database and CouchDB will not allow two
         same job ids because of revision number conflicts.
         RPCServerException is thrown if
@@ -49,7 +51,7 @@ class DatabaseServer:
 
         An exception will be raised it project already exists.
         Arguments:
-            projectName -- name of peoject to create."""
+            projectName -- name of project to create."""
         self.storage.createProject(projectName)
 
 
