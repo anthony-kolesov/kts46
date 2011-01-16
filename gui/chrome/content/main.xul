@@ -1,0 +1,119 @@
+﻿<?xml version="1.0"?>
+
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<?xml-stylesheet href="chrome://pyxul/skin/pyxul.css" type="text/css"?>
+<!DOCTYPE window SYSTEM "chrome://pyxul/locale/main.dtd">
+
+<window id="main" title="PyXUL" width="900" height="500" onload="initWindow();"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	xmlns:html="http://www.w3.org/1999/xhtml" sizemode="maximized">
+
+	<script type="application/javascript" src="chrome://pyxul/content/model.js"/>
+	<script type="application/javascript" src="chrome://pyxul/content/main.js"/>
+	<script type="application/javascript" src="chrome://pyxul/content/jquery-1.4.2.min.js"/>
+
+	<commandset>
+		<command id="cmd_openModel" oncommand="openModel();"/>
+		<command id="cmd_exitApp" oncommand="closeApp();"/>
+		<command id="cmd_about" oncommand="showAboutInfo();"/>
+		<command id="cmd_console" oncommand="openJavaScriptConsole();"/>
+		<command id="cmd_model_run" oncommand="runModel();"/>
+		<command id="cmd_model_pause" oncommand="pauseModel();"/>
+		<command id="cmd_model_reset" oncommand="newModel();"/>
+        <command id="cmd_model_simulate" oncommand="simulateModel();"/>
+		<command id="cmd_model_params_apply" oncommand="applyModelParams();"/>
+		<command id="cmd_model_params_reset" oncommand="resetModelParams();"/>
+	</commandset>
+
+	<keyset>
+		<key id="about_cmd_key" keycode="VK_F1" command="cmd_about" />
+		<key id="open_cmd_key" modifiers="accel" key="O" command="cmd_openModel" />
+		<key id="console_cmd_key" modifiers="control" key="Q" command="cmd_console" />
+	</keyset>
+
+	<toolbox>
+		<menubar id="main-menu">
+			<menu id="menu-file" label="&menu-file.label;" accesskey="&menu-file.key;">
+				<menupopup>
+					<menuitem label="&menu-open.label;" accesskey="&menu-open.key;"
+							  command="cmd_openModel" key="open_cmd_key"/>
+					<menuseparator/>
+					<menuitem label="&menu-exit.label;" accesskey="&menu-exit.key;"
+							  command="cmd_exitApp"/>
+				</menupopup>
+			</menu>
+			<menu id="menu-tools" label="&menu-tools.label;" accesskey="&menu-tools.key;">
+				<menupopup>
+					<menuitem label="&menu-console.label;" accesskey="&menu-console.key;"
+						command="cmd_console" key="console_cmd_key"/>
+				</menupopup>
+			</menu>
+			<menu id="help-menu" label="&menu-help.label;" accesskey="&menu-help.key;">
+				<menupopup>
+					<menuitem label="&menu-about.label;" accesskey="&menu-about.key;"
+						command="cmd_about" key="about_cmd_key"/>
+				</menupopup>
+			</menu>
+		</menubar>
+	</toolbox>
+
+	<separator/>
+	<hbox>
+		<!-- AK: Need to place it in the box, so it will not be stretched to window size.
+			 For whatever reason canvas stretches even with flex=0.
+			 Maybe this is for every element that is in the root of window?
+		-->
+		<html:canvas id="road-canvas" width="600" height="400" />
+
+		<vbox flex="1">
+
+            <groupbox id="model-simulation">
+                <caption label="&model-sim-caption;"/>
+                <hbox>
+					<label value="&model-sim-duration;" control="model-sim-duration"/>
+					<textbox id="model-sim-duration" type="number" min="0" value="30"/>
+				</hbox>
+				<hbox>
+					<label value="&model-sim-save;" control="model-sim-file"/>
+					<textbox id="model-sim-file"/>
+				</hbox>
+                <button label="&model-simulate;" command="cmd_model_simulate"/>
+                <progressmeter id="simulation-progress" mode="determined" value="0"/>
+            </groupbox>
+
+			<button label="&model-run;" command="cmd_model_run"/>
+			<button label="&model-pause;" command="cmd_model_pause"/>
+			<button label="&model-reset;" command="cmd_model_reset"/>
+
+			<groupbox align="end" id="model-params">
+				<caption label="&model-params.label;"/>
+				<hbox>
+					<label value="&model-params-cargenrate.label;"
+						   control="car-gen-rate-control"/>
+					<textbox id="car-gen-rate-box" value="3"/>
+					<label value="&model-params-cargenrate.suffix;"/>
+				</hbox>
+				<hbox>
+					<label value="&model-params-safedist.label;"
+						   control="safedist-control"/>
+					<textbox id="safedist-box" value="5.0"/>
+					<label value="&model-params-safedist.suffix;"/>
+				</hbox>
+				<hbox>
+					<label value="&model-params-speedmin.label;" control="car-speed-min"/>
+					<textbox id="car-speed-min" value="10"/>
+					<label value="&model-params-speedmin.suffix;"/>
+					<label value="&model-params-speedmax.label;" control="car-speed-max"/>
+					<textbox id="car-speed-max" value="20"/>
+					<label value="&model-params-speedmax.suffix;"/>
+				</hbox>
+				<hbox>
+					<button label="&model-params-reset.label;"
+							command="cmd_model_params_reset"/>
+					<button label="&model-params-apply.label;"
+							command="cmd_model_params_apply"/>
+				</hbox>
+			</groupbox>
+		</vbox>
+	</hbox>
+</window>

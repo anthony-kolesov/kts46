@@ -1,0 +1,76 @@
+<!doctype HTML>
+<html>
+    <head>
+        <style type="text/css">
+            @import url("css/ui-lightness/jquery-ui-1.8.7.custom.css");
+            @import url("style.css");
+        </style>
+        <script type="text/javascript" src="js/json2.js"></script>
+        <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+        <script type="text/javascript" src="js/jquery-ui-1.8.7.custom.min.js"></script>
+        <script type="text/javascript" src="js/jquery.kolesov.grid.js"></script>
+        <script type="text/javascript" src="script.js"></script>
+    </head>
+    <body>
+        <div id="top-container">
+	        <div class="project-name" id="header">
+	            <button class="jqueryui-button add-project-button">Add project</button>
+	            <input id="add-project-name" type="text" value="new_project_1" />
+	            <span id="add-project-status"></span>
+	        </div>
+	        <div class="progress-block">
+	           <div class="last-update-time"></div>
+	        </div>
+	        
+	        <table id="progress-table"></table>
+	        
+        </div>
+        
+        <div id="add-project-confirm" title="Add project?" style="display: none;">
+            <p>
+                <span class="ui-icon ui-icon-alert"></span>
+                Are you sure you want to add a project to server?
+            </p>
+        </div>
+        
+        <div id="delete-project-confirm" title="Delete project?" style="display: none;">
+            <p>
+                <span class="ui-icon ui-icon-alert"></span>
+                These project will be permanently deleted and cannot be recovered. Are you sure?
+            </p>
+        </div>
+        
+        <div id="delete-job-confirm" title="Delete job?" style="display: none;">
+            <p>
+                <span class="ui-icon ui-icon-alert"></span>
+                These job will be permanently deleted and cannot be recovered. Are you sure?
+            </p>
+        </div>
+        
+        <div id="add-job-form" title="Add job user" style="display: none;">
+            <p class="validateTips"><!-- All form fields are required. --></p>
+            <form>
+            <fieldset>
+                <label for="add-job-name">Name</label>
+                <input type="text" name="add-job-name" id="add-job-name" class="text ui-widget-content ui-corner-all" />
+                <br />
+                
+                <label for="add-job-definition">Definition file</label>
+                <input type="file" name="add-job-definition" id="add-job-definition" class="ui-widget-content ui-corner-all" />
+                <br />
+                
+                <label for="add-job-is-series">Add as a series?</label>
+                <input type="checkbox" name="add-job-is-series" id="add-job-is-series" class="ui-widget-content ui-corner-all"/>
+                <br />          
+
+                <label for="add-job-count">Job series length</label>
+                <input type="text" name="add-job-count" id="add-job-count"
+                    class="text ui-widget-content ui-corner-all" value="1" />
+                <br />
+            </fieldset>
+            </form>
+        </div>
+        
+                
+    </body>
+</html>
