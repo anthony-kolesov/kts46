@@ -164,5 +164,4 @@ Is seems that something changed state of the task. Your: {0}. Has: {1}.""".forma
 
         # Report tasks as aborted and add it to queue again.
         self.reportStatus(workerId, self.stateNameAbort, lastUpdate)
-        self.runJob(task['project'], task['job'])
         return True

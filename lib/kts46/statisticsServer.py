@@ -24,12 +24,6 @@ class StatisticsServer:
         self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
-    def calculate1(self, job):
-        job.statistics['finished'] = True
-        #self.log.info('Save job progress.')
-        #self.log.info(repr(job.progress))
-        #job.db.progresses.save(job.progress)
-        job.save()
         
     def calculate(self, job):
         addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
@@ -63,54 +57,66 @@ class StatisticsServer:
         if self.cfg.getboolean("worker", "calculateStops"):
             self.calculateStops(job)
         
-        #job.db.statistics.update({'_id':job.name}, {"$set": {
-        #    "average": round(job.statistics['average'], 2),
-        #    "stdeviation": round(job.statistics['stdeviation'], 2),
-        #    "averageSpeed": round(job.statistics['averageSpeed'], 2),
-        #    "finished": True}})
         job.save()
+
 
     def calculateStops(self, job):
         # Get cars indexes.
-        carsNotUniqueView = job.project.db.view("basicStats/cars")[job.id]
+        #carsNotUniqueView = job.project.db.view("basicStats/cars")[job.id]
+        carsUnique = job.db.cars.find({'job': job.name},['carid']).distinct("carid")
         
-        # Filter cars that haven't finished distance.
-        carsNotUnique = []
-        deletedCars = []
-        for it in carsNotUniqueView:
-            v = it['value']
-            if len(v) > 1 and v[1] == 'del':
-                deletedCars.append(v[0])
-            else:
-                carsNotUnique.append(v[0]) 
+        # Filter from cars that haven't finished distance.
+        #carsNotUnique = []
+        #deletedCars = []
+        #for it in carsNotUniqueView:
+        #    v = it['value']
+        #    if len(v) > 1 and v[1] == 'del':
+        #        deletedCars.append(v[0])
+        #    else:
+        #        carsNotUnique.append(v[0]) 
         
-        cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))
+        #cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))
+        cars = carsUnique
         
         results = {}
         resultValues = []
         
         for carId in cars:
             # Get positions.
-            positionsView = job.project.db.view("basicStats/carPositions")
-            positionsView = positionsView[ [job.id, carId] ]
+            #positionsView = job.project.db.view("basicStats/carPositions")
+            positionsView = job.db.cars.find({'job':job.name, 'carid': carId},
+                                        ['time', 'pos', 'state']).sort("time")
+            #positionsView = positionsView[ [job.id, carId] ]
             # Convert them to python list.
-            positions = [ it['value'] for it in positionsView ]
+            #positions = [ it['value'] for it in positionsView ]
+            positions = positionsView
             # Sort them by time.
-            positions.sort(key = lambda a: a['time'])
+            #positions.sort(key = lambda a: a['time'])
+                    
             # Calculate stand-still time.
             standTime = 0.0
-            for pos in xrange(1, len(positions) ):
-                if positions[pos]['pos'] == positions[pos-1]['pos']:
-                    standTime += positions[pos]['time'] - positions[pos-1]['time']
-            results[carId] = standTime
-            resultValues.append(standTime)
+            prevPos = None
+            wasDeleted = False
+            for pos in positions:
+                if prevPos is not None and pos['pos'] == prevPos['pos']:
+                    standTime += pos['time'] - prevPos['time']
+                if 'state' in pos and pos['state'] == 'del':
+                    wasDeleted = True
+                prevPos = pos
             
-            # Store results
-            d = {'values': results, 'average': None, 'stdev': None}
-            job.statistics['stallTimes'] = d
-            #job.save()
-            self.log.info("Calculated stops for car: %s", carId)
-            
+            if wasDeleted:    
+                results[carId] = round(standTime, 4)
+                resultValues.append(standTime)
+                
+                #job.save()
+                self.log.info("Calculated stops for car: %s", carId)
+            else:
+                self.log.info("Skip cars %s stall idle times: dodn't finished road.", carId)
+                
+        
+        # Store results
+        #d = {'values': results, 'average': None, 'stdev': None}
+        #job.statistics['stallTimes'] = d
         
         # Calculate mean and standard deviation.
         resultValues = numpy.array(resultValues)
@@ -118,7 +124,7 @@ class StatisticsServer:
         stdev = numpy.std(resultValues) 
         
         # Store results
-        d = {'values': results, 'average': mean, 'stdev': stdev}
+        d = {'values': results, 'average': round(mean, 4), 'stdev': round(stdev, 4)}
         job.statistics['stallTimes'] = d
             
 
