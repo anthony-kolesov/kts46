@@ -113,8 +113,9 @@ class SimulationProject(object):
         # ensure that database exists
         if self.db.info.find_one('project') is None:
             self.db.info.insert({'_id':'project', 'name': name})
-            self.db.cars.create_index({'job':pymongo.ASCENDING, 'state': pymongo.ASCENDING})
-        
+            self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
+            self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
+            
 
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
