@@ -22,7 +22,8 @@ from datetime import datetime
 # Project imports.
 #sys.path.append('../../../lib/')
 import kts46.utils
-from kts46.db.CouchDBStorage import CouchDBStorage
+#from kts46.db.CouchDBStorage import CouchDBStorage
+from kts46.mongodb import Storage
 
 
 class SchedulerManager(SyncManager): pass
@@ -40,7 +41,8 @@ class SchedulerServer:
           configuration - ConfigParser of application configuration."""
         self._cfg = configuration
         self._log = logging.getLogger(configuration.get('loggers', 'Scheduler'))
-        self.storage = CouchDBStorage(configuration.get('couchdb', 'dbaddress'))
+        #self.storage = CouchDBStorage(configuration.get('couchdb', 'dbaddress'))
+        self.storage = Storage(self._cfg.get('mongodb','host'))
         self.timeout = configuration.getint('scheduler', 'notifyInterval')
         # Task statuses.
         self.stateNameWorking = configuration.get('scheduler', 'workingStateName')
@@ -162,5 +164,4 @@ Is seems that something changed state of the task. Your: {0}. Has: {1}.""".forma
 
         # Report tasks as aborted and add it to queue again.
         self.reportStatus(workerId, self.stateNameAbort, lastUpdate)
-        self.runJob(task['project'], task['job'])
         return True

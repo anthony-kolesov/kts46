@@ -16,13 +16,15 @@ License:
 """
 
 import logging
-from kts46.db.CouchDBStorage import CouchDBStorage
+#from kts46.db.CouchDBStorage import CouchDBStorage
+from kts46.mongodb import Storage
 
 class StatusServer:
     "A server that enables view of simulation status."
 
     def __init__(self, cfg):
-        self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+        #self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
+        self.storage = Storage(cfg.get('mongodb', 'host'))
 
     def getJobStatus(self, projectName, jobName):
         project = self.storage[projectName]
@@ -49,7 +51,7 @@ class StatusServer:
         return r
 
     def getServerStatus(self):
-        projects = self.storage.getProjects()
+        projects = self.storage.getProjectNames()
         results = []
         for project in projects:
             results.extend(self.getProjectStatus(project))
@@ -62,6 +64,6 @@ class StatusServer:
         job = project[jobName]
         d = dict(job.statistics)
         # Remove utility fields.
-        del d['_id']
-        del d['_rev']
+        if '_id' in d: del d['_id']
+        if '_rev' in d: del d['_rev']
         return d

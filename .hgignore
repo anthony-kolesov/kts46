@@ -2,4 +2,5 @@ glob:*.pyo
 glob:*.lnk
 glob:*.xpt
 glob:*.pyc
+glob:config/local.ini
 relre:couchdb.(stderr|stdout)
