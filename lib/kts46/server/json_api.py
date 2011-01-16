@@ -192,3 +192,4 @@ It must be an empty array if method has no params.""", id)
 
         # If we are here than all was a success.
         self.sendRPCResponse(result, id, None)
+

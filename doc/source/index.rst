@@ -9,21 +9,10 @@ Welcome to kts46's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 9
+    :numbered:
 
-
-API
-=========
-
-.. automodule:: kts46.server.scheduler
-
-
-SchedulerServer
----------------
-
-.. autoclass:: SchedulerServer
-    :members:
-
+    kts46.rst
 
 Indices and tables
 ==================

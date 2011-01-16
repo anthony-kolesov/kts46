@@ -16,4 +16,5 @@ License:
 """
 
 class RPCServerException(Exception):
+    "Exception..."
     pass
