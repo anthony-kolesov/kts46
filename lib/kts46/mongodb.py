@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Wraps functionality of MongoDB to provide storage facility specific to
+application requirements.
+"""
 
 import logging
 import pymongo # connect with db
@@ -22,19 +25,26 @@ import math # Math.floor
 
 
 # Constants
-JOBS_COUNT_DOCID = "jobsCount"
-PROJECT_DOCID = "projectInfo"
 
 
-class StorageException(Exception): pass
+class StorageException(Exception):
+    "Exception for error that happen in operations with storage."
+    pass
 
 
 
 class Storage(object):
-    "Facade for MongoDB that is specific for this aplication."
+    """Facade for MongoDB that is specific for this application.
+    Acts like a dictionary for projects."""
     
     
     def __init__(self, host='localhost', port=27017):
+        """Initializes storage and connects to the server.
+        
+        Parameters:
+        :param host: network address of database. Can be a name or IP address.
+        :param port: Database port. 
+        """
         self.log = logging.getLogger('kts46.storage.mongodb')
         self.log.debug("Creating connection to Mongodb server: %s:%i.", host, port)
         self.server = pymongo.Connection(host, port)
@@ -211,9 +221,9 @@ class SimulationJob(object):
             'currentFullState': ''})
 
         self.statistics = {'_id': self.name,
-            'average': 1.1, 'stdeviation': 1.1,
-            'averageSpeed': 1.1,
-            'stallTimes': {},
+            'average': None, 'stdeviation': None,
+            'averageSpeed': None,
+            'idleTimes': {},
             'finished': False }
         self.db.statistics.insert(self.statistics)
 
