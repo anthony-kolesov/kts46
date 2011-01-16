@@ -58,7 +58,6 @@ class Storage(object):
 
         db = self.server[projectName]
         p = SimulationProject(self.server, projectName, self.log)
-        #p.initialize()
         return p
 
 
@@ -114,11 +113,8 @@ class SimulationProject(object):
         # ensure that database exists
         if self.db.info.find_one('project') is None:
             self.db.info.insert({'_id':'project', 'name': name})
+            self.db.cars.create_index({'job':pymongo.ASCENDING, 'state': pymongo.ASCENDING})
         
-
-    #def initialize(self):
-    #    "Initializes project infrastructure in database by creating required documents."
-    #    self.db.project.insert({"jobs": {}, '_id':PROJECT_DOCID})
 
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
@@ -164,21 +160,12 @@ class SimulationProject(object):
         self.db.statistics.remove(key)
         self.db.jobs.remove(key)
         self.db.states.remove({'job': key})
-        
-        
-    #def getDocument(self, docid):
-    #    "Gets document from database with specified id."
-    #    return self.db[docid]
-
-
-    #def containsDocument(self, docid):
-    #    "Checks whether document with specified id exists in database."
-    #    return docid in self.db
 
 
     def getJobsList(self):
         "Gets list of project jobs names."
         return map(lambda x: x['_id'], self.db.jobs.find(fields=['_id']))
+
     
     def getJobs(self):
         "Gets project jobs."
