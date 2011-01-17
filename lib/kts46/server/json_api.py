@@ -17,7 +17,9 @@ License:
 
 import logging, BaseHTTPServer, re, json, os.path
 from socket import error as SocketException
+import gviz_api
 import kts46.utils
+
 
 JSON_CONTENT_TYPE = 'application/json'
 
@@ -93,6 +95,9 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
+            elif functionName == 'serverStatus2':
+                data = self.getServerStatus2(rpc)
+                return
             elif functionName == 'jobStatistics':
                 paramsMatch = re.match(r"/api/jobStatistics/([-\w]+)/([-\w]+)/", self.path)
                 if paramsMatch is not None:
@@ -111,6 +116,21 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(data))
+
+
+    def getServerStatus2(self, rpc):
+        #{"project": "new_project_1", "total": 36000.0, "done": 36000,
+        #"name": "exp1-s1"}
+        schema = {"project":"string", "total":"number","done":"number",
+                  "name":"string"}
+        data = rpc.getServerStatus()
+        table = gviz_api.DataTable(schema)
+        table.LoadData(data)
+        
+        self.send_response(200)
+        self.send_header('Content-Type', JSON_CONTENT_TYPE)
+        self.end_headers()
+        self.wfile.write(table.ToJSonResponse())
 
 
     def do_POST(self):

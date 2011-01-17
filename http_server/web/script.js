@@ -1,7 +1,7 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 3000;
+    var serverPollInterval = 30000;
     var jsonRpcPath = "/json-rpc/";
     
     var addProject = function(){
@@ -284,18 +284,26 @@ var kts46 = (function($){
         });
     };
     
-    $(document).ready(function(){
-        $('.jqueryui-button').button();
-        $('.add-project-button').click(addProject);
-        $('#progress-table').grid('initialize', {columns: [
-            {name:'Run'},
-            {name:'Delete'},
-            {name:'Name'},
-            {name:'Progress'}
-        ] });
-        kts46.updateStatus();
-        setInterval("kts46.updateStatus();", serverPollInterval);
-    });
+    // on ready
+    $('.jqueryui-button').button();
+    $('.add-project-button').click(addProject);
+    updateStatus();
+    setInterval("kts46.updateStatus();", serverPollInterval);
+    
+    // google table
+    google.load('visualization', '1', {packages:['table']});
+    var drawTable = function() {
+        console.log("BBBBBBBBBBBB");
+        var query = new google.visualization.Query("/api/serverStatus2/");
+        console.log(query);
+        query.send( function(response){
+            console.log('AAAAAAAAAAAAAAAAA');
+            var dataTable = response.getDataTable();
+            var table = new google.visualization.Table(document.getElementById('progress-table-2'));
+            table.draw(dataTable, {showRowNumber: true});
+        } );
+    };
+    google.setOnLoadCallback(drawTable);
     
     return {'updateStatus': updateStatus};
     
