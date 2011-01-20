@@ -19,6 +19,11 @@ body, select, input, textarea {
     border: 1px dotted #444;
 }
 
+/* ****** Toolbar ****** */
+#simulation-add-job, #simulation-delete-project, .add-project-button {
+    padding: 3px;
+}
+
 /* ****** Project ****** */
 .project-block {
     border: 1px dotted #444;
@@ -94,6 +99,8 @@ body, select, input, textarea {
 	
 }
 
+
+
 /* ****** Dialogs ****** */
 #add-project-confirm span.ui-icon-alert,
 #delete-project-confirm span.ui-icon-alert,
@@ -106,6 +113,3 @@ body, select, input, textarea {
 .job-control .ui-icon {
     margin: 0 4px;	
 }
-
-
-
