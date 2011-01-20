@@ -14,13 +14,14 @@
     <body>
         <div id="top-container">
 	        <div class="project-name" id="header">
-	            <button class="jqueryui-button add-project-button">Add project</button>
+	            <button class="add-project-button">Add project</button>
 	            <input id="add-project-name" type="text" value="new_project_1" />
 	            <span id="add-project-status"></span>
 	            
 	            <button id="simulation-start-job">Start job</button>
                 <button id="simulation-delete-job">Delete job</button>
-                
+                <button id="simulation-add-job" style="padding: 3px;">Add job</button>
+                <button id="simulation-delete-project" style="padding: 3px;">Delete project</button>
 	        </div>
 	        <div class="progress-block">
 	           <div class="last-update-time"></div>
@@ -40,6 +41,12 @@
         <div id="delete-project-confirm" title="Delete project?" style="display: none;">
             <p>
                 <span class="ui-icon ui-icon-alert"></span>
+                
+                <label for="delete-project-name">Project name</label>
+                <select name="delete-project-name" id="delete-project-name"
+                    class="ui-widget-content ui-corner-all"></select>
+                <br />
+                
                 These project will be permanently deleted and cannot be recovered. Are you sure?
             </p>
         </div>
@@ -55,6 +62,11 @@
             <p class="validateTips"><!-- All form fields are required. --></p>
             <form>
             <fieldset>
+                <label for="add-job-project-name">Project name</label>
+                <select name="add-job-project-name" id="add-job-project-name"
+                    class="ui-widget-content ui-corner-all"></select>
+                <br />
+                
                 <label for="add-job-name">Name</label>
                 <input type="text" name="add-job-name" id="add-job-name" class="text ui-widget-content ui-corner-all" />
                 <br />
