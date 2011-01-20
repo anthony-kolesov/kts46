@@ -1,8 +1,11 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 30000;
-    var jsonRpcPath = "/json-rpc/";
+    var serverPollInterval = 30000,
+        jsonRpcPath = "/json-rpc/",
+        projectColumnId = 0,
+        jobColumnId = 1,
+        googleTableId = "progress-table-2";
     
     var addProject = function(){
         $("#add-project-confirm").dialog({
@@ -151,19 +154,55 @@ var kts46 = (function($){
     };
     
     
-    var runJob = function() {
-        var p = $(this).data('project');
-        var j = $(this).data('job');
+    var runJob = function(project, job) {
+        // var p = $(this).data('project');
+        // var j = $(this).data('job');
         var params = JSON.stringify({
             method: "runJob",
-            id: "runJob_" + p + "_" + j,
-            params: [p, j]
+            id: "runJob_" + project + "_" + job,
+            params: [project, job]
         }) + "\n";
         $.post(jsonRpcPath, params, function(data) {});
-    };    
+    };
     
     
     var updateStatus = function() {
+        
+        var query = new google.visualization.Query("/api/serverStatus2/");
+        query.send( function(response){
+            var dataTable = response.getDataTable();
+            
+            // Store table
+            $(document).data('simulation-data', dataTable);
+
+            // Add progress column.
+            dataTable.addColumn("number", "Progress");
+            for (var rowNum = 0, l = dataTable.getNumberOfRows(); rowNum < l; ++rowNum ){
+                var v = dataTable.getValue(rowNum, 2) / dataTable.getValue(rowNum, 3);
+                var f = [dataTable.getValue(rowNum, 2), '/', dataTable.getValue(rowNum, 3)].join("");
+                dataTable.setCell(rowNum, 4, v, f) ;
+            }
+            
+            // progress formatter.
+            var formatterOptions = {
+                    width: 120,
+                    base: 0,
+                    min: 0,
+                    max: 1,
+                    showValue: true
+            };
+            var progressFormatter = new google.visualization.BarFormat(formatterOptions);
+            progressFormatter.format(dataTable, 4);
+
+            var view = new google.visualization.DataView(dataTable);
+            view.setColumns([projectColumnId, jobColumnId, 4]);
+
+            // var table = new google.visualization.Table(document.getElementById(googleTableId));
+            var table = $(document).data('google-table');
+            table.draw(view, {showRowNumber: true, allowHtml: true});
+            $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
+        } );
+        /*
         $.getJSON('/api/serverStatus/', function(data) {
             if (data.result === "fail") {
                 return;
@@ -281,30 +320,49 @@ var kts46 = (function($){
             }
             
             $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
-        });
+        });*/
     };
     
-    // on ready
-    $('.jqueryui-button').button();
-    $('.add-project-button').click(addProject);
-    updateStatus();
-    setInterval("kts46.updateStatus();", serverPollInterval);
+    
+    var getSelectedJobs = function() {
+        return $(document).data('google-table').getSelection().map( function(it){ return it.row; } );
+    };
+    
+    
+    var runSelectedJobs = function() { 
+        var jobs = getSelectedJobs(),
+            table = $(document).data('simulation-data'),
+            i, l;
+        if (typeof table === "undefined") return;
+        for(i = 0, l = jobs.length; i < l; ++i){
+            var p = table.getValue(jobs[i], projectColumnId),
+                j = table.getValue(jobs[i], jobColumnId);
+            runJob(p, j);
+        }
+    };
+
     
     // google table
     google.load('visualization', '1', {packages:['table']});
-    var drawTable = function() {
-        console.log("BBBBBBBBBBBB");
-        var query = new google.visualization.Query("/api/serverStatus2/");
-        console.log(query);
-        query.send( function(response){
-            console.log('AAAAAAAAAAAAAAAAA');
-            var dataTable = response.getDataTable();
-            var table = new google.visualization.Table(document.getElementById('progress-table-2'));
-            table.draw(dataTable, {showRowNumber: true});
-        } );
-    };
-    google.setOnLoadCallback(drawTable);
+    google.setOnLoadCallback( function() {
+        updateStatus();
+        setInterval(updateStatus, serverPollInterval);
+    });
     
-    return {'updateStatus': updateStatus};
+    // on ready
+    $(document).ready(function(){
+        $('.jqueryui-button').button();
+        $('#simulation-start-job')
+            .button({text: false,icons: {primary:"ui-icon-play"}})
+            .click(runSelectedJobs.bind({}));
+        $('#simulation-delete-job').button({text: false,icons: {primary:"ui-icon-trash"}});
+        $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+    });
+    
+    return {
+        //"g": getSelectedJobs.bind({}),
+        "updateStatus": updateStatus,
+        "runJob": runJob
+    };
     
 })(jQuery);
