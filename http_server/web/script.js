@@ -257,7 +257,7 @@ var kts46 = (function($){
     };
     
     
-    /* Runs spcecified action on all selected projects.
+    /* Runs specified action on all selected projects.
      * :param action: function(projectName, jobName)
      */
     var forSelectedJobs = function(action) { 
@@ -270,6 +270,26 @@ var kts46 = (function($){
                 j = table.getValue(jobs[i], jobColumnId);
             action(p, j);
         }
+    };
+    
+    
+    var showStatistics = function() {
+        var jobs = getSelectedJobs(),
+            doc = $(document),
+            job, project, path;
+        if (jobs.length === 0) return;
+        
+        job = doc.data('simulation-data').getValue(jobs[0], jobColumnId);
+        project = doc.data('simulation-data').getValue(jobs[0], projectColumnId);    
+        
+        $.getJSON(['/api/jobStatistics', project, job, ''].join('/'), function(data){
+            var text = JSON.stringify(data, null, 4); // 4 is amount of spaces.    
+            $('#show-stats-dialog .content').text(text);
+            $('#show-stats-dialog').dialog({
+                modal: true,
+                buttons: { Ok: function(){ $(this).dialog("close"); } }
+            });
+        } );
     };
     
     
@@ -294,6 +314,7 @@ var kts46 = (function($){
         $('#simulation-delete-project').button().click(deleteProject);
         $('.add-project-button').button().click(addProject);
         $('#simulation-add-job').button().click(addJob);
+        $('#show-statistics').button().click(showStatistics);
     });
     
     return {
