@@ -2,15 +2,14 @@
 <html>
     <head>
         <style type="text/css">
-            @import url("css/ui-lightness/jquery-ui-1.8.7.custom.css");
-            @import url("style.css");
+            @import url("css/ui-lightness/jquery-ui-1.8.7.custom.css?v=1");
+            @import url("style.css?v=1");
         </style>
-        <script type="text/javascript" src="js/json2.js"></script>
+        <script type="text/javascript" src="js/json2.js?v=1"></script>
         <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
         <script type="text/javascript" src="js/jquery-ui-1.8.7.custom.min.js"></script>
-        <!--<script type="text/javascript" src="js/jquery.kolesov.grid.js"></script>-->
         <script type='text/javascript' src='https://www.google.com/jsapi'></script>
-        <script type="text/javascript" src="script.js"></script>
+        <script type="text/javascript" src="script.js?v=4"></script>
     </head>
     <body>
         <div id="top-container">
@@ -18,13 +17,15 @@
 	            <button class="jqueryui-button add-project-button">Add project</button>
 	            <input id="add-project-name" type="text" value="new_project_1" />
 	            <span id="add-project-status"></span>
+	            
+	            <button id="simulation-start-job">Start job</button>
+                <button id="simulation-delete-job">Delete job</button>
+                
 	        </div>
 	        <div class="progress-block">
 	           <div class="last-update-time"></div>
 	        </div>
-	        
 	        <table id="progress-table"></table>
-	        
 	        <div id="progress-table-2"></div>
 	        
         </div>

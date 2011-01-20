@@ -101,3 +101,11 @@ body, select, input, textarea {
     float:left;
     margin:0 7px 20px 0;
 }
+
+/* ****** Google table ****** */
+.job-control .ui-icon {
+    margin: 0 4px;	
+}
+
+
+
