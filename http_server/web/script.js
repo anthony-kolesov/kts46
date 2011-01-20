@@ -32,22 +32,24 @@ var kts46 = (function($){
         });
     };
     
-    var deleteProject = function(projectName){
+    var deleteProject = function(){
+        var projectNameElem = $('#delete-project-name');
+        fillWithProjects(projectNameElem);
+        
         $("#delete-project-confirm").dialog({
             resizable: false,
             height: 200,
             modal: true,
             buttons: {
                 "Delete project": function() {
-                    var data = JSON.stringify({
-                        "method": "deleteProject",
-                        "id": "deleteProject_" + projectName,
-                        "params": [ projectName ]
-                    }) + "\n";
-                    var $dialog = $(this);
-                    $.post(jsonRpcPath, data, function(data) {
-                        $dialog.dialog("close");
-                    });
+                    var projectName = projectNameElem.val(),
+                        data = JSON.stringify({
+                            "method": "deleteProject",
+                            "id": "deleteProject_" + projectName,
+                            "params": [ projectName ]
+                        }) + "\n";
+                        closeClb = (function() {$(a).dialog("close");}).bind({a:this});
+                    $.post(jsonRpcPath, data, closeClb);
                 },
                 Cancel: function() {
                     $(this).dialog("close");
@@ -109,8 +111,10 @@ var kts46 = (function($){
         }
     };
     
-    var addJob = function(projectName) {
+    var addJob = function() {
         var allFields = $('#add-job-name, #add-job-definition');
+        var projectNameElem = $('#add-job-project-name');
+        fillWithProjects(projectNameElem);
     
         $("#add-job-form").dialog({
             // autoOpen: false,
@@ -118,7 +122,7 @@ var kts46 = (function($){
             width: 350,
             modal: true,
             buttons: {
-                "Add job": function(){ addJobAction(projectName, allFields, $(this)); },
+                "Add job": function(){ addJobAction(projectNameElem.val(), allFields, $(this)); },
                 Cancel: function() { $(this).dialog("close"); }
             },
             close: function() { allFields.val("").removeClass("ui-state-error"); }
@@ -127,8 +131,6 @@ var kts46 = (function($){
     
     
     var deleteJob = function(project, job) {
-        //var buttonProject = $(this).data('project');
-        //var buttonJob = $(this).data('job');
         $( "#delete-job-confirm" ).dialog({
             resizable: false,
             height:200,
@@ -241,6 +243,20 @@ var kts46 = (function($){
     };
     
     
+    var getProjects = function() {
+        return $(document).data('simulation-data').getDistinctValues(projectColumnId);
+    };
+    
+    
+    var fillWithProjects = function(target) {
+        var projects = getProjects();
+        target.empty();
+        for (var i=0, l = projects.length; i < l; ++i) {
+            target.append(['<option value="', projects[i] ,'">',projects[i],'</option>'].join(""))
+        }  
+    };
+    
+    
     /* Runs spcecified action on all selected projects.
      * :param action: function(projectName, jobName)
      */
@@ -266,6 +282,8 @@ var kts46 = (function($){
     
     // on ready
     $(document).ready(function(){
+        $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+        
         $('.jqueryui-button').button();
         $('#simulation-start-job')
             .button({text: false,icons: {primary:"ui-icon-play"}})
@@ -273,7 +291,9 @@ var kts46 = (function($){
         $('#simulation-delete-job')
             .button({text: false,icons: {primary:"ui-icon-trash"}})
             .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
-        $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+        $('#simulation-delete-project').button().click(deleteProject);
+        $('.add-project-button').button().click(addProject);
+        $('#simulation-add-job').button().click(addJob);
     });
     
     return {
