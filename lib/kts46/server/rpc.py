@@ -16,8 +16,8 @@ License:
 """
 
 import logging
-from kts46.server.scheduler import SchedulerServer
 from kts46.server.database import DatabaseServer
+from kts46.server.scheduler import SchedulerServer
 from kts46.server.status import StatusServer
 
 

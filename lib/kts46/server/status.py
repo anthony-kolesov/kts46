@@ -16,7 +16,6 @@ License:
 """
 
 import logging
-#from kts46.db.CouchDBStorage import CouchDBStorage
 from kts46.mongodb import Storage
 
 class StatusServer:

@@ -15,7 +15,8 @@ License:
    limitations under the License.
 """
 
-import logging, yaml
+import logging
+import yaml
 from uuid import uuid4
 
 class Car(yaml.YAMLObject):

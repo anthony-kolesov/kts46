@@ -15,7 +15,10 @@ License:
    limitations under the License.
 """
 
-import json, math, numpy, logging
+import json
+import logging
+import math
+import numpy
 import yaml
 
 class StatisticsServer:

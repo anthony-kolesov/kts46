@@ -19,9 +19,9 @@ application requirements.
 """
 
 import logging
+import math # Math.floor
 import pymongo # connect with db
 import yaml # parse model definition
-import math # Math.floor
 
 
 # Constants

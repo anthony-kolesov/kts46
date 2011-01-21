@@ -18,7 +18,6 @@ License:
 import logging
 from kts46.model.Model import Model
 from kts46.modelParams import ModelParams
-#from kts46.db.CouchDBStateStorage import CouchDBStateStorage
 from kts46.mongodb import StateStorage
 
 
