@@ -15,7 +15,11 @@ License:
    limitations under the License.
 """
 
-import logging, BaseHTTPServer, re, json, os.path
+import BaseHTTPServer
+import json
+import logging
+import os.path
+import re
 import urllib
 from socket import error as SocketException
 import gviz_api

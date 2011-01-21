@@ -15,14 +15,13 @@ License:
    limitations under the License.
 """
 
-import sys, Queue, logging
-from multiprocessing import Manager
-from multiprocessing.managers import SyncManager
+import sys
+import logging
+import Queue
 from datetime import datetime
-# Project imports.
-#sys.path.append('../../../lib/')
+from multiprocessing.managers import SyncManager
+
 import kts46.utils
-#from kts46.db.CouchDBStorage import CouchDBStorage
 from kts46.mongodb import Storage
 
 

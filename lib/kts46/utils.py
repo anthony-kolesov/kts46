@@ -15,7 +15,8 @@ License:
    limitations under the License.
 """
 
-import logging, logging.handlers, xmlrpclib
+import logging, logging.handlers
+import xmlrpclib
 from ConfigParser import SafeConfigParser
 
 

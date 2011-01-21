@@ -15,7 +15,8 @@ License:
    limitations under the License.
 """
 
-import logging, time
+import logging
+import time
 from datetime import datetime, timedelta
 from socket import error as SocketException
 import kts46.utils

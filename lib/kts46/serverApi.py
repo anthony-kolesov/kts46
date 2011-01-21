@@ -15,6 +15,6 @@ License:
    limitations under the License.
 """
 
-class RPCServerException(Exception):
-    "Exception..."
-    pass
+#class RPCServerException(Exception):
+#    "Exception..."
+#    pass

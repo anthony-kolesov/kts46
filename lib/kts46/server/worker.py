@@ -15,12 +15,13 @@ License:
    limitations under the License.
 """
 
-import threading, time, logging, uuid, xmlrpclib
-from xmlrpclib import ServerProxy
+import logging
+import threading
+import time
+import uuid
 from socket import error as SocketException
+
 import kts46.utils
-from kts46.serverApi import RPCServerException
-#from kts46.db.CouchDBStorage import CouchDBStorage
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
 from kts46.mongodb import Storage 

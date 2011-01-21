@@ -1,6 +1,6 @@
-*****
-kts46
-*****
+****************
+kts46 Python API
+****************
 
 .. automodule:: kts46
 
@@ -30,11 +30,6 @@ Scheduler
     :members:
 
 
-serverApi
-=========
-
-.. automodule:: kts46.serverApi
-    :members:
 
 simulationServer
 ================

@@ -15,11 +15,18 @@ License:
    limitations under the License.
 """
 
-import random, json, math, logging, yaml
+import random
+import json
+import math
+import logging
+import yaml
+
 from datetime import timedelta
+
 from Car import Car
 from Road import Road
 from TrafficLight import SimpleSemaphore
+
 
 class Model(object):
 

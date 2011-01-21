@@ -18,10 +18,8 @@ License:
    limitations under the License.
 """
 
-import sys, logging
-# Project imports.
-#sys.path.append('../../../lib/')
-#from kts46.db.CouchDBStorage import CouchDBStorage
+import logging
+import sys
 from kts46.mongodb import Storage
 
 
