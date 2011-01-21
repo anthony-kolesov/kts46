@@ -28,6 +28,17 @@ from Road import Road
 from TrafficLight import SimpleSemaphore
 
 
+class ModelParams:
+    """Defines simulation parameters such as min and max speed, safe distance
+    between vehicles and interval between generations of new cars."""
+
+    def __init__(self):
+        self.carGenerationInterval = 3.0
+        self.safeDistance = 5.0
+        self.maxSpeed = 20.0
+        self.minSpeed = 10.0
+
+
 class Model(object):
 
     def __init__(self, params):

@@ -1,55 +1,43 @@
-****************
-kts46 Python API
-****************
+**************************
+kts46 Python API Reference
+**************************
 
 .. automodule:: kts46
 
 
-
-modelParams
-===========
-
-.. automodule:: kts46.modelParams
-
-ModelParams
------------
-
-.. autoclass:: kts46.modelParams.ModelParams
-    :members:
-
-
 simulationServer
 ================
-
 .. automodule:: kts46.simulationServer
 
 .. autofunction:: kts46.simulationServer.timedeltaToSeconds
 
+
 SimulationServer
 ----------------
-
 .. autoclass:: kts46.simulationServer.SimulationServer
     :members:
 
 
 statisticsServer
 ================
-
 .. automodule:: kts46.statisticsServer
 
 StatisticsServer
 ----------------
-
 .. autoclass:: kts46.statisticsServer.StatisticsServer
     :members:
 
 
 utils
 =====
-
 .. automodule:: kts46.utils
     :members:
 
+
+mongodb
+=======
+.. automodule:: kts46.mongodb
+    :members:
 
 
 kts46.server
