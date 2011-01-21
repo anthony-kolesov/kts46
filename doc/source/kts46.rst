@@ -37,6 +37,13 @@ utils
 mongodb
 =======
 .. automodule:: kts46.mongodb
+.. autoclass:: kts46.mongodb.Storage
+    :members: createProject, __getitem__, __contains__, __delitem__, getProjectNames
+.. autoclass:: SimulationProject
+    :members: addJob, __getitem__, __contains__, __delitem__, getJobsNames, getJobs
+.. autoclass:: SimulationJob
+    :members: getStateDocumentId, __getitem__, __contains__, save
+.. autoclass:: StateStorage
     :members:
 
 
