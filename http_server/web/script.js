@@ -207,40 +207,6 @@ var kts46 = (function($){
             table.draw(view, {showRowNumber: true, allowHtml: true});
             $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
         } );
-        /*  var progressBlock = $('.progress-block');
-            // progressBlock.empty(); // remove previous
-            for (var i in data) {
-                if (data.hasOwnProperty(i)) {
-                    var projectName = data[i].project;
-                    var projectBlock = $('#project-progress-'+projectName);
-                    
-                    // Check. If dummy job - skip it. But project will still be
-                    // created. That is the point of dummy jobs.
-                    if (typeof data[i].visible === "undefined" || data[i].visible) {     
-                            // Click handler
-                            var showStats = function(){
-                                var c = $(this).parent();
-                                var stats = $('.jobstatistics', c);
-                                
-                                if (stats.length !== 0) {
-                                    stats.remove();
-                                } else {
-                                    var p = c.data('project');
-                                    var j = c.data('job');
-                                    var path = ['/api/jobStatistics/',p,'/',j,'/'].join('');
-                                    $.getJSON(path, function(data){
-                                        stats = $('<pre></pre>');
-                                        stats.addClass("jobstatistics");
-                                        stats.text(JSON.stringify(data, null, 4));
-                                        c.append(stats);    
-                                    } );
-                                }
-                            };
-                        }
-                    }
-                }
-            }
-        });*/
     };
     
     
@@ -310,16 +276,23 @@ var kts46 = (function($){
     $(document).ready(function(){
         $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
         
+        // Buttons
         $('.jqueryui-button').button();
+        $('#simulation-add-project')
+            .button({text: false, icons: {primary: "ui-icon-play"}})
+            .click(addProject);
+        $('#simulation-delete-project')
+            .button({text: false, icons: {primary: "ui-icon-trash"}})
+            .click(deleteProject);
+        $('#simulation-add-job')
+            .button({text: false,icons: {primary:"ui-icon-plus"}})
+            .click(addJob);
         $('#simulation-start-job')
             .button({text: false,icons: {primary:"ui-icon-play"}})
             .click(forSelectedJobs.bind({}, runJob.bind({}) ));
         $('#simulation-delete-job')
             .button({text: false,icons: {primary:"ui-icon-trash"}})
             .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
-        $('#simulation-delete-project').button().click(deleteProject);
-        $('.add-project-button').button().click(addProject);
-        $('#simulation-add-job').button().click(addJob);
         $('#show-statistics').button().click(showStatistics);
     });
     

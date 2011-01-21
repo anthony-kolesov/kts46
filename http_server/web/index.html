@@ -13,21 +13,28 @@
     </head>
     <body>
         <div id="top-container">
-	        <div class="project-name" id="header">
-	            <button class="add-project-button">Add project</button>
-	            <input id="add-project-name" type="text" value="new_project_1" />
-	            <span id="add-project-status"></span>
-	            
-	            <button id="simulation-start-job">Start job</button>
-                <button id="simulation-delete-job">Delete job</button>
-                <button id="simulation-add-job">Add job</button>
-                <button id="simulation-delete-project">Delete project</button>
-                <button id="show-statistics">Statistics</button>
+	        
+	        <div class="ui-widget-content toolbar" id="header">
+                <div>
+                    Project:
+	                <button id="simulation-add-project">Add project</button>
+                    <button id="simulation-delete-project">Delete project</button>
+                </div>
+	            <div>
+                    Job:
+                    <button id="simulation-start-job">Start job</button>
+                    <button id="simulation-add-job">Add job</button>
+                    <button id="simulation-delete-job">Delete job</button>
+                    <button id="show-statistics">Statistics</button>
+                </div>
 	        </div>
+	        
 	        <div class="progress-block">
 	           <div class="last-update-time"></div>
 	        </div>
+	        
 	        <table id="progress-table"></table>
+	        
 	        <div id="progress-table-2"></div>
 	        
         </div>
@@ -35,6 +42,9 @@
         <div id="add-project-confirm" title="Add project?" style="display: none;">
             <p>
                 <span class="ui-icon ui-icon-alert"></span>
+                <label for="add-project-name">Project name</label>
+                <input id="add-project-name" type="text" value="new_project_1"
+                    class="ui-widget-content ui-corner-all"/>
                 Are you sure you want to add a project to server?
             </p>
         </div>
