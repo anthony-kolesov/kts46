@@ -116,7 +116,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 if paramsMatch is not None:
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
-                    data = rpc.getJobStatistics(p,j)
+                    data = rpc.getJobStatistics(p,j, False)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',

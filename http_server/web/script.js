@@ -52,7 +52,7 @@ var kts46 = (function($){
                             "id": "deleteProject_" + projectName,
                             "params": [ projectName ]
                         }) + "\n";
-                        closeClb = (function() {$(a).dialog("close");}).bind({a:this});
+                        closeClb = (function(a) {$(a).dialog("close");}).bind({},this});
                     $.post(jsonRpcPath, data, closeClb);
                 },
                 Cancel: function() {

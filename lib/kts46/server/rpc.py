@@ -106,10 +106,10 @@ class RPCServer:
             self._log.error('Method `getServerStatus`: ' + str(ex))
             return []
         
-    def getJobStatistics(self, project, job):
+    def getJobStatistics(self, project, job, includeIdleTimes):
         self._log.debug("Method getJobStatistics %s %s", project, job)
         try:
-            return self._status.getJobStatistics(project, job)
+            return self._status.getJobStatistics(project, job, includeIdleTimes)
         except KeyError:
             self._log.error("getJobStatistics: invalid project or job name: %s, %s.", project, job)
             return { }
