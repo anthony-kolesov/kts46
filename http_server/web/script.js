@@ -5,6 +5,10 @@ var kts46 = (function($){
         jsonRpcPath = "/json-rpc/",
         projectColumnId = 0,
         jobColumnId = 1,
+        doneColumnId = 2,
+        totalColumnId = 3,
+        statsFinishedColumnId = 4,
+        progressColumnId = 5,
         googleTableId = "progress-table-2";
     
     var addProject = function(){
@@ -177,9 +181,11 @@ var kts46 = (function($){
             // Add progress column.
             dataTable.addColumn("number", "Progress");
             for (var rowNum = 0, l = dataTable.getNumberOfRows(); rowNum < l; ++rowNum ){
-                var v = dataTable.getValue(rowNum, 2) / dataTable.getValue(rowNum, 3);
-                var f = [dataTable.getValue(rowNum, 2), '/', dataTable.getValue(rowNum, 3)].join("");
-                dataTable.setCell(rowNum, 4, v, f) ;
+                var total = dataTable.getValue(rowNum, totalColumnId),
+                    done = dataTable.getValue(rowNum, doneColumnId), 
+                    v =  done / total,
+                    f = [done, total].join("/");
+                dataTable.setCell(rowNum, progressColumnId, v, f);
             }
             
             // progress formatter.
@@ -191,12 +197,12 @@ var kts46 = (function($){
                     showValue: true
             };
             var progressFormatter = new google.visualization.BarFormat(formatterOptions);
-            progressFormatter.format(dataTable, 4);
+            progressFormatter.format(dataTable, progressColumnId);
 
             var view = new google.visualization.DataView(dataTable);
-            view.setColumns([projectColumnId, jobColumnId, 4]);
+            view.setColumns([projectColumnId, jobColumnId, progressColumnId,
+                             statsFinishedColumnId]);
 
-            // var table = new google.visualization.Table(document.getElementById(googleTableId));
             var table = $(document).data('google-table');
             table.draw(view, {showRowNumber: true, allowHtml: true});
             $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
