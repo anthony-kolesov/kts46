@@ -1,11 +1,8 @@
 body {
-    font:13px/1.231 sans-serif;
+    /*font:13px/1.231 sans-serif;*/
+    font:13px/1.231 Gergia serif;
     *font-size:small;
-}
-
-body, select, input, textarea {
     color: #444;
-    font-family: Georgia, serif;
 }
 
 #top-container {
@@ -15,90 +12,18 @@ body, select, input, textarea {
     margin: 0px auto;	
 }
 
-#header {
-    border: 1px dotted #444;
-}
 
 /* ****** Toolbar ****** */
-#simulation-add-job, #simulation-delete-project, .add-project-button {
+
+.toolbar {
     padding: 3px;
 }
 
-/* ****** Project ****** */
-.project-block {
-    border: 1px dotted #444;
-    margin: 5px 0px;
+.toolbar > div {
+	display: inline-block;
+    border: 1px dotted #aaa;
+    padding: 0px 2px;	
 }
-
-.project-name {
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border-bottom: 1px dotted #444;
-    background: #eee;
-    margin-top: 0px;
-}
-
-.project-name span.name {
-}
-
-.project-name button {
-    margin-left: 5px;
-    margin-bottom: 0px;
-}
-
-.project-name button .ui-button-text { 
-    padding: 1px;
-    /*line-height: 1em;*/
-}
-
-/* ****** Job ****** */
-.job-container {
-    /*height: 28px;*/
-}
-
-.job-start, .job-delete {
-    float: left;
-    height: 2.0em;
-}
-
-.job-delete {
-    left: 30px;
-}
-
-.job-name {
-    float: left;
-    width: 100px;
-    text-align: right;
-    margin-left: 10px;
-    padding-right: 20px;
-}
-
-.progress-num {
-    float: left;
-    margin-left: 40%;
-}
-
-.job-name, .progress-num {
-    line-height: 2.0em;
-    height: 2.0em;
-}
-
-.progressbar {
-    margin-left: 200px;
-    margin-top: 2px;
-    margin-bottom: 2px;
-    height: 1.7em;    
-}
-
-.jobstatistics {
-    clear: left;
-    
-    /* like pre */
-    font-family: monospace, sans-serif;
-    padding: 15px;
-	
-}
-
 
 
 /* ****** Dialogs ****** */
