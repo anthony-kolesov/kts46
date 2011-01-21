@@ -48,7 +48,7 @@ class StatusServer:
             results.extend(self.getProjectStatus(project))
         return results
     
-    def getJobStatistics(self, projectName, jobName):
+    def getJobStatistics(self, projectName, jobName, includeIdleTimes=False):
         """Returns job statistics dictionary. It is always dictionary and if
         statistics hasn't been already calculated it fields will be set to None."""
         project = self.storage[projectName]
@@ -57,4 +57,7 @@ class StatusServer:
         # Remove utility fields of databases.
         if '_id' in d: del d['_id']
         if '_rev' in d: del d['_rev']
+        # Remove cars idle times if required
+        if not includeIdleTimes:
+            d['idleTimes']['values'] = None
         return d
