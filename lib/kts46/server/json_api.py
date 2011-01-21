@@ -134,10 +134,11 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         data = rpc.getServerStatus()
                 
         schema = {"project":("string", "Project"), "name":("string", "Job"),
-                  "total": ("number", "Total states"), "done": ("number", "Done steps")}
+                  "total": ("number", "Total states"), "done": ("number", "Done steps"),
+                  "statisticsFinished":("boolean", "Has stats")}
         table = gviz_api.DataTable(schema)
         table.LoadData(data)
-        columnsOrder = ("project", "name", "done", "total")
+        columnsOrder = ("project", "name", "done", "total", "statisticsFinished")
         response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
         return response
 

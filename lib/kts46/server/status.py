@@ -26,15 +26,6 @@ class StatusServer:
         #self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
         self.storage = Storage(cfg.get('mongodb', 'host'))
 
-    def getJobStatus(self, projectName, jobName):
-        project = self.storage[projectName]
-        job = project[jobName]
-        progress = job.progress
-        progressPcnt = progress['done'] / progress['totalSteps']
-        msg = "{proj}.{job}: {progress} ({done}/{total}).".format(proj=projectName, job=jobName,
-            progress=progressPcnt, done=progress['done'], total=progress['totalSteps'])
-        return msg
-
     def getJobsList(self, projectName):
         return self.storage[projectName].getJobsList()
 
@@ -44,7 +35,8 @@ class StatusServer:
         for job in jobs:
             r.append({'name': job.name, 'done': job.progress['done'],
                       'total': job.progress['totalSteps'],
-                      'project': projectName})
+                      'project': projectName,
+                      'statisticsFinished': job.statistics['finished'] })
         # If project contains nothing - add dummy job to display project in interface.
         if len(r) == 0:
             r.append({'visible': False, 'project': projectName})
@@ -63,7 +55,7 @@ class StatusServer:
         project = self.storage[projectName]
         job = project[jobName]
         d = dict(job.statistics)
-        # Remove utility fields.
+        # Remove utility fields of databases.
         if '_id' in d: del d['_id']
         if '_rev' in d: del d['_rev']
         return d
