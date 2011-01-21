@@ -18,19 +18,6 @@ ModelParams
     :members:
 
 
-schedulerClient
-===============
-
-.. automodule:: kts46.schedulerClient
-
-Scheduler
----------
-
-.. autoclass:: kts46.schedulerClient.Scheduler
-    :members:
-
-
-
 simulationServer
 ================
 
