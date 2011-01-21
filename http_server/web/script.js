@@ -1,8 +1,15 @@
 var kts46 = (function($){
 
     // cfg
-    var serverPollInterval = 3000;
-    var jsonRpcPath = "/json-rpc/";
+    var serverPollInterval = 5000,
+        jsonRpcPath = "/json-rpc/",
+        projectColumnId = 0,
+        jobColumnId = 1,
+        doneColumnId = 2,
+        totalColumnId = 3,
+        statsFinishedColumnId = 4,
+        progressColumnId = 5,
+        googleTableId = "progress-table-2";
     
     var addProject = function(){
         $("#add-project-confirm").dialog({
@@ -29,22 +36,24 @@ var kts46 = (function($){
         });
     };
     
-    var deleteProject = function(projectName){
+    var deleteProject = function(){
+        var projectNameElem = $('#delete-project-name');
+        fillWithProjects(projectNameElem);
+        
         $("#delete-project-confirm").dialog({
             resizable: false,
             height: 200,
             modal: true,
             buttons: {
                 "Delete project": function() {
-                    var data = JSON.stringify({
-                        "method": "deleteProject",
-                        "id": "deleteProject_" + projectName,
-                        "params": [ projectName ]
-                    }) + "\n";
-                    var $dialog = $(this);
-                    $.post(jsonRpcPath, data, function(data) {
-                        $dialog.dialog("close");
-                    });
+                    var projectName = projectNameElem.val(),
+                        data = JSON.stringify({
+                            "method": "deleteProject",
+                            "id": "deleteProject_" + projectName,
+                            "params": [ projectName ]
+                        }) + "\n";
+                        closeClb = (function() {$(a).dialog("close");}).bind({a:this});
+                    $.post(jsonRpcPath, data, closeClb);
                 },
                 Cancel: function() {
                     $(this).dialog("close");
@@ -106,8 +115,10 @@ var kts46 = (function($){
         }
     };
     
-    var addJob = function(projectName) {
+    var addJob = function() {
         var allFields = $('#add-job-name, #add-job-definition');
+        var projectNameElem = $('#add-job-project-name');
+        fillWithProjects(projectNameElem);
     
         $("#add-job-form").dialog({
             // autoOpen: false,
@@ -115,7 +126,7 @@ var kts46 = (function($){
             width: 350,
             modal: true,
             buttons: {
-                "Add job": function(){ addJobAction(projectName, allFields, $(this)); },
+                "Add job": function(){ addJobAction(projectNameElem.val(), allFields, $(this)); },
                 Cancel: function() { $(this).dialog("close"); }
             },
             close: function() { allFields.val("").removeClass("ui-state-error"); }
@@ -123,9 +134,7 @@ var kts46 = (function($){
     };
     
     
-    var deleteJob = function() {
-        var buttonProject = $(this).data('project');
-        var buttonJob = $(this).data('job');
+    var deleteJob = function(project, job) {
         $( "#delete-job-confirm" ).dialog({
             resizable: false,
             height:200,
@@ -135,10 +144,9 @@ var kts46 = (function($){
                     var dialog = $(this);
                     var params = JSON.stringify({
                         method: "deleteJob",
-                        id: "deleteJob_" + buttonProject + "_" + buttonJob,
-                        params: [buttonProject, buttonJob]
+                        id: "deleteJob_" + project + "_" + job,
+                        params: [project, job]
                     }) + "\n";
-                    console.log(params);
                     $.post(jsonRpcPath, params, function(data) {
                         dialog.dialog("close");
                     });
@@ -151,152 +159,147 @@ var kts46 = (function($){
     };
     
     
-    var runJob = function() {
-        var p = $(this).data('project');
-        var j = $(this).data('job');
+    var runJob = function(project, job) {
         var params = JSON.stringify({
             method: "runJob",
-            id: "runJob_" + p + "_" + j,
-            params: [p, j]
+            id: "runJob_" + project + "_" + job,
+            params: [project, job]
         }) + "\n";
         $.post(jsonRpcPath, params, function(data) {});
-    };    
+    };
     
     
     var updateStatus = function() {
-        $.getJSON('/api/serverStatus/', function(data) {
-            if (data.result === "fail") {
-                return;
+        
+        var query = new google.visualization.Query("/api/serverStatus2/");
+        query.send( function(response){
+            var dataTable = response.getDataTable();
+            
+            // Store table
+            $(document).data('simulation-data', dataTable);
+
+            // Add progress column.
+            dataTable.addColumn("number", "Progress");
+            for (var rowNum = 0, l = dataTable.getNumberOfRows(); rowNum < l; ++rowNum ){
+                var total = dataTable.getValue(rowNum, totalColumnId),
+                    done = dataTable.getValue(rowNum, doneColumnId), 
+                    v =  done / total,
+                    f = [done, total].join("/");
+                dataTable.setCell(rowNum, progressColumnId, v, f);
             }
             
-            var progressBlock = $('.progress-block');
-            // progressBlock.empty(); // remove previous
-            for (var i in data) {
-                if (data.hasOwnProperty(i)) {
-                    var projectName = data[i].project;
-                    var projectBlock = $('#project-progress-'+projectName);
-                    if (projectBlock.length == 0) {
-                        projectBlock = $('<div class="project-block"></div>');
-                        projectBlock.attr('id', 'project-progress-'+projectName);
-                        progressBlock.prepend(projectBlock);
-                        
-                        // Add project name
-                        var projNameBlock = $('<div class="project-name"></div>');
-                        projNameBlock.append('<span class="name">'+projectName+'</span>');
-                        projectBlock.append(projNameBlock);
-                        
-                        // Button to add job
-                        var jobAddButton = $('<button><span class="ui-icon ui-icon-plusthick"></span></button>').button();
-                        projNameBlock.append(jobAddButton);
-                        jobAddButton.data('project', projectName);
-                        jobAddButton.click( function(){ addJob( $(this).data('project') ); });
-                        
-                        // Project deleter.
-                        var projDeleteButton = $('<button><span class="ui-icon ui-icon-closethick"></span></button>').button();
-                        projNameBlock.append(projDeleteButton);
-                        projDeleteButton.data('project', projectName);
-                        projDeleteButton.click( function(){
-                            deleteProject($(this).data('project'));
-                        } );
-                    }
-                
-                    // Check. If dummy job - skip it. But project will still be
-                    // created. That is the point of dummy jobs.
-                    if (typeof data[i].visible === "undefined" || data[i].visible) {
-                        var jobName = data[i].name;
-                        
-                        // Job wrapper
-                        var wrapperId  = 'job-'+projectName+jobName;
-                        var jobContainer = $('#'+wrapperId);
-                        if (jobContainer.length === 0) {
-                            
-                            jobContainer = $('<div class="job-container"></div>');
-                            jobContainer
-                                .attr('id',wrapperId)
-                                .data('project', projectName)
-                                .data('job', data[i].name);
-                            projectBlock.append(jobContainer);
-                        
-                            // Job runner
-                            var jobRunner = $('<button><span class="ui-icon ui-icon-play"></span></button>');
-                            jobContainer.append(jobRunner);
-                            jobRunner.addClass('job-start').click(runJob)
-                                .data('project', projectName).data('job', data[i].name);
-                        
-                            // Job deleter
-                            var jobDeleter = $('<button><span class="ui-icon ui-icon-closethick"></span></button>');
-                            jobContainer.append(jobDeleter);
-                            jobDeleter.addClass('job-delete').click(deleteJob)
-                                .data('project', projectName).data('job', data[i].name);;
-                        
-                            // Job name
-                            var name = $('<div class="job-name"></div>');
-                            name.text(data[i].name);
-                            jobContainer.append(name);
-                    
-                            // Job progress value
-                            var progressNum = $('<div class="progress-num"></div>');
-                            jobContainer.append(progressNum);
-                            //progressNum.text([data[i].done, '/', data[i].total].join(""));
-                        
-                            // Job progressbar
-                            var bar = $('<div class="progressbar"></div>');
-                            bar.attr('id', jobName + '-progressbar')
-                            jobContainer.append(bar);
-                            //var progress = Math.round(data[i].done / data[i].total * 100);
-                            //bar.progressbar({value:  progress});
-                            
-                            // Click handler
-                            var showStats = function(){
-                                var c = $(this).parent();
-                                var stats = $('.jobstatistics', c);
-                                
-                                if (stats.length !== 0) {
-                                    stats.remove();
-                                } else {
-                                    var p = c.data('project');
-                                    var j = c.data('job');
-                                    var path = ['/api/jobStatistics/',p,'/',j,'/'].join('');
-                                    $.getJSON(path, function(data){
-                                        stats = $('<pre></pre>');
-                                        stats.addClass("jobstatistics");
-                                        stats.text(JSON.stringify(data, null, 4));
-                                        c.append(stats);    
-                                    } );
-                                }
-                            };
-                            bar.click(showStats);
-                            progressNum.click(showStats);
+            // progress formatter.
+            var formatterOptions = {
+                    width: 120,
+                    base: 0,
+                    min: 0,
+                    max: 1,
+                    showValue: true
+            };
+            var progressFormatter = new google.visualization.BarFormat(formatterOptions);
+            progressFormatter.format(dataTable, progressColumnId);
 
-                        }
-                        
-                        // Set progress.
-                        $('.progress-num', jobContainer)
-                            .text([data[i].done, '/', data[i].total].join(""));
-                        var progress = Math.round(data[i].done / data[i].total * 100);
-                        $(['#', jobName, '-progressbar'].join("")).progressbar({value:  progress});
+            var view = new google.visualization.DataView(dataTable);
+            view.setColumns([projectColumnId, jobColumnId, progressColumnId,
+                             statsFinishedColumnId]);
 
-                    }
-                }
-            }
-            
+            var table = $(document).data('google-table');
+            table.draw(view, {showRowNumber: true, allowHtml: true});
             $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
-        });
+        } );
     };
     
-    $(document).ready(function(){
-        $('.jqueryui-button').button();
-        $('.add-project-button').click(addProject);
-        $('#progress-table').grid('initialize', {columns: [
-            {name:'Run'},
-            {name:'Delete'},
-            {name:'Name'},
-            {name:'Progress'}
-        ] });
-        kts46.updateStatus();
-        setInterval("kts46.updateStatus();", serverPollInterval);
+    
+    var getSelectedJobs = function() {
+        return $(document).data('google-table').getSelection().map( function(it){ return it.row; } );
+    };
+    
+    
+    var getProjects = function() {
+        return $(document).data('simulation-data').getDistinctValues(projectColumnId);
+    };
+    
+    
+    var fillWithProjects = function(target) {
+        var projects = getProjects();
+        target.empty();
+        for (var i=0, l = projects.length; i < l; ++i) {
+            target.append(['<option value="', projects[i] ,'">',projects[i],'</option>'].join(""))
+        }  
+    };
+    
+    
+    /* Runs specified action on all selected projects.
+     * :param action: function(projectName, jobName)
+     */
+    var forSelectedJobs = function(action) { 
+        var jobs = getSelectedJobs(),
+            table = $(document).data('simulation-data'),
+            i, l;
+        if (typeof table === "undefined") return;
+        for(i = 0, l = jobs.length; i < l; ++i){
+            var p = table.getValue(jobs[i], projectColumnId),
+                j = table.getValue(jobs[i], jobColumnId);
+            action(p, j);
+        }
+    };
+    
+    
+    var showStatistics = function() {
+        var jobs = getSelectedJobs(),
+            doc = $(document),
+            job, project, path;
+        if (jobs.length === 0) return;
+        
+        job = doc.data('simulation-data').getValue(jobs[0], jobColumnId);
+        project = doc.data('simulation-data').getValue(jobs[0], projectColumnId);    
+        
+        $.getJSON(['/api/jobStatistics', project, job, ''].join('/'), function(data){
+            var text = JSON.stringify(data, null, 4); // 4 is amount of spaces.    
+            $('#show-stats-dialog .content').text(text);
+            $('#show-stats-dialog').dialog({
+                modal: true,
+                buttons: { Ok: function(){ $(this).dialog("close"); } }
+            });
+        } );
+    };
+    
+    
+    // google table
+    google.load('visualization', '1', {packages:['table']});
+    google.setOnLoadCallback( function() {
+        updateStatus();
+        setInterval(updateStatus, serverPollInterval);
     });
     
-    return {'updateStatus': updateStatus};
+    // on ready
+    $(document).ready(function(){
+        $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+        
+        // Buttons
+        $('.jqueryui-button').button();
+        $('#simulation-add-project')
+            .button({text: false, icons: {primary: "ui-icon-play"}})
+            .click(addProject);
+        $('#simulation-delete-project')
+            .button({text: false, icons: {primary: "ui-icon-trash"}})
+            .click(deleteProject);
+        $('#simulation-add-job')
+            .button({text: false,icons: {primary:"ui-icon-plus"}})
+            .click(addJob);
+        $('#simulation-start-job')
+            .button({text: false,icons: {primary:"ui-icon-play"}})
+            .click(forSelectedJobs.bind({}, runJob.bind({}) ));
+        $('#simulation-delete-job')
+            .button({text: false,icons: {primary:"ui-icon-trash"}})
+            .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
+        $('#show-statistics').button().click(showStatistics);
+    });
+    
+    return {
+        //"g": getSelectedJobs.bind({}),
+        "updateStatus": updateStatus,
+        "runJob": runJob
+    };
     
 })(jQuery);
