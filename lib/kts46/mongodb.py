@@ -16,6 +16,13 @@
 
 """Wraps functionality of MongoDB to provide storage facility specific to
 application requirements.
+
+:class:`Storage` represents MongoDB instance. It acts like a type specific
+dictionary for `SimulationProject` s which represent databases on server.
+On their hand projects act like type specific dictionaries for
+`SimulationJob` s. And jobs act like dictionaries for their
+`SimulationState` s.
+
 """
 
 import logging
@@ -24,26 +31,24 @@ import pymongo # connect with db
 import yaml # parse model definition
 
 
-# Constants
-
-
 class StorageException(Exception):
-    "Exception for error that happen in operations with storage."
+    """Exception for error that happen in operations with storage. For example
+    if there is an attempt to create project with name that already exists."""
     pass
-
 
 
 class Storage(object):
     """Facade for MongoDB that is specific for this application.
-    Acts like a dictionary for projects."""
-    
-    
+    Acts like a dictionary for projects.
+    """
+        
     def __init__(self, host='localhost', port=27017):
         """Initializes storage and connects to the server.
         
-        Parameters:
         :param host: network address of database. Can be a name or IP address.
-        :param port: Database port. 
+        :type host: str
+        :param port: port of database on a host.
+        :type port: int 
         """
         self.log = logging.getLogger('kts46.storage.mongodb')
         self.log.debug("Creating connection to Mongodb server: %s:%i.", host, port)
@@ -53,12 +58,13 @@ class Storage(object):
         
     def createProject(self, projectName):
         """Creates project with specified name.
-
-        A StorageException will be raised if project already exists.
-        Arguments:
-          projectName [string] - name of project to create.
-          
-        Returns SimulationProject instance."""
+        
+        :param projectName: name of project to create.
+        :type projectName: str
+        :returns: newly created project.
+        :rtype: kts46.mongodb.SimulationProject
+        :raises StorageException: If project already exists.
+        """
 
         self.log.info("Creating project: %s.", projectName)
         if projectName in self:
@@ -72,6 +78,15 @@ class Storage(object):
 
 
     def __getitem__(self, key):
+        """Gets SimulationProject with specified name.
+        
+        :param key: project name.
+        :type key: str
+        :returns: Project with specified name.
+        :rtype: kts46.mongodb.SimulationProject
+        :raises KeyError: if project with specified name doesn't exists. 
+        """
+        
         if key not in self:
             msg = "Couldn't get project '{0}' because it doesn't exists.".format(key)
             self.log.warning(msg)
@@ -80,7 +95,13 @@ class Storage(object):
 
 
     def __contains__(self, item):
-        "Checks whether project with specified name already exists. Returns bool."
+        """Checks whether project with specified name already exists.
+	
+        :param item: project name to check for existence.
+        :type item: str
+        :rtype: bool
+        """
+
         # local and admin are utility databases.
         if item not in ['local', 'admin'] and item in self.server.database_names():
             if self.server[item].info.find_one('project') is not None:
@@ -91,7 +112,10 @@ class Storage(object):
     def __delitem__(self, key):
         """Deletes project with specified name.
 
-        Raises KeyError if project doesn't exist."""
+        :param key: name of project to delete.
+        :type key: str
+        :raises KeyError: if project doesn't exist
+        """
         
         if key in self:
             self.log.debug("Deleting project '{0}'.".format(key))
@@ -102,12 +126,14 @@ class Storage(object):
             self.log.warning(msg)
             raise KeyError(msg)
 
-    def getProjectNames(self):
-        """Returns list of projects in storage.
 
-        Returns list of strings."""
-        # 'in self' returns true only for projects, not any databases.
-        return filter(lambda x: x in self, [p for p in self.server.database_names()])
+    def getProjectNames(self):
+        """Returns list of names of projects in storage.
+
+        :rtype: list of strings."""
+        # '__contains__' returns true only for projects, not any databases.
+        return filter(self.__contains__, [p for p in self.server.database_names()])
+        #return filter(self.__contains__ lambda x: x in self, [p for p in self.server.database_names()])
 
 
 
@@ -115,6 +141,13 @@ class SimulationProject(object):
     "Represents a simulation project stored in database."
 
     def __init__(self, dbserver, name, log):
+        """Creates new instance of :class:`SimulationProject` class. If project
+        doesn't exists on the server it will be created.
+        
+        :param dbserver: mongodb connection.
+        :param name: project name.
+        :param log: logger.
+        """
         self.server = dbserver
         self.name = name
         self.db = self.server[name]
@@ -130,23 +163,32 @@ class SimulationProject(object):
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
 
-        StorageException will be raised if job with specified name already exists.
-        Arguments:
-            jobName -- job name.
-            definition -- definition of job written in YAML.
+        :param jobName: job name
+        :type jobName: str 
+        :param definition: definition of job written in YAML.
+        :type definition: str
+        :returns: created job.
+        :rtype: SimulationJob
+        :raises StorageException: if job with specified name already exists.
         """
 
         # Check for job duplication.
         if jobName in self:
             msg = "Couldn't add job '{0}' to project '{1}' because it already exists."
             raise CouchDBServerException(msg.format(jobName, self.name))
-
         job = SimulationJob(self, jobName, definition)
-    
         return job
     
 
     def __getitem__(self, key):
+        """Gets job with specified name.
+        
+        :param key: name of job to get.
+        :type key: str
+        :returns: job with specified name
+        :rtype: SimulationJob
+        :raises KeyError: if job with specified name doesn't exists.
+        """
         if key not in self:
             msg = "Couldn't get job '{0}' from project '{1}' because it doesn't exists."
             msg = msg.format(key, self.name)
@@ -156,13 +198,22 @@ class SimulationProject(object):
 
 
     def __contains__(self, item):
-        "Checks whether job with provided name exists in project."
+        """Checks whether job with provided name exists in project.
+        
+        :param item: Name of job to check for.
+        :type item: str
+        :rtype: bool
+        """
         return self.db.jobs.find_one(item) is not None
 
 
     def __delitem__(self, key):
-        """Deletes job with specified name if it exists.
-        Otherwise throws KeyError."""
+        """Deletes job with specified name.
+        
+        :param key: name of job to delete.
+        :type key: str
+        :raises KeyError: if job with specified name doesn't exists.
+        """
         if key not in self:
             msg = "Couldn't delete job '{0}' in project '{1}' because it doesn't exist." 
             raise KeyError(msg.format(key, self.name))
@@ -173,23 +224,42 @@ class SimulationProject(object):
         self.db.states.remove({'job': key})
 
 
-    def getJobsList(self):
-        "Gets list of project jobs names."
+    def getJobsNames(self):
+        """Gets list of project jobs names.
+        
+        :returns: names of jobs of this project.
+        :rtype: list of strings
+        """
         return map(lambda x: x['_id'], self.db.jobs.find(fields=['_id']))
 
     
     def getJobs(self):
-        "Gets project jobs."
+        """Gets project jobs.
+        
+        :returns: list of project jobs.
+        :rtype: list of :class:`SimulationJob`
+        """
         jobs = [ ]
-        for jobName in self.getJobsList():
+        for jobName in self.getJobsNames():
             jobs.append(self[jobName])
         return jobs
 
 
 
 class SimulationJob(object):
+    "Job to simulate."
 
     def __init__(self, project, name, definition=None):
+        """Create new :class:`SimulationJob` instance .
+        
+        :param project: project to which job belongs.
+        :type project: SimulationProject
+        :param name: name of this job.
+        :type name: str
+        :param definition: YAML definition of job. If it is omitted than job
+         will be loaded from database.
+        :type definition: str
+        """
         self.project = project
         self.db = project.db
         self.name = name
@@ -202,6 +272,7 @@ class SimulationJob(object):
             self._create()
 
     def _create(self):
+        "Creats new job on the server from definition."
         # Store simulation parameters.
         objData = yaml.safe_load(self.definition)
         simParams = objData['simulationParameters']
@@ -229,6 +300,7 @@ class SimulationJob(object):
 
 
     def _load(self):
+        "Loads existing job from the server."
         doc = self.db.jobs.find_one(self.name)
 
         self.definition = doc['yaml']
@@ -239,18 +311,36 @@ class SimulationJob(object):
 
 
     def getStateDocumentId(self, time):
-        "Returns document id of state for specified time."
-        return "".join((self.name, ',', time))
+        """Returns document id of state for specified time.
+        
+        :param time: time for which to get state.
+        :type time: str or float
+        :returns: document id of state for specified time.
+        :rtype: str
+        """
+        return ",".join((self.name, time))
 
 
     def __contains__(self, key):
-        "Checks whether state with specified id exists."
+        """Checks whether state with specified id exists.
+
+        :param key: time of state to check.
+        :type key: str or float
+        :rtype: bool
+        """
         id = self.getStateDocumentId(key)
         return self.db.states.find_one(id, fields={})
 
 
     def __getitem__(self, key):
-        "Gets state with specified id."
+        """Gets state with specified id.
+        
+        :param key: time of state to get.
+        :type key: str or float
+        :rtype: dict
+        :returns: state of model at specified time.
+        :raises KeyError: there is no state saved for specified time.
+        """
         id = self.getStateDocumentId(key)
         s = self.db.states.find_one(id)
         if s is None:
@@ -259,6 +349,7 @@ class SimulationJob(object):
 
 
     def save(self):
+        "Saves progress and statistics to server."
         if self.progress is not None:
              self.db.progresses.save(self.progress)
         if self.statistics is not None:
@@ -266,8 +357,20 @@ class SimulationJob(object):
 
 
 class StateStorage(object):
+    "Represents storage for simulation states."
     
     def __init__(self, job, fullStateGeneratorCallback=None, batchLength=None):
+        """Creates new instance of :class:`StateStorage` class.
+        
+        :param job: job for which this storage belongs.
+        :type job: SimulationJob
+        :param fullStateGeneratorCallback: function that returns current full
+         state of the model.
+        :type fullStateGeneratorCallback: callable
+        :param batchLength: length of batches that to send to the server. 
+         If None then length from job parameters will be used.
+        :type batchLength: int
+        """
         self.db = job.db
         self.job = job
         self.buffer = []
@@ -279,6 +382,13 @@ class StateStorage(object):
 
         
     def add(self, time, data):
+        """Adds state to the storage.
+        
+        :param time: time for which to save state.
+        :type time: float
+        :param data: model state that will be saved.
+        :type data: dic
+        """
         d = dict(data)
         d['time'] = time
         d['job'] = self.job.name
@@ -290,6 +400,9 @@ class StateStorage(object):
 
 
     def dump(self):
+        """Dump states saved in a buffers to server. This method is called by
+        ``add`` when length of buffer is more than batchLength and by
+        ``close`` method."""
         if len(self.buffer) > 0:
             self.job.progress['done'] += len(self.buffer)
             #self.job.progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
@@ -315,4 +428,7 @@ class StateStorage(object):
             self.db.cars.insert(cars)
             self.buffer = []
 
-    def close(self): self.dump()
+    def close(self):
+        "Save all unsaved data to server."
+        self.dump()
+
