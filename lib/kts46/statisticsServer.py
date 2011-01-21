@@ -24,12 +24,13 @@ class StatisticsServer:
         self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
+        
     def calculate(self, job):
-        addCarData = job.project.db.view("basicStats/addCar")[job.id]
-        delCarData = job.project.db.view("basicStats/deleteCar")[job.id]
+        addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
+        delCarData = job.db.cars.find({'job':job.name, 'state': 'del'},['carid','time'])
 
-        addCarTimes = dict((x['value']['car'], x['value']['time']) for x in addCarData)
-        delCarTimes = dict((x['value']['car'], x['value']['time']) for x in delCarData)
+        addCarTimes = dict((x['carid'], x['time']) for x in addCarData)
+        delCarTimes = dict((x['carid'], x['time']) for x in delCarData)
 
         times = {}
         moveTimes = []
@@ -48,71 +49,50 @@ class StatisticsServer:
         
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
-        job.statistics['average'] = av if not math.isnan(av) else - 1
-        job.statistics['stdeviation'] = stdd
-        job.statistics['averageSpeed'] = avgSpeed
+        job.statistics['average'] = round(av if not math.isnan(av) else - 1, 4)
+        job.statistics['stdeviation'] = round(stdd, 4)
+        job.statistics['averageSpeed'] = round(avgSpeed, 4)
         job.statistics['finished'] = True
         
-        if self.cfg.getboolean("worker", "calculateStops"):
-            self.calculateStops(job)
+        if self.cfg.getboolean("worker", "calculateIdleTimes"):
+            self.calculateIdleTimes(job)
         
         job.save()
 
-    def calculateStops(self, job):
-        # Get cars indexes.
-        carsNotUniqueView = job.project.db.view("basicStats/cars")[job.id]
+
+    def calculateIdleTimes(self, job):
+        # Get cars ids. We need no repeatings.
+        carsSpec = {'job': job.name, 'state': 'del'}
+        cars = job.db.cars.find(carsSpec, ['carid']).distinct("carid")
         
-        # Filter cars that haven't finished distance.
-        carsNotUnique = []
-        deletedCars = []
-        for it in carsNotUniqueView:
-            v = it['value']
-            if len(v) > 1 and v[1] == 'del':
-                deletedCars.append(v[0])
-            else:
-                carsNotUnique.append(v[0]) 
-        
-        cars = numpy.unique(filter(lambda x: x in deletedCars, carsNotUnique))
-        
+        # Initialize results.
         results = {}
         resultValues = []
         
+        # Retrieve data for each car separately. 
         for carId in cars:
-            # Get positions.
-            positionsView = job.project.db.view("basicStats/carPositions")
-            positionsView = positionsView[ [job.id, carId] ]
-            # Convert them to python list.
-            positions = [ it['value'] for it in positionsView ]
-            # Sort them by time.
-            positions.sort(key = lambda a: a['time'])
-            # Calculate stand-still time.
-            standTime = 0.0
-            for pos in xrange(1, len(positions) ):
-                if positions[pos]['pos'] == positions[pos-1]['pos']:
-                    standTime += positions[pos]['time'] - positions[pos-1]['time']
-            results[carId] = standTime
-            resultValues.append(standTime)
+            # Get positions already sorted by time.
+            spec = {'job': job.name, 'carid': carId}
+            fields = ['time', 'pos', 'state']
+            positions = job.db.cars.find(spec, fields).sort("time")
+                    
+            # Calculate idle time.
+            idleTime = 0.0
+            prevPos = None
+            for pos in positions:
+                if prevPos is not None and pos['pos'] == prevPos['pos']:
+                    idleTime += pos['time'] - prevPos['time']
+                prevPos = pos
             
-            # Store results
-            d = {'values': results, 'average': None, 'stdev': None}
-            job.statistics['stallTimes'] = d
-            #job.save()
-            self.log.info("Calculated stops for car: %s", carId)
+            results[carId] = round(idleTime, 4)
+            resultValues.append(idleTime)
             
-        
-        # Calculate mean and standard deviation.
-        resultValues = numpy.array(resultValues)
-        mean = numpy.average(resultValues)
-        stdev = numpy.std(resultValues) 
+            self.log.debug("Calculated idle time for car: %s", carId)
+                
+        # Calculate mean.
+        mean = numpy.average(numpy.array(resultValues))
         
         # Store results
-        d = {'values': results, 'average': mean, 'stdev': stdev}
-        job.statistics['stallTimes'] = d
-            
-
-    #def calculate(self, job):
-    #    view = job.project.db.view('_all_docs', {'include_docs': True})
-    #    startkey = 's' + job.id
-    #    endkey = 's' + (job.id + 1)
-    #    for state in view[startkey:endkey]:
+        d = {'values': results, 'average': round(mean, 4)}
+        job.statistics['idleTimes'] = d
             

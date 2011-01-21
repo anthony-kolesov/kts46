@@ -20,9 +20,10 @@ from xmlrpclib import ServerProxy
 from socket import error as SocketException
 import kts46.utils
 from kts46.serverApi import RPCServerException
-from kts46.db.CouchDBStorage import CouchDBStorage
+#from kts46.db.CouchDBStorage import CouchDBStorage
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
+from kts46.mongodb import Storage 
 
 def _notificationThreadImplementation(worker):
     while True:
@@ -70,8 +71,8 @@ class Worker:
         self.startNotificationThread()
 
         # Create db storage.
-        self.storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'))
-
+        #self.storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'))
+        self.storage = Storage(self.cfg.get('mongodb', 'host'))
 
     def run(self):
         "Runs a worker loop."

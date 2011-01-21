@@ -16,8 +16,11 @@ License:
 """
 
 import logging, BaseHTTPServer, re, json, os.path
+import urllib
 from socket import error as SocketException
+import gviz_api
 import kts46.utils
+
 
 JSON_CONTENT_TYPE = 'application/json'
 
@@ -32,7 +35,7 @@ class JSONApiServer:
         server_address = ('', self.cfg.getint('http-api', 'port'))
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
-        httpd.logger = logging.getLogger('HTTPServer')
+        httpd.logger = logging.getLogger('kts46.server.HTTPServer')
         httpd.filesDir = self.cfg.get('http-api', 'filesDir')
         httpd.serve_forever()
 
@@ -93,6 +96,17 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
+            elif functionName == 'serverStatus2':
+                tqxMatch = re.match(r"^/api/serverStatus2/\?tqx=([^\&]*)", self.path)
+                self.server.logger.info(self.path)
+                tqx = urllib.unquote( tqxMatch.group(1) ) if tqxMatch is not None else "" 
+                self.server.logger.info("tqx: %s", tqx)
+                response = self.getServerStatus2(rpc, tqx)
+                self.send_response(200)
+                self.send_header('Content-Type', JSON_CONTENT_TYPE)
+                self.end_headers()
+                self.wfile.write(response)
+                return
             elif functionName == 'jobStatistics':
                 paramsMatch = re.match(r"/api/jobStatistics/([-\w]+)/([-\w]+)/", self.path)
                 if paramsMatch is not None:
@@ -111,6 +125,22 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(json.dumps(data))
+
+
+    def getServerStatus2(self, rpc, tqx):
+        #{"project": "new_project_1", "total": 36000.0, "done": 36000, "name": "exp1-s1"}
+        
+        # Prepare data.
+        data = rpc.getServerStatus()
+                
+        schema = {"project":("string", "Project"), "name":("string", "Job"),
+                  "total": ("number", "Total states"), "done": ("number", "Done steps"),
+                  "statisticsFinished":("boolean", "Has stats")}
+        table = gviz_api.DataTable(schema)
+        table.LoadData(data)
+        columnsOrder = ("project", "name", "done", "total", "statisticsFinished")
+        response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
+        return response
 
 
     def do_POST(self):
