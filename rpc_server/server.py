@@ -35,6 +35,8 @@ from kts46.server.rpc import RPCServer
 from kts46.server.json_api import JSONApiServer
 from kts46.server.supervisor import Supervisor
 
+import psyco
+psyco.full()
 
 def startWorker(cfg, id=None):
     worker = Worker(cfg, id)

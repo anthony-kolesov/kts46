@@ -35,7 +35,7 @@ def _notificationThreadImplementation(worker):
         worker.lastUpdateLock.acquire()
         # Event may have been disabled while we were waiting, so check here again.
         if worker.enableNotificationEvent.is_set():
-            worker.log.info('[%s] Sending notification to server...', threading.currentThread().name)
+            worker.log.debug('[%s] Sending notification to server...', threading.currentThread().name)
             try:
                 lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
             except SocketException, msg:

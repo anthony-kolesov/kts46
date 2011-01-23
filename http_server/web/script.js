@@ -52,7 +52,7 @@ var kts46 = (function($){
                             "id": "deleteProject_" + projectName,
                             "params": [ projectName ]
                         }) + "\n";
-                        closeClb = (function(a) {$(a).dialog("close");}).bind({},this});
+                        closeClb = (function(a) {$(a).dialog("close");}).bind({},this);
                     $.post(jsonRpcPath, data, closeClb);
                 },
                 Cancel: function() {
@@ -169,10 +169,11 @@ var kts46 = (function($){
     };
     
     
-    var updateStatus = function() {
+    var updateStatus = function(r) {
         
         var query = new google.visualization.Query("/api/serverStatus2/");
         query.send( function(response){
+            if (response.isError()) { return; }
             var dataTable = response.getDataTable();
             
             // Store table
@@ -205,7 +206,6 @@ var kts46 = (function($){
 
             var table = $(document).data('google-table');
             table.draw(view, {showRowNumber: true, allowHtml: true});
-            $('.progress-block .last-update-time').text( 'Last update time: ' + new Date() );
         } );
     };
     
@@ -269,17 +269,17 @@ var kts46 = (function($){
     google.load('visualization', '1', {packages:['table']});
     google.setOnLoadCallback( function() {
         updateStatus();
-        setInterval(updateStatus, serverPollInterval);
+        setInterval(updateStatus, serverPollInterval);     
     });
     
     // on ready
     $(document).ready(function(){
-        $(this).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+        $(document).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
         
         // Buttons
         $('.jqueryui-button').button();
         $('#simulation-add-project')
-            .button({text: false, icons: {primary: "ui-icon-play"}})
+            .button({text: false, icons: {primary: "ui-icon-plus"}})
             .click(addProject);
         $('#simulation-delete-project')
             .button({text: false, icons: {primary: "ui-icon-trash"}})

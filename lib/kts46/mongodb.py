@@ -248,7 +248,7 @@ class SimulationProject(object):
 
 class SimulationJob(object):
     "Job to simulate."
-
+    
     def __init__(self, project, name, definition=None):
         """Create new :class:`SimulationJob` instance .
         
@@ -354,6 +354,16 @@ class SimulationJob(object):
              self.db.progresses.save(self.progress)
         if self.statistics is not None:
              self.db.statistics.save(self.statistics)
+             
+    def round(self, value):
+        """Provides centralised way to round values for required precision.
+        
+        :param value: value to round.
+        :type value: float
+        :returns: value rounded with required precision.
+        :rtype: float
+        """
+        return round(value, 6)
 
 
 class StateStorage(object):
