@@ -4,17 +4,17 @@
         <title>kts46 Web UI</title>
         <style type="text/css">
             @import url("css/ui-lightness/jquery-ui-1.8.7.custom.css?v=1");
-            @import url("style.css?v=1");
+            @import url("css/style.css?v=1");
         </style>
         <script type="text/javascript" src="js/json2.js?v=1"></script>
         <script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
         <script type="text/javascript" src="js/jquery-ui-1.8.7.custom.min.js"></script>
         <script type='text/javascript' src='https://www.google.com/jsapi'></script>
-        <script type="text/javascript" src="script.js?v=4"></script>
+        <script type="text/javascript" src="js/script.js?v=4"></script>
     </head>
     <body>
         <div id="top-container">
-	        
+
 	        <div class="ui-widget-content toolbar" id="header">
                 <div>
                     Project:
@@ -29,17 +29,17 @@
                     <button id="show-statistics">Statistics</button>
                 </div>
 	        </div>
-	        
+
 	        <div class="progress-block">
 	           <div class="last-update-time"></div>
 	        </div>
-	        
+
 	        <table id="progress-table"></table>
-	        
+
 	        <div id="progress-table-2"></div>
-	        
+
         </div>
-        
+
         <div id="add-project-confirm" title="Add project?" style="display: none;">
             <p>
                 <span class="ui-icon ui-icon-alert"></span>
@@ -49,27 +49,27 @@
                 Are you sure you want to add a project to server?
             </p>
         </div>
-        
+
         <div id="delete-project-confirm" title="Delete project?" style="display: none;">
             <p>
                 <span class="ui-icon ui-icon-alert"></span>
-                
+
                 <label for="delete-project-name">Project name</label>
                 <select name="delete-project-name" id="delete-project-name"
                     class="ui-widget-content ui-corner-all"></select>
                 <br />
-                
+
                 These project will be permanently deleted and cannot be recovered. Are you sure?
             </p>
         </div>
-        
+
         <div id="delete-job-confirm" title="Delete job?" style="display: none;">
             <p>
                 <span class="ui-icon ui-icon-alert"></span>
                 These job will be permanently deleted and cannot be recovered. Are you sure?
             </p>
         </div>
-        
+
         <div id="add-job-form" title="Add job user" style="display: none;">
             <p class="validateTips"><!-- All form fields are required. --></p>
             <form>
@@ -78,18 +78,18 @@
                 <select name="add-job-project-name" id="add-job-project-name"
                     class="ui-widget-content ui-corner-all"></select>
                 <br />
-                
+
                 <label for="add-job-name">Name</label>
                 <input type="text" name="add-job-name" id="add-job-name" class="text ui-widget-content ui-corner-all" />
                 <br />
-                
+
                 <label for="add-job-definition">Definition file</label>
                 <input type="file" name="add-job-definition" id="add-job-definition" class="ui-widget-content ui-corner-all" />
                 <br />
-                
+
                 <label for="add-job-is-series">Add as a series?</label>
                 <input type="checkbox" name="add-job-is-series" id="add-job-is-series" class="ui-widget-content ui-corner-all"/>
-                <br />          
+                <br />
 
                 <label for="add-job-count">Job series length</label>
                 <input type="text" name="add-job-count" id="add-job-count"
@@ -98,11 +98,11 @@
             </fieldset>
             </form>
         </div>
-        
+
         <div id="show-stats-dialog" title="Job statistics" style="display: none;">
             <pre class="content"></pre>
         </div>
-        
-                
+
+
     </body>
 </html>
