@@ -78,7 +78,8 @@ class SchedulerServer:
             self._waitingTasks.put(d)
 
     def addStatisticsTask(self, projectName, jobName):
-        if self.storage[projectName][jobName].statistics['finished']:
+        if self.storage[projectName][jobName].progress['basicStatistics']:
+            # Scheduler now relies on basicStats, because other stats can be switched off.
             self._log.info('Statistics already calculated. Finish')
         else:
             self._log.info('Adding statistics task: project={0}, job={1}.'.format(

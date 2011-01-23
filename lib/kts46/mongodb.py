@@ -311,8 +311,41 @@ class SimulationJob(object):
         self.definition = doc['yaml']
         self.simulationParameters = doc['simulationParameters']
 
-        self.progress = self.db.progresses.find_one(self.name)
+        p = self.db.progresses.find_one(self.name)
+        self.progress = p
         self.statistics = self.db.statistics.find_one(self.name)
+
+        # Update old documents
+        updated = False
+        if 'throughput' not in self.statistics:
+            self.statistics['throughput'] = []
+            updated = True
+
+        if 'basicStatistics' not in p:
+            if 'finished' in self.statistics:
+                p['basicStatistics'] = self.statistics['finished']
+            else:
+                p['basicStatistics'] = False
+            updated = True
+        if 'idleTiems' not in p:
+            p['idleTimes'] = len(self.statistics['idleTimes']) > 0
+            updated = True
+        if 'throughput' not in p:
+            if 'throughput' in self.statistics:
+                p['throughput'] = len(self.statistics['throughput']) > 0
+            else:
+                p['throughput'] = False
+            updated = True
+        if 'fullStatistics' not in p:
+            p['fullStatistics'] = (p['basicStatistics'] and
+                                   p['idleTimes'] and
+                                   p['throughput'])
+            updated = True
+        if 'jobname' not in p:
+            p['jobname'] = self.name
+            updated = True
+
+        if updated: self.save()
 
 
     def getStateDocumentId(self, time):
