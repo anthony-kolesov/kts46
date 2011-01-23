@@ -4,8 +4,10 @@ simulationParameters:
     stepDuration: 0.2
     batchLength: 2000
 
-# seconds
-carGenerationInterval: 3
+# seconds. This is overrided by inputRate
+# carGenerationInterval: 3
+# input rate is a cars per hour.
+inputRate: 1200
 # m/s
 safeDistance: 20
 # m/s
