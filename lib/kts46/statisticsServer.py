@@ -108,10 +108,10 @@ class StatisticsServer:
         points = ['start', 'end']
         result = []
         # Here we need .distinct because no 'del' or 'add' is used.
-        cars = job.db.cars.find({'job': job.name}, ['carid']).distinct("carid")
+        #cars = job.db.cars.find({'job': job.name}, ['carid']).distinct("carid")
         #carQuery = job.db.cars.find({'job': job.name}, ['carid'])
         #cars = set( map(lambda x: x['carid'], carQuery ) )
-        self.log.info("Has to find throughput with %i cars", len(cars))
+        #self.log.info("Has to find throughput with %i cars", len(cars))
         for point in points:
             if point == 'start' or point == 'end':
                 carsAmount = self.calculateEndpointsThroughput(job, point)

@@ -133,7 +133,7 @@ class Model(object):
                 for i in range(0, self._road.lines):
                     if self.canAddCar(i):
                         self._enterQueue[0].line = i
-                        addCar = False
+                        addCar = True
                         break
             if addCar:
                 self._addCar(self._enterQueue[0])
