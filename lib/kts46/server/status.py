@@ -32,9 +32,13 @@ class StatusServer:
         r = [ ]
         for job in jobs:
             r.append({'name': job.name, 'done': job.progress['done'],
-                      'total': job.progress['totalSteps'],
+                      'totalSteps': job.progress['totalSteps'],
                       'project': projectName,
-                      'statisticsFinished': job.statistics['finished'] })
+                      'fullStatistics': job.progress['fullStatistics'],
+                      'basicStatistics': job.progress['basicStatistics'],
+                      'idleTimes': job.progress['idleTimes'],
+                      'throughput': job.progress['throughput'],
+                      })
         # If project contains nothing - add dummy job to display project in interface.
         if len(r) == 0:
             r.append({'visible': False, 'project': projectName})
