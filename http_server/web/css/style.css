@@ -10,17 +10,9 @@ ul {
     padding-left: 0; /* Override default webkit settings. */
 }
 
-#top-container {
-    /*max-width: 1000px;
-    min-width: 400px;
-    width: 90%;
-    margin: 0px auto 0px 0px;*/
-}
-
 
 /* ****** Layout ****** */
 .layout-column-1 {
-    /*float: left; */
     width: 149px; /*-1px for border */
     height: 100%;
     margin: 0;
@@ -30,10 +22,18 @@ ul {
 
 .layout-column-2 {
     position: absolute;
-    height: 100%;
     left: 150px;
     right: 0px;
     bottom: 0px;
+    top: 0px;
+}
+
+.layout-column-2.toolbar {
+    height: 48px;
+}
+
+.layout-column-2.content {
+    top: 48px;
 }
 
 .layout-row {
@@ -43,7 +43,6 @@ ul {
 
 .layout-row-1 {
     height: 50%;
-
 }
 
 .layout-row-2 {
@@ -52,7 +51,7 @@ ul {
 }
 
 
-.border-sizing, .layout-row-2 {
+.border-sizing, .layout-row-2, .layout-column-2 {
     -webkit-box-sizing: border-box;
     box-sizing: border-box;
     -moz-box-sizing: border-box;
@@ -67,9 +66,9 @@ ul {
     padding: 3px 3px 3px 10px;
 }
 
-#projects-list li.hover {
-    background-color: #ccc;
-}
+#projects-list .ui-selecting { background: #e9e9e9; }
+#projects-list .ui-selected { background: #ccc;}
+
 
 /* ****** Toolbar ****** */
 
@@ -85,15 +84,17 @@ ul {
 
 
 #progress-table-2 {
-    /*position: absolute;*/
+    top: 0px;
+    bottom: 0px;
+    position: relative;
     /*height: 50%;*/
-    /*overflow: scroll;*/
+    overflow-y: scroll;
 }
 
 
 /* ****** Details ****** */
 #details-view {
-
+    padding: 0.3em 1em;
 }
 
 
