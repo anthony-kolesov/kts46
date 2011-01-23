@@ -218,22 +218,21 @@ var kts46 = (function($){
             var view = new google.visualization.DataView(dataTable);
             view.setColumns([projectColumnId, jobColumnId, progressColumnId,
                              statsFinishedColumnId]);
+            //$(document).data('google-table-view', view);
 
-            var table = $(document).data('google-table');
-            table.draw(view, {showRowNumber: true, allowHtml: true});
+            //var table = $(document).data('google-table');
+            //table.draw(view, {showRowNumber: true, allowHtml: true});
+            renderFilteredRows(view);
 
             // Show projects in their view.
-            var projectsList = $('#projects-list').empty();
-            var projects = dataTable.getDistinctValues(projectColumnId);
-            $.each(projects, function(){
-                projectsList.append(['<li>',this,'</li>'].join(''));
-            } );
+            updateProjectsList(dataTable.getDistinctValues(projectColumnId));
         } );
     };
 
 
     var getSelectedJobs = function() {
-        return $(document).data('google-table').getSelection().map( function(it){ return it.row; } );
+        return $(document).data('google-table').getSelection().map( function(it){
+            return it.row; } );
     };
 
 
@@ -256,7 +255,7 @@ var kts46 = (function($){
      */
     var forSelectedJobs = function(action) {
         var jobs = getSelectedJobs(),
-            table = $(document).data('simulation-data'),
+            table = $(document).data('google-table-view'),
             i, l;
         if (typeof table === "undefined") return;
         for(i = 0, l = jobs.length; i < l; ++i){
@@ -270,21 +269,78 @@ var kts46 = (function($){
     var showStatistics = function() {
         var jobs = getSelectedJobs(),
             doc = $(document),
+            view = doc.data('google-table-view'),
             job, project, path;
         if (jobs.length === 0) return;
 
-        job = doc.data('simulation-data').getValue(jobs[0], jobColumnId);
-        project = doc.data('simulation-data').getValue(jobs[0], projectColumnId);
+        job = view.getValue(jobs[0], jobColumnId);
+        project = view.getValue(jobs[0], projectColumnId);
 
         $.getJSON(['/api/jobStatistics', project, job, ''].join('/'), function(data){
             var text = JSON.stringify(data, null, 4); // 4 is amount of spaces.
-            $('#details-content').text(text);
-            /*$('#show-stats-dialog .content').text(text);
-            $('#show-stats-dialog').dialog({
-                modal: true,
-                buttons: { Ok: function(){ $(this).dialog("close"); } }
-            });*/
+            $('#details-content').text( [project,'.',job,'\n',text].join(''));
         } );
+    };
+
+
+    var updateProjectsList = function(projects) {
+        // Show projects in their view.
+        var projectsList = $('#projects-list');
+        var currentProjects = projectsList.data('projects');
+        if (typeof currentProjects === "undefined") currentProjects = [];
+        // Remove old projects.
+        projectsList.find('li').each(function(){
+            if ($.inArray(this.innerText, projects) === -1) {
+                $(this).remove();
+            }
+        });
+        $.each(projects, function(index, val){
+            if ($.inArray(val, currentProjects) === -1) {
+                projectsList.append(['<li>', val, '</li>'].join(''));
+            }
+        } );
+        projectsList.data('projects', projects);
+    };
+
+
+    var handleProjectSelected = function(event, ui) {
+        var projectName = ui.selected.innerText;
+        $(document).data('selected-projects').push(projectName);
+        renderFilteredRows();
+    };
+
+
+    var handleProjectUnselected = function(event, ui) {
+        var projectName = ui.unselected.innerText,
+            selected = $(document).data('selected-projects'),
+            index = $.inArray(projectName, selected);
+        $(document).data('selected-projects', selected.splice(index, 0));
+        renderFilteredRows();
+    };
+
+
+    var renderFilteredRows = function(view) {
+        if (view) {
+            $(document).data('google-table-view', view);
+        } else {
+            view = $(document).data('google-table-view');
+        }
+
+        var rows = [];
+        var data = $(document).data('simulation-data');
+        var selectedProjects = $(document).data('selected-projects');
+        if (selectedProjects.length !== 0) {
+            $.each(selectedProjects, function(i, v){
+                var newRows = data.getFilteredRows([{"column": projectColumnId, "value": v}]);
+                rows = rows.concat(newRows);
+            });
+            view.setRows(rows);
+        } else {
+            view.setRows(0, data.getNumberOfRows()-1);
+        }
+
+        var table = $(document).data('google-table');
+        table.draw(view, {showRowNumber: true, allowHtml: true});
     };
 
 
@@ -292,12 +348,13 @@ var kts46 = (function($){
     google.load('visualization', '1', {packages:['table']});
     google.setOnLoadCallback( function() {
         updateStatus();
-        //setInterval(updateStatus, serverPollInterval);
+        setInterval(updateStatus, serverPollInterval);
     });
 
     // on ready
     $(document).ready(function(){
         $(document).data('google-table', new google.visualization.Table(document.getElementById(googleTableId)));
+        $(document).data('selected-projects', []);
 
         // Buttons
         $('.jqueryui-button').button();
@@ -319,9 +376,10 @@ var kts46 = (function($){
         $('#show-statistics').button().click(showStatistics);
 
         /* Project list effects. */
-        $('#projects-list').delegate('li', 'hover', function(){
-            $(this).toggleClass('hover');
-        } );
+        $('#projects-list').selectable({
+            selected: handleProjectSelected,
+            unselected: handleProjectUnselected
+        });
     });
 
     return {

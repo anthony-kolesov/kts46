@@ -14,28 +14,26 @@
     </head>
     <body>
         <ul id="projects-list" class="layout-column-1"></ul>
-        <div class="layout-column-2">
-            <div id="top-container" class="layout-row layout-row-1">
-                <div class="ui-widget-content toolbar" id="header">
-                    <div>
-                        Project:
-                        <button id="simulation-add-project">Add project</button>
-                        <button id="simulation-delete-project">Delete project</button>
-                    </div>
-                    <div>
-                        Job:
-                        <button id="simulation-start-job">Start job</button>
-                        <button id="simulation-add-job">Add job</button>
-                        <button id="simulation-delete-job">Delete job</button>
-                        <button id="show-statistics">Statistics</button>
-                    </div>
-                </div>
+        <div class="ui-widget-content toolbar layout-column-2" id="header">
+            <div>
+                Project:
+                <button id="simulation-add-project">Add project</button>
+                <button id="simulation-delete-project">Delete project</button>
+            </div>
+            <div>
+                Job:
+                <button id="simulation-start-job">Start job</button>
+                <button id="simulation-add-job">Add job</button>
+                <button id="simulation-delete-job">Delete job</button>
+                <button id="show-statistics">Statistics</button>
+            </div>
+        </div>
 
+        <div class="layout-column-2 content">
                 <div class="progress-block">
                    <div class="last-update-time"></div>
                 </div>
-                <div id="progress-table-2"></div>
-            </div>
+            <div id="progress-table-2" class="layout-row layout-row-1"></div>
             <div id="details-view" class="layout-row layout-row-2">
                 <pre id="details-content">
                 </pre>
