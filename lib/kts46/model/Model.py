@@ -107,8 +107,17 @@ class Model(object):
         self.addCars(carsToAdd)
         self._lastCarGenerationTime = newLastCarTime
 
+        self.addCarsFromQueueToRoad()
+
+        # Update time.
+        self.time = newTime
+
+
+    def addCarsFromQueueToRoad(self):
         # If there is a car in the queue, then send it.
-        if len(self._enterQueue) > 0:
+        # Try to add cars while there was at least one succesfull added.
+        addCar = True
+        while len(self._enterQueue) > 0 and addCar:
             # Start with generated line and if it is busy try others.
             addCar = False
             if self.canAddCar(self._enterQueue[0].line):
@@ -124,9 +133,6 @@ class Model(object):
             if addCar:
                 self._addCar(self._enterQueue[0])
                 del self._enterQueue[0]
-
-        # Update time.
-        self.time = newTime
 
 
     def addCars(self, amount):
