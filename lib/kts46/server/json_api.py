@@ -100,11 +100,12 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                 data = rpc.getProjectStatus(projectName)
             elif functionName == 'serverStatus':
                 data = rpc.getServerStatus()
+            elif functionName == 'serverStatus3':
+                data = self.getServerStatus3(rpc)
             elif functionName == 'serverStatus2':
                 tqxMatch = re.match(r"^/api/serverStatus2/\?tqx=([^\&]*)", self.path)
                 self.server.logger.info(self.path)
                 tqx = urllib.unquote( tqxMatch.group(1) ) if tqxMatch is not None else "" 
-                self.server.logger.info("tqx: %s", tqx)
                 response = self.getServerStatus2(rpc, tqx)
                 self.send_response(200)
                 self.send_header('Content-Type', JSON_CONTENT_TYPE)
@@ -144,6 +145,33 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         table.LoadData(data)
         columnsOrder = ("project", "name", "done", "total", "statisticsFinished")
         response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
+        return response
+
+
+    def getServerStatus3(self, rpc):
+        # Prepare data.
+        data = rpc.getServerStatus()
+        
+        response = { }
+        
+        # Schema
+        cols = [  ] 
+        schema = (("project","string", "Project"),
+                  ("name", "string", "Job"),
+                  ("done", "number", "Done steps"),
+                  ("total", "number", "Total states"),
+                  ("statisticsFinished", "boolean", "Has stats"))
+        for col in schema:
+            cols.append({'id': col[0], 'type': col[1], 'label': col[2]})
+        response['cols'] = cols
+        
+        # Rows
+        rows = [ ]
+        for j in data:
+            row = [j['project'], j['name'], j['done'], j['total'],
+                   j['statisticsFinished'] ] 
+            rows.append(row)
+        response['rows'] = rows
         return response
 
 

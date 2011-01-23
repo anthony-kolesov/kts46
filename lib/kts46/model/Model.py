@@ -65,6 +65,7 @@ class Model(object):
             if newTime > light.getNextSwitchTime():
                 light.switch(newTime)
 
+        toRemove = [ ]
         for car in self._cars:
             if car.state != Car.DELETED:
                 # Update state.
@@ -97,7 +98,9 @@ class Model(object):
                     # self._cars.remove(car)
                     car.state = Car.DELETED
             else:
-                self._cars.remove(car)
+                toRemove.append(car)
+        
+        for car in toRemove: self._cars.remove(car)
 
         # Generate new car.
         # It is always added to the queue and if there is enough place then
