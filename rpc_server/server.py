@@ -35,8 +35,6 @@ from kts46.server.rpc import RPCServer
 from kts46.server.json_api import JSONApiServer
 from kts46.server.supervisor import Supervisor
 
-import psyco
-psyco.full()
 
 def startWorker(cfg, id=None):
     worker = Worker(cfg, id)
@@ -94,6 +92,11 @@ if __name__ == '__main__':
     # Logging
     kts46.utils.configureLogging(cfg)
     logger = logging.getLogger(cfg.get('loggers', 'Node'))
+
+    # Psyco JIT.
+    if cfg.getboolean('node', 'enablePsyco'):
+        import psyco
+        psyco.full()
 
     rpcProcess, workerProcess = (None, None)
     supervisorProcess, httpProcess = (None, None)
