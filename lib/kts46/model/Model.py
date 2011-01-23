@@ -56,7 +56,6 @@ class Model(object):
 
     def run_step(self, milliseconds):
         stopDistance = self.params.safeDistance
-        newCarGenRate = timedelta(seconds=self.params.carGenerationInterval)
 
         timeStep = timedelta(milliseconds=milliseconds)
         newTime = self.time + timeStep # Time after step is performed.
@@ -95,31 +94,18 @@ class Model(object):
 
                 car.move(distanceToMove)
                 if self._road.length < car.get_position():
-                    # self._cars.remove(car)
                     car.state = Car.DELETED
             else:
                 toRemove.append(car)
-        
+
         for car in toRemove: self._cars.remove(car)
 
         # Generate new car.
         # It is always added to the queue and if there is enough place then
         # it will be instantly added to the road.
-        if self._lastCarGenerationTime + newCarGenRate <= newTime:
-            speedMultiplier = self.params.maxSpeed - self.params.minSpeed
-            speedAdder = self.params.minSpeed
-            speed = math.floor(random.random() * speedMultiplier) + speedAdder
-            self._lastCarId += 1
-            line = math.floor(random.random() * self._road.lines)
-
-            newCar = Car(id=self._lastCarId, speed=speed, line=line)
-            self._lastCarGenerationTime = newTime
-            self._logger.debug('Created car: [speed: %f].', speed)
-            #if self.canAddCar():
-            #    self._addCar(newCar)
-            #else:
-            self._enterQueue.append(newCar)
-            #    self._logger.info("Couldn't add car to the road, put in the queue.")
+        carsToAdd, newLastCarTime = self.howMuchCarsToAdd(newTime)
+        self.addCars(carsToAdd)
+        self._lastCarGenerationTime = newLastCarTime
 
         # If there is a car in the queue, then send it.
         if len(self._enterQueue) > 0:
@@ -143,6 +129,28 @@ class Model(object):
         self.time = newTime
 
 
+    def addCars(self, amount):
+        speedMultiplier = self.params.maxSpeed - self.params.minSpeed
+        speedAdder = self.params.minSpeed
+        for i in xrange(amount):
+            speed = math.floor(random.random() * speedMultiplier) + speedAdder
+            self._lastCarId += 1
+            line = math.floor(random.random() * self._road.lines)
+            newCar = Car(id=self._lastCarId, speed=speed, line=line)
+            self._logger.debug('Created car: [speed: %f].', speed)
+            self._enterQueue.append(newCar)
+
+
+    def howMuchCarsToAdd(self, newTime):
+        newCarGenRate = self.params.carGenerationInterval
+        lastCarTime = self._lastCarGenerationTime
+        carsToGenerate = 0
+        while lastCarTime <= newTime:
+            carsToGenerate += 1
+            lastCarTime += newCarGenRate
+        return (carsToGenerate, lastCarTime)
+
+
     def get_nearest_traffic_light(self, position):
         return self.get_nearest_object_in_array(self._lights, position)
 
@@ -156,11 +164,11 @@ class Model(object):
 
             # Check if it is in our line and skip it if not.
             # Objects that has not line attribute affect all lines,
-            # like traffic lights. 
+            # like traffic lights.
             if hasattr(i, "line") and i.line != line:
                 continue
 
-            # Rule out deleted cars.
+            # Deleted cars already doesn't exists.
             if hasattr(i, "state") and i.state == Car.DELETED:
                 continue
 
@@ -206,7 +214,15 @@ class Model(object):
         objData = yaml.safe_load(yamlData)
         # fields
         if "carGenerationInterval" in objData:
-           self.params.carGenerationInterval = objData["carGenerationInterval"]
+            self.params.carGenerationInterval = \
+                timedelta(seconds=objData["carGenerationInterval"])
+            self.params.inputRate = 3600 / objData["carGenerationInterval"]
+        if "inputRate" in objData:
+            inputRate = objData["inputRate"]
+            # Store both but inputRate is used for storage while
+            # carGenerationInterval is used in model.
+            self.params.inputRate = inputRate
+            self.params.carGenerationInterval = timedelta(hours=1) / inputRate
         if "safeDistance" in objData:
            self.params.safeDistance = objData["safeDistance"]
         if "maxSpeed" in objData:
@@ -230,7 +246,7 @@ class Model(object):
 
     def asYAML(self):
         d = {}
-        d["carGenerationInterval"] = self.params.carGenerationInterval
+        d["inputRate"] = self.params.inputRate
         d["safeDistance"] = self.params.safeDistance
         d["maxSpeed"] = self.params.maxSpeed
         d["minSpeed"] = self.params.minSpeed
