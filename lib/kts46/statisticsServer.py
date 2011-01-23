@@ -25,7 +25,7 @@ class StatisticsServer:
         self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
-        
+
     def calculate(self, job):
         addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
         delCarData = job.db.cars.find({'job':job.name, 'state': 'del'},['carid','time'])
@@ -44,22 +44,26 @@ class StatisticsServer:
         arr = numpy.array(moveTimes)
         av = numpy.average(arr)
         stdd = numpy.std(arr)
-        
+
         definition = yaml.safe_load(job.definition)
         avgSpeed = definition['road'].length / av
-        
+
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
-        job.statistics['average'] = round(av if not math.isnan(av) else - 1, 4)
-        job.statistics['stdeviation'] = round(stdd, 4)
-        job.statistics['averageSpeed'] = round(avgSpeed, 4)
+        job.statistics['average'] = job.round(av if not math.isnan(av) else - 1)
+        job.statistics['stdeviation'] = job.round(stdd)
+        job.statistics['averageSpeed'] = job.round(avgSpeed)
         job.statistics['finished'] = True
-        
+        job.progress['basicStatistics'] = True
+
         if self.cfg.getboolean("worker", "calculateIdleTimes"):
             self.calculateIdleTimes(job)
         if self.cfg.getboolean('worker', "calculateThroughput"):
             self.calculateThroughput(job)
-        
+
+        job.progress['fullStatistics']= (job.progress['basicStatistics'] and
+                                         job.progress['idleTimes'] and
+                                         job.progress['throughput'])
         job.save()
 
 
@@ -70,19 +74,19 @@ class StatisticsServer:
         # distinct is useless for its original purpose because car can be
         # added or delete only once. But it used because it returns values
         # not documents. So I give that work to library and don't extract
-        # them by myself.  
-        
+        # them by myself.
+
         # Initialize results.
         results = {}
         resultValues = []
-        
-        # Retrieve data for each car separately. 
+
+        # Retrieve data for each car separately.
         for carId in cars:
             # Get positions already sorted by time.
             spec = {'job': job.name, 'carid': carId}
             fields = ['time', 'pos', 'state']
             positions = job.db.cars.find(spec, fields).sort("time")
-                    
+
             # Calculate idle time.
             idleTime = 0.0
             prevPos = None
@@ -90,28 +94,25 @@ class StatisticsServer:
                 if prevPos is not None and pos['pos'] == prevPos['pos']:
                     idleTime += pos['time'] - prevPos['time']
                 prevPos = pos
-            
+
             results[carId] = round(idleTime, 4)
             resultValues.append(idleTime)
-            
+
             self.log.debug("Calculated idle time for car: %s", carId)
-                
+
         # Calculate mean.
         mean = numpy.average(numpy.array(resultValues))
-        
+
         # Store results
         d = {'values': results, 'average': round(mean, 4)}
         job.statistics['idleTimes'] = d
-    
+        job.progress['idleTimes'] = True
+
+
     def calculateThroughput(self, job):
         self.log.info("Calculating throughput.")
         points = ['start', 'end']
         result = []
-        # Here we need .distinct because no 'del' or 'add' is used.
-        #cars = job.db.cars.find({'job': job.name}, ['carid']).distinct("carid")
-        #carQuery = job.db.cars.find({'job': job.name}, ['carid'])
-        #cars = set( map(lambda x: x['carid'], carQuery ) )
-        #self.log.info("Has to find throughput with %i cars", len(cars))
         for point in points:
             if point == 'start' or point == 'end':
                 carsAmount = self.calculateEndpointsThroughput(job, point)
@@ -135,10 +136,11 @@ class StatisticsServer:
                            'pos': point})
         job.statistics['throughput'] = result
         self.log.info("Throughput calculated for %i points.", len(points))
-        
+        job.progress['throughput'] = True
+
+
     def calculateEndpointsThroughput(self, job, point):
         """Calculates throughput for start and end points. That is much
         faster than for usual points because of 'state' field and indexes."""
         carState = 'add' if point == 'start' else 'del'
         return job.db.cars.find({'job': job.name, 'state': carState}, []).count()
-        

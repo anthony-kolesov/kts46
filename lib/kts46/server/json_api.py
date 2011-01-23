@@ -105,7 +105,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             elif functionName == 'serverStatus2':
                 tqxMatch = re.match(r"^/api/serverStatus2/\?tqx=([^\&]*)", self.path)
                 self.server.logger.info(self.path)
-                tqx = urllib.unquote( tqxMatch.group(1) ) if tqxMatch is not None else "" 
+                tqx = urllib.unquote( tqxMatch.group(1) ) if tqxMatch is not None else ""
                 response = self.getServerStatus2(rpc, tqx)
                 self.send_response(200)
                 self.send_header('Content-Type', JSON_CONTENT_TYPE)
@@ -134,16 +134,21 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
     def getServerStatus2(self, rpc, tqx):
         #{"project": "new_project_1", "total": 36000.0, "done": 36000, "name": "exp1-s1"}
-        
+
         # Prepare data.
         data = rpc.getServerStatus()
-                
+
         schema = {"project":("string", "Project"), "name":("string", "Job"),
-                  "total": ("number", "Total states"), "done": ("number", "Done steps"),
-                  "statisticsFinished":("boolean", "Has stats")}
+                  "totalSteps": ("number", "Total states"),
+                  "done": ("number", "Done steps"),
+                  "basicStatistics":("boolean", "Basic stats"),
+                  "idleTimes":("boolean", "Idle times"),
+                  "throughput":("boolean", "Throughput"),
+                  "fullStatistics":("boolean", "All stats")}
         table = gviz_api.DataTable(schema)
         table.LoadData(data)
-        columnsOrder = ("project", "name", "done", "total", "statisticsFinished")
+        columnsOrder = ("project", "name", "done", "totalSteps", "basicStatistics",
+                        "idleTimes", "throughput", "fullStatistics")
         response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
         return response
 
@@ -151,11 +156,11 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     def getServerStatus3(self, rpc):
         # Prepare data.
         data = rpc.getServerStatus()
-        
+
         response = { }
-        
+
         # Schema
-        cols = [  ] 
+        cols = [  ]
         schema = (("project","string", "Project"),
                   ("name", "string", "Job"),
                   ("done", "number", "Done steps"),
@@ -164,12 +169,12 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         for col in schema:
             cols.append({'id': col[0], 'type': col[1], 'label': col[2]})
         response['cols'] = cols
-        
+
         # Rows
         rows = [ ]
         for j in data:
             row = [j['project'], j['name'], j['done'], j['total'],
-                   j['statisticsFinished'] ] 
+                   j['statisticsFinished'] ]
             rows.append(row)
         response['rows'] = rows
         return response
@@ -203,14 +208,14 @@ Required number of params: {0}, but has: {1}.""".format(amount, len(params)), id
     def handleCall(self):
         # JSON RPC request must be in one line o
         request = json.loads(self.rfile.readline())
-        
+
         if "id" not in request:
             self.exceptBadRequest("""`id` field is missing from JSON RPC request body.
 It must be `null` if you want to send notification.""")
             return
-            
+
         id = request['id']
-            
+
         if "method" not in request:
             self.exceptBadRequest("`method` field is missing from JSON RPC request body.", id)
             return
@@ -218,10 +223,10 @@ It must be `null` if you want to send notification.""")
             self.exceptBadRequest("""`params` field is missing from JSON RPC request body.
 It must be an empty array if method has no params.""", id)
             return
-        
+
         methodName = request['method']
         params = request['params']
-        
+
         if not isinstance(params, type( [] )):
             self.exceptBadRequest("`params` fields must be an array.", id)
             return
@@ -254,4 +259,3 @@ It must be an empty array if method has no params.""", id)
 
         # If we are here than all was a success.
         self.sendRPCResponse(result, id, None)
-

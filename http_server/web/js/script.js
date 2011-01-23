@@ -22,8 +22,11 @@ var kts46 = (function($){
         jobColumnId = 1,
         doneColumnId = 2,
         totalColumnId = 3,
-        statsFinishedColumnId = 4,
-        progressColumnId = 5,
+        basicStatsFinishedColumnId = 4,
+        idleTimesFinishedColumnId = 5,
+        throughputFinishedColumnId = 6,
+        statsFinishedColumnId = 7,
+        progressColumnId = 8,
         googleTableId = "progress-table-2";
 
     var addProject = function(){
@@ -102,7 +105,7 @@ var kts46 = (function($){
             // Check series identifier
             var isSeriesDOM = document.getElementById("add-job-is-series");
             if (isSeriesDOM.checked) {
-                seriesLength = parseInt($('#add-job-count').val());
+                seriesLength = parseInt($('#add-job-count').val(), 10);
             }
 
             var file = document.getElementById('add-job-definition').files[0];
@@ -184,7 +187,7 @@ var kts46 = (function($){
     };
 
 
-    var updateStatus = function(r) {
+    var updateStatus = function() {
 
         var query = new google.visualization.Query("/api/serverStatus2/");
         query.send( function(response){
@@ -217,7 +220,8 @@ var kts46 = (function($){
 
             var view = new google.visualization.DataView(dataTable);
             view.setColumns([projectColumnId, jobColumnId, progressColumnId,
-                             statsFinishedColumnId]);
+                             basicStatsFinishedColumnId, idleTimesFinishedColumnId,
+                             throughputFinishedColumnId, statsFinishedColumnId]);
             //$(document).data('google-table-view', view);
 
             //var table = $(document).data('google-table');

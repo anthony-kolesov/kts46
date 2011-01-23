@@ -22,11 +22,10 @@ class StatusServer:
     "A server that enables view of simulation status."
 
     def __init__(self, cfg):
-        #self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
         self.storage = Storage(cfg.get('mongodb', 'host'))
 
-    def getJobsList(self, projectName):
-        return self.storage[projectName].getJobsList()
+    #def getJobsList(self, projectName):
+    #    return self.storage[projectName].getJobsList()
 
     def getProjectStatus(self, projectName):
         jobs = self.storage[projectName].getJobs()
@@ -41,13 +40,30 @@ class StatusServer:
             r.append({'visible': False, 'project': projectName})
         return r
 
+    def getProjectStatus2(self, projectName):
+        db = self.storage.server[projectName]
+        # Go directly for statistics and believe that they are true.
+        fields = ['name', 'done', 'totalSteps', 'basicStatistics', 'idleTimes',
+                  'fullStatistics', 'throughput']
+        ps = db.progresses.find({}, fields)
+        r = []
+        for a in ps:
+            a['project'] = projectName
+            if 'name' not in a: a['name'] = a['_id']
+            r.append(a)
+
+        # If project contains nothing - add dummy job to display project in interface.
+        if len(r) == 0:
+            r.append({'visible': False, 'project': projectName})
+        return r
+
     def getServerStatus(self):
         projects = self.storage.getProjectNames()
         results = []
         for project in projects:
-            results.extend(self.getProjectStatus(project))
+            results.extend(self.getProjectStatus2(project))
         return results
-    
+
     def getJobStatistics(self, projectName, jobName, includeIdleTimes=False):
         """Returns job statistics dictionary. It is always dictionary and if
         statistics hasn't been already calculated it fields will be set to None."""

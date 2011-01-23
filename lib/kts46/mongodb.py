@@ -41,24 +41,24 @@ class Storage(object):
     """Facade for MongoDB that is specific for this application.
     Acts like a dictionary for projects.
     """
-        
+
     def __init__(self, host='localhost', port=27017):
         """Initializes storage and connects to the server.
-        
+
         :param host: network address of database. Can be a name or IP address.
         :type host: str
         :param port: port of database on a host.
-        :type port: int 
+        :type port: int
         """
         self.log = logging.getLogger('kts46.storage.mongodb')
         self.log.debug("Creating connection to Mongodb server: %s:%i.", host, port)
         self.server = pymongo.Connection(host, port)
         self.log.info("Connection created: %s:%i.", host, port)
-        
-        
+
+
     def createProject(self, projectName):
         """Creates project with specified name.
-        
+
         :param projectName: name of project to create.
         :type projectName: str
         :returns: newly created project.
@@ -79,14 +79,14 @@ class Storage(object):
 
     def __getitem__(self, key):
         """Gets SimulationProject with specified name.
-        
+
         :param key: project name.
         :type key: str
         :returns: Project with specified name.
         :rtype: kts46.mongodb.SimulationProject
-        :raises KeyError: if project with specified name doesn't exists. 
+        :raises KeyError: if project with specified name doesn't exists.
         """
-        
+
         if key not in self:
             msg = "Couldn't get project '{0}' because it doesn't exists.".format(key)
             self.log.warning(msg)
@@ -96,7 +96,7 @@ class Storage(object):
 
     def __contains__(self, item):
         """Checks whether project with specified name already exists.
-	
+
         :param item: project name to check for existence.
         :type item: str
         :rtype: bool
@@ -116,7 +116,7 @@ class Storage(object):
         :type key: str
         :raises KeyError: if project doesn't exist
         """
-        
+
         if key in self:
             self.log.debug("Deleting project '{0}'.".format(key))
             self.server.drop_database(key)
@@ -143,7 +143,7 @@ class SimulationProject(object):
     def __init__(self, dbserver, name, log):
         """Creates new instance of :class:`SimulationProject` class. If project
         doesn't exists on the server it will be created.
-        
+
         :param dbserver: mongodb connection.
         :param name: project name.
         :param log: logger.
@@ -152,19 +152,19 @@ class SimulationProject(object):
         self.name = name
         self.db = self.server[name]
         self.log = log
-        
+
         # ensure that database exists
         if self.db.info.find_one('project') is None:
             self.db.info.insert({'_id':'project', 'name': name})
             self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
             self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
-            
+
 
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
 
         :param jobName: job name
-        :type jobName: str 
+        :type jobName: str
         :param definition: definition of job written in YAML.
         :type definition: str
         :returns: created job.
@@ -178,11 +178,11 @@ class SimulationProject(object):
             raise CouchDBServerException(msg.format(jobName, self.name))
         job = SimulationJob(self, jobName, definition)
         return job
-    
+
 
     def __getitem__(self, key):
         """Gets job with specified name.
-        
+
         :param key: name of job to get.
         :type key: str
         :returns: job with specified name
@@ -199,7 +199,7 @@ class SimulationProject(object):
 
     def __contains__(self, item):
         """Checks whether job with provided name exists in project.
-        
+
         :param item: Name of job to check for.
         :type item: str
         :rtype: bool
@@ -209,13 +209,13 @@ class SimulationProject(object):
 
     def __delitem__(self, key):
         """Deletes job with specified name.
-        
+
         :param key: name of job to delete.
         :type key: str
         :raises KeyError: if job with specified name doesn't exists.
         """
         if key not in self:
-            msg = "Couldn't delete job '{0}' in project '{1}' because it doesn't exist." 
+            msg = "Couldn't delete job '{0}' in project '{1}' because it doesn't exist."
             raise KeyError(msg.format(key, self.name))
 
         self.db.progresses.remove(key)
@@ -226,16 +226,16 @@ class SimulationProject(object):
 
     def getJobsNames(self):
         """Gets list of project jobs names.
-        
+
         :returns: names of jobs of this project.
         :rtype: list of strings
         """
         return map(lambda x: x['_id'], self.db.jobs.find(fields=['_id']))
 
-    
+
     def getJobs(self):
         """Gets project jobs.
-        
+
         :returns: list of project jobs.
         :rtype: list of :class:`SimulationJob`
         """
@@ -248,10 +248,10 @@ class SimulationProject(object):
 
 class SimulationJob(object):
     "Job to simulate."
-    
+
     def __init__(self, project, name, definition=None):
         """Create new :class:`SimulationJob` instance .
-        
+
         :param project: project to which job belongs.
         :type project: SimulationProject
         :param name: name of this job.
@@ -289,12 +289,17 @@ class SimulationJob(object):
             'totalSteps': math.floor(simulationTime / simulationStep),
             'batches': math.floor(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
-            'currentFullState': ''})
+            'currentFullState': '',
+            'basicStatistics': False, 'idleTimes': False, 'throughput': False,
+            'fullStatistics': False,
+            'jobname': job.name
+        })
 
         self.statistics = {'_id': self.name,
             'average': None, 'stdeviation': None,
             'averageSpeed': None,
             'idleTimes': {},
+            'thoughput': [ ],
             'finished': False }
         self.db.statistics.insert(self.statistics)
 
@@ -312,7 +317,7 @@ class SimulationJob(object):
 
     def getStateDocumentId(self, time):
         """Returns document id of state for specified time.
-        
+
         :param time: time for which to get state.
         :type time: str or float
         :returns: document id of state for specified time.
@@ -334,7 +339,7 @@ class SimulationJob(object):
 
     def __getitem__(self, key):
         """Gets state with specified id.
-        
+
         :param key: time of state to get.
         :type key: str or float
         :rtype: dict
@@ -354,10 +359,10 @@ class SimulationJob(object):
              self.db.progresses.save(self.progress)
         if self.statistics is not None:
              self.db.statistics.save(self.statistics)
-             
+
     def round(self, value):
         """Provides centralised way to round values for required precision.
-        
+
         :param value: value to round.
         :type value: float
         :returns: value rounded with required precision.
@@ -368,16 +373,16 @@ class SimulationJob(object):
 
 class StateStorage(object):
     "Represents storage for simulation states."
-    
+
     def __init__(self, job, fullStateGeneratorCallback=None, batchLength=None):
         """Creates new instance of :class:`StateStorage` class.
-        
+
         :param job: job for which this storage belongs.
         :type job: SimulationJob
         :param fullStateGeneratorCallback: function that returns current full
          state of the model.
         :type fullStateGeneratorCallback: callable
-        :param batchLength: length of batches that to send to the server. 
+        :param batchLength: length of batches that to send to the server.
          If None then length from job parameters will be used.
         :type batchLength: int
         """
@@ -390,10 +395,10 @@ class StateStorage(object):
             self.bufferSize = batchLength
         self.fullStateGeneratorCallback = fullStateGeneratorCallback
 
-        
+
     def add(self, time, data):
         """Adds state to the storage.
-        
+
         :param time: time for which to save state.
         :type time: float
         :param data: model state that will be saved.
@@ -403,7 +408,7 @@ class StateStorage(object):
         d['time'] = time
         d['job'] = self.job.name
         d['_id'] = self.job.getStateDocumentId(str(time))
-        
+
         self.buffer.append(d)
         if len(self.buffer) >= self.bufferSize:
             self.dump()
@@ -441,4 +446,3 @@ class StateStorage(object):
     def close(self):
         "Save all unsaved data to server."
         self.dump()
-
