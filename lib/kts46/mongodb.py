@@ -175,7 +175,7 @@ class SimulationProject(object):
         # Check for job duplication.
         if jobName in self:
             msg = "Couldn't add job '{0}' to project '{1}' because it already exists."
-            raise CouchDBServerException(msg.format(jobName, self.name))
+            raise StorageException(msg.format(jobName, self.name))
         job = SimulationJob(self, jobName, definition)
         return job
 
@@ -292,7 +292,7 @@ class SimulationJob(object):
             'currentFullState': '',
             'basicStatistics': False, 'idleTimes': False, 'throughput': False,
             'fullStatistics': False,
-            'jobname': job.name
+            'jobname': self.name
         })
 
         self.statistics = {'_id': self.name,
