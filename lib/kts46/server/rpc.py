@@ -15,7 +15,9 @@ License:
    limitations under the License.
 """
 
+import sys # for sys.exc_info()
 import logging
+import traceback
 from kts46.server.database import DatabaseServer
 from kts46.server.scheduler import SchedulerServer
 from kts46.server.status import StatusServer
@@ -76,7 +78,12 @@ class RPCServer:
 
     def addJob(self, projectName, jobName, definition):
         self._log.info('Method: addJob %s %s ...', projectName, jobName)
-        self._db.addJob(projectName, jobName, definition)
+        try:
+            self._db.addJob(projectName, jobName, definition)
+        except NameError as ex:
+            self._log.error("Couldn't add job: %s", ex)
+            traceback.print_exc()
+            raise
 
     def jobExists(self, projectName, jobName):
         self._log.info('Method: jobExists %s %s', projectName, jobName)
@@ -105,7 +112,7 @@ class RPCServer:
         except AttributeError as ex:
             self._log.error('Method `getServerStatus`: ' + str(ex))
             return []
-        
+
     def getJobStatistics(self, project, job, includeIdleTimes):
         self._log.debug("Method getJobStatistics %s %s", project, job)
         try:

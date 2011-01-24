@@ -344,7 +344,7 @@ var kts46 = (function($){
         }
 
         var table = $(document).data('google-table');
-        table.draw(view, {showRowNumber: true, allowHtml: true});
+        table.draw(view, {showRowNumber: true, allowHtml: true, sortColumn: 1});
     };
 
 

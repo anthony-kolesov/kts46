@@ -33,13 +33,7 @@ class DatabaseServer:
 
 
     def getNewJobId(self, projectName):
-        """Creates new job id.
-
-        It is guaranteed that there will be no duplicates, because after
-        generation new id is written to database and CouchDB will not allow two
-        same job ids because of revision number conflicts.
-        RPCServerException is thrown if
-        doesn't exist."""
+        """Creates new job id."""
 
         return self.storage[projectName].getNewJobId()
 
