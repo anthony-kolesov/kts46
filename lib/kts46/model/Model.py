@@ -228,7 +228,7 @@ class Model(object):
             # Store both but inputRate is used for storage while
             # carGenerationInterval is used in model.
             self.params.inputRate = inputRate
-            self.params.carGenerationInterval = timedelta(hours=1) / inputRate
+            self.params.carGenerationInterval = timedelta(seconds=3600/inputRate)
         if "safeDistance" in objData:
            self.params.safeDistance = objData["safeDistance"]
         if "maxSpeed" in objData:
