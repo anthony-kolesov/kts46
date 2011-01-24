@@ -222,6 +222,7 @@ class SimulationProject(object):
         self.db.statistics.remove(key)
         self.db.jobs.remove(key)
         self.db.states.remove({'job': key})
+        self.db.cars.remove({'job': key})
 
 
     def getJobsNames(self):
