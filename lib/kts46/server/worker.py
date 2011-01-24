@@ -24,7 +24,7 @@ from socket import error as SocketException
 import kts46.utils
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
-from kts46.mongodb import Storage 
+from kts46.mongodb import Storage
 
 def _notificationThreadImplementation(worker):
     while True:
@@ -108,7 +108,7 @@ class Worker:
 
             if task.get('type') == 'simulation':
                 self.log.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
-                simServer = SimulationServer()
+                simServer = SimulationServer(self.cfg)
                 simServer.runSimulationJob(job)
             elif task.get('type') == 'statistics':
                 self.log.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))

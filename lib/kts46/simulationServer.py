@@ -28,7 +28,8 @@ def timedeltaToSeconds(td):
 class SimulationServer(object):
     "A server object that does simulation of model."
 
-    def __init__(self):
+    def __init__(self, cfg):
+        self.cfg = cfg
         self.logger = logging.getLogger('kts46.SimulationServer')
 
     def runSimulationJob(self, job):
@@ -46,8 +47,8 @@ class SimulationServer(object):
         batchLength = job.simulationParameters['batchLength']
 
         # Prepare infrastructure.
-        #saver = CouchDBStateStorage(job, model.asYAML)
-        saver = StateStorage(job, model.asYAML)
+        saver = StateStorage(job, model.asYAML,
+                             self.cfg.getint('worker', 'dbBufferLength'))
 
         # Load current state: load state and set time
         if len(job.progress['currentFullState']) > 0:
@@ -80,7 +81,3 @@ class SimulationServer(object):
         # Finalize.
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
-
-        #f1 = open('/tmp/kts46-state.txt', 'w')
-        #f1.write(model.asYAML())
-        #f1.close()
