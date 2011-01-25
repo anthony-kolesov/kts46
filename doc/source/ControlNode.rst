@@ -45,12 +45,14 @@ Methods
     :param string jobName: Name of job that is executed in this task.
     :param string-or-arrayOfStrings taskType:
         Specifies specific type of task that has to be done on job. If not
-        specified than scheduler will do all available tasks for this job
-        according to preferences. For available values see :ref:`kts46-cn-taskTypes`.
-        If array of strings is provided than all of them will be scheduled. If
-        any of specified types is unknown than nothing will be scheduled.
-        Null values are ignored. Note that statistics tasks require simulation
-        to be done. If dependencies are not done than scheduler will run them.
+        specified or array is null than scheduler will do all available tasks
+        for this job according to preferences. For available values see
+        :ref:`kts46-cn-taskTypes`. If array of strings is provided than all of
+        them will be scheduled. If any of specified types is unknown than
+        nothing will be scheduled. Null values are ignored. Note that statistics
+        tasks require simulation to be done. If dependencies are not done than
+        scheduler will run them.
+    :returns: "success" string. May become a dictionary in future.
     :throws DuplicateTask:
         Explicitly specified task is already running. This can be thrown only to
         specified types. ``taskType`` field of ``error`` object will contain
@@ -59,7 +61,7 @@ Methods
         Explicitly specified task is alread done. ``error.taskType`` will have
         failes taskType type.
     :throws UnknownTaskType:
-        Specified task type is unkown to scheduler. ``error.taskType`` will
+        Specified task type is unknown to scheduler. ``error.taskType`` will
         contain name of this unknown type.
 
 
@@ -78,7 +80,7 @@ Methods
         (int) Number of directly aborted tasks. Dependent tasks doesn't count.
         So if zero is returned there were no active tasks for this job.
     :throws UnknownTaskType:
-        Specified task type is unkown to scheduler. ``error.taskType`` will
+        Specified task type is unknown to scheduler. ``error.taskType`` will
         contain name of this unknown type.
 
 
@@ -95,16 +97,141 @@ Methods
         :js:func:`addTask` that is always array. Empty array isn't an error:
         schudler will just return no task.
     :throws UnknownTaskType:
-        Specified task type is unkown to scheduler. ``error.taskType`` will
+        Specified task type is unknown to scheduler. ``error.taskType`` will
         contain name of this unknown type.
+    :throws WorkerHasTask:
+        This worker already has assigned task: either active or waiting
+        acception from worker.
+    :returns:
+        :ref:`kts46-cn-taskType`. If there are tasks than ``empty`` will be
+        ``false`` otherwise ``false``.
 
 
-.. js:function:: acceptTask(workerId)
-.. js:function:: rejectTask(workerId)
-.. js:function:: taskFinished(workerId)
-.. js:function:: taskInProgress(workerId)
+.. js:function:: acceptTask(workerId, sig)
+
+    That method notifies scheduler that worker has accepted task and started it
+    execution.
+
+    :param string workerId: Worker unique identifier.
+    :param string sig: Unique signature of task state.
+    :returns:
+        Dictionary with one field ``sig``  which contains new task state
+        signature.
+    :throws InvalidWorkerId:
+        There is no task waiting for acception from this worker.
+    :throws InvalidSignature:
+        Signature for this task doesn't match. May be somebody has done with
+        with task. Worker should call :js:func:`getTask` again for a new job.
+
+
+.. js:function:: rejectTask(workerId, sig)
+
+    With this method worker notifies scheduler that it rejects provided task.
+    This method is different from restartign task by supervisor: supervisor will
+    put task in the end of waiting queue, while this method will return it to
+    the start of queue.
+
+    :param string workerId: Worker unique identifier.
+    :param string sig: Unique signature of task state.
+    :returns: "success" string. May become a dictionary in future.
+    :throws InvalidWorkerId:
+        There is no task waiting for acception from this worker.
+    :throws InvalidSignature:
+        Signature for this task doesn't match. May be somebody has done with
+        with task. Worker should call :js:func:`getTask` again for a new job.
+
+
+.. js:function:: taskFinished(workerId, sig)
+
+    Notifies scheduler that worker has finished task. Scheduler may start
+    following tasks if there are any.
+
+    :param string workerId: Worker unique identifier.
+    :param string sig: Unique signature of task state.
+    :returns: "success" string. May become a dictionary in future.
+    :throws InvalidWorkerId:
+        There is no running task for this worker.
+    :throws InvalidSignature:
+        Signature for this task doesn't match. May be somebody has done with
+        with task. Worker can do nothing with this and should get a new job.
+
+
+.. js:function:: taskInProgress(workerId, sig)
+
+    Notifies scheduler that worker is alive and working on its task.
+
+    :param string workerId: Worker unique identifier.
+    :param string sig: Unique signature of task state.
+    :returns:
+        Dictionary with one field ``sig`` which contains new task state
+        signature.
+    :throws InvalidWorkerId:
+        There is no running task for this worker.
+    :throws InvalidSignature:
+        Signature for this task doesn't match. May be somebody has done with
+        with task. Worker can do nothing with this and should get a new job.
+
+
 .. js:function:: getCurrentTasks()
-.. js:function:: restartTasks()
+
+    Returns list of currently active tasks.
+
+    :returns:
+        An array of objects with two fields: ``id`` is a worker id, and ``sig``
+        is a signature of task state. Both accepted and waitign for acception
+        tasks are in this array.
+
+
+.. js:function:: restartTasks(tasks)
+
+    Restarts tasks. This method is intented to use by supervisor to avoid tasks
+    staled because of dead workers. This method is used to restart tasks
+    which are in active state and those that are waiting for acception.
+    Scheduler must restart them properly according to algorithm for
+    corresponsing task type.
+
+    :param array tasks:
+        Tasks to reset. Array contains objects with two fields: ``id`` is a
+        worker id and ``sig`` is a task state signature. If signature or id
+        doesn't match with known values scheduler will skip them quitly.
+
+
+Types
+=====
+
+.. _kts46-cn-taskType:
+
+Task
+----
+
+.. js:attribute:: task.empty
+
+    Whether object contains task. If it ``true`` than this dictionary will
+    contain no other fields.
+
+.. js:attribute:: task.project
+
+    Name of project to which task belongs.
+
+.. js:attribute:: task.job
+
+    Name of job to which task belongs.
+
+.. js:attribute:: task.type
+
+    One of :ref:`kts46-cn-taskTypes` values which define what kind of work to do.
+
+.. js:attribute:: task.sig
+
+    String that is signature of task state. With help this fields scheduler may
+    be sure that it is in sync with worker. For example when supervisor restarts
+    task scheduler and signatures doesn't match that meen that state of task has
+    been changed and worker is presumably alive.
+
+.. js:attribute:: task.databases
+
+    Array of strings that are paths to databases. Worker must try to use them
+    starting from first, if it doesn't work try to use second and so on.
 
 
 Constants
