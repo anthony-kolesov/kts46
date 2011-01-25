@@ -42,8 +42,10 @@ class DatabaseServer:
         """Create in database project with specified name.
 
         An exception will be raised it project already exists.
-        Arguments:
-            projectName -- name of project to create."""
+
+        :param projectName: name of project to create.
+        :type projectName: str
+        """
         self.storage.createProject(projectName)
 
 
@@ -63,10 +65,13 @@ class DatabaseServer:
 
         RPCServerException will be raised if project doesn't exist or job with
         specified name already exists.
-        Arguments:
-            projectName -- name of model project.
-            jobName -- job name.
-            definition -- definition of job written in YAML.
+
+        :param projectName: name of model project.
+        :type projectName: str
+        :param jobName: job name
+        :type jobName: str
+        :param definition: definition of job written in YAML.
+        :type jobName: str
         """
         self.storage[projectName].addJob(jobName, definition)
 
