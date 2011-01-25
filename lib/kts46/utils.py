@@ -1,19 +1,18 @@
-"""
-License:
-   Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2011 Anthony Kolesov
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-"""
+"Some useful function."
 
 import logging, logging.handlers
 import xmlrpclib
@@ -21,10 +20,13 @@ from ConfigParser import SafeConfigParser
 
 
 def getConfiguration(customConfigFiles=[]):
-    """Returns ConfigParser for application.
+    """Returns ``SafeConfigParser`` for application. Loads configuration from
+    default files and custom application files if they are provided.
 
-    Loads configuration from default files and custom application files if
-    provided.
+    :param customConfigFiles:
+        List of paths to additional ocnifguration files. Values from this files
+        will override those from default files.
+    :return: application confguration.
     """
     configFiles = ['../config/default.ini', '../config/local.ini']
     configFiles.extend(customConfigFiles)
@@ -34,11 +36,12 @@ def getConfiguration(customConfigFiles=[]):
 
 
 def configureLogging(cfg):
-    "Setups logging module."
+    """Confugres logging module for this application.
 
+    :param cfg: Application configuration.
+    :type cfg: ConfigParser
+    """
     logging.getLogger('').setLevel(logging.INFO)
-    #logging.basicConfig(format=cfg.get('log', 'format'),
-    #                    datefmt=cfg.get('log', 'dateFormat'))
 
     # Define a log handler for console.
     consoleHandler = logging.StreamHandler()
@@ -56,13 +59,25 @@ def configureLogging(cfg):
 
 
 def getLogger(cfg):
-    "Gets logger configured according to data from ConfigParser"
+    """Gets logger configured according to data from ConfigParser.
+
+    :param cfg: Application configuration.
+    :type cfg: ConfigParser
+    :returns: Logger for this application.
+    """
     logger = logging.getLogger(cfg.get('log', 'loggerName'))
     logger.setLevel(logging.INFO)
     return logger
 
+
 def getRPCServerProxy(cfg):
-    # Create RPC proxy.
+    """Create an RPC proxy to server.
+
+    :param cfg: Application configuration.
+    :type cfg: ConfigParser
+    :returns: Proxy to an XML-RPC server.
+    :rtype: xmlrpclib.ServerProxy
+    """
     host = cfg.get('rpc-server', 'address')
     port = cfg.getint('rpc-server', 'port')
     connString = 'http://{host}:{port}'.format(host=host, port=port)

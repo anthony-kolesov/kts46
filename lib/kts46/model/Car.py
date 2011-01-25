@@ -1,25 +1,23 @@
-"""
-License:
-   Copyright 2010-2011 Anthony Kolesov
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-"""
+# Copyright 2010-2011 Anthony Kolesov
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import logging
 import yaml
 from uuid import uuid4
 
 class Car(yaml.YAMLObject):
+    "Represent a car in the model."
 
     yaml_tag = u"!car"
     yaml_loader = yaml.SafeLoader
@@ -29,6 +27,7 @@ class Car(yaml.YAMLObject):
     ACTIVE = 'active'
     DEFAULT = 'active'
     DELETED = 'del'
+
 
     def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0,
                 line=0):
@@ -48,8 +47,13 @@ class Car(yaml.YAMLObject):
         self.line = line
         self.state = Car.INACTIVE
 
+
     def move(self, distance):
-        "Moves car on specified distance forward. Distance couldn't be negative."
+        """Moves car on specified distance forward.
+
+        :param distance: Distance in meters on which to move. Can't be negative.
+        :type distance: float
+        """
         if distance < 0:
             msg = "Distance of car moving can't be negative. " + \
                 "Backwards moving isn't currently allowed."
@@ -57,20 +61,46 @@ class Car(yaml.YAMLObject):
             raise Exception(msg)
         self._position += distance
 
-    def get_speed(self): return self._speed
-    def get_length(self): return self._length
-    def get_width(self): return self._width
-    def get_position(self): return self._position
-    def get_id(self): return self._id
+
+    def get_speed(self):
+        "Get car speed in m/s."
+        return self._speed
+
+
+    def get_length(self):
+        "Get car length in meters."
+        return self._length
+
+
+    def get_width(self):
+        "Get car width in meters."
+        return self._width
+
+
+    def get_position(self):
+        "Get car position in meters from road start."
+        return self._position
+
+
+    def get_id(self):
+        "Get car id."
+        return self._id
+
 
     def get_description_data(self):
+        """Get dictionary with data describing this car.
+
+        :rtype: dict"""
         return {'id': self.get_id(),
                 'length': self.get_length(),
-                'width': self.get_width(),
-                'line': self.line
+                'width': self.get_width()
         }
 
+
     def get_state_data(self):
+        """Get data describing current state of car.
+
+        :rtype: dict"""
         d = {'pos': round(self.get_position(), 2),
              'line': self.line
         }
