@@ -12,6 +12,7 @@ Contents:
     :maxdepth: 9
     :numbered:
 
+    ControlNode.rst
     kts46.rst
 
 Indices and tables
