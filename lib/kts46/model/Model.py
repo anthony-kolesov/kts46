@@ -1,26 +1,22 @@
-"""
-License:
-   Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2011 Anthony Kolesov
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-"""
-
-import random
 import json
-import math
 import logging
+import math
+import random
 import yaml
-
 from datetime import timedelta
 
 from Car import Car
@@ -40,8 +36,13 @@ class ModelParams:
 
 
 class Model(object):
+    "Defines a model that can simulate road traffic."
 
     def __init__(self, params):
+        """Initializes new model with provided set of parameters.
+
+        :param params: Model parameters.
+        :type params: :py:class:`ModelParams`"""
         self.time = timedelta()
         self._cars = []
         self._enterQueue = []
@@ -54,7 +55,12 @@ class Model(object):
         self._logger = logging.getLogger(self._loggerName)
         self._lastCarId = -1
 
+
     def run_step(self, milliseconds):
+        """Performs one step of simulation.
+
+        :param milliseconds: length of step in milliseconds.
+        :type milliseconds: int"""
         stopDistance = self.params.safeDistance
 
         timeStep = timedelta(milliseconds=milliseconds)
@@ -114,6 +120,7 @@ class Model(object):
 
 
     def addCarsFromQueueToRoad(self):
+        "Add cars from entering queue to road."
         # If there is a car in the queue, then send it.
         # Try to add cars while there was at least one succesfull added.
         addCar = True
@@ -136,6 +143,10 @@ class Model(object):
 
 
     def addCars(self, amount):
+        """Add cars to entering queue.
+
+        :param amount: Amount of cars to add to queue.
+        :type amount: int"""
         speedMultiplier = self.params.maxSpeed - self.params.minSpeed
         speedAdder = self.params.minSpeed
         for i in xrange(amount):
@@ -147,7 +158,8 @@ class Model(object):
             self._enterQueue.append(newCar)
 
 
-    def howMuchCarsToAdd(self, newTime):
+    def howManyCarsToAdd(self, newTime):
+        "Define how many cars can be added to the model."
         newCarGenRate = self.params.carGenerationInterval
         lastCarTime = self._lastCarGenerationTime
         carsToGenerate = 0
@@ -158,12 +170,15 @@ class Model(object):
 
 
     def get_nearest_traffic_light(self, position):
+        "Get nearest traffic light to specified position in forward destination."
         return self.get_nearest_object_in_array(self._lights, position)
 
     def get_nearest_car(self, position, line=0):
+        "Get nearest car to specified position in forward destination."
         return self.get_nearest_object_in_array(self._cars, position, line)
 
     def get_nearest_object_in_array(self, array, position, line=0):
+        "Get nearest object in arrayto specified position in forward destination."
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
@@ -187,10 +202,12 @@ class Model(object):
         return current
 
     def canAddCar(self, line=0):
+        "Defines whether car can be added to specified line."
         lastCar = self.get_nearest_car(-100.0, line) # Detect cars which are comming on the road.
         return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
 
     def _addCar(self, car):
+        "Add car to the model, but not to the road."
         self._cars.append(car)
         car.state = Car.ADDED
 
@@ -208,6 +225,7 @@ class Model(object):
         return {'cars': cars, 'lights': lights}
 
     def get_description_data(self):
+        "Gets dictionary describing model."
         data = {}
         data['lights'] = {}
         for light in self._lights:
@@ -217,6 +235,10 @@ class Model(object):
         return json.dumps(data)
 
     def loadYAML(self, yamlData):
+        """Loads model from YAML string.
+
+        :param yamlData: definition of model in YAML.
+        :type yamlData: str"""
         objData = yaml.safe_load(yamlData)
         # fields
         if "carGenerationInterval" in objData:
@@ -251,6 +273,7 @@ class Model(object):
 
 
     def asYAML(self):
+        "Returns YAML string which represents current model including it state."
         d = {}
         d["inputRate"] = self.params.inputRate
         d["safeDistance"] = self.params.safeDistance

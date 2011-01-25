@@ -28,14 +28,14 @@ StatisticsServer
     :members:
 
 
-utils
-=====
+utils module
+============
 .. automodule:: kts46.utils
     :members:
 
 
-mongodb
-=======
+mongodb module
+==============
 .. automodule:: kts46.mongodb
 .. autoclass:: kts46.mongodb.Storage
     :members: createProject, __getitem__, __contains__, __delitem__, getProjectNames
@@ -148,21 +148,20 @@ kts46.model
 
 Car
 ---
-.. automodule:: kts46.model.Car
+.. autoclass:: kts46.model.Car.Car
     :members:
 
 Model
 -----
-.. automodule:: kts46.model.Model
+.. autoclass:: kts46.model.Model.Model
     :members:
 
 Road
 ----
-.. automodule:: kts46.model.Road
+.. autoclass:: kts46.model.Road.Road
     :members:
 
 TrafficLight
 ------------
-.. automodule:: kts46.model.TrafficLight
+.. autoclass:: kts46.model.TrafficLight.SimpleSemaphore
     :members:
-
