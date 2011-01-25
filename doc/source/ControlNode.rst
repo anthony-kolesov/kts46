@@ -27,7 +27,13 @@ values:
 Methods
 =======
 
-.. js:function:: addTask(projectName, jobName[, taskType])
+.. js:function:: hello()
+
+    Just to be able to check whether server is alive.
+    :returns: String with greeting and version.
+
+
+.. js:function:: addTask(projectName, jobName[, taskTypes])
 
     Adds to queue of waiting tasks new task for the specified job. Task can
     derive several other tasks and some of them may be run simultaneously and
@@ -43,7 +49,7 @@ Methods
 
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job that is executed in this task.
-    :param string-or-arrayOfStrings taskType:
+    :param string-or-arrayOfStrings taskTypes:
         Specifies specific type of task that has to be done on job. If not
         specified or array is null than scheduler will do all available tasks
         for this job according to preferences. For available values see
@@ -65,7 +71,7 @@ Methods
         contain name of this unknown type.
 
 
-.. js:function:: abortTask(projectName, jobName[, taskType])
+.. js:function:: abortTask(projectName, jobName[, taskTypes])
 
     Aborts currently running tasks for specified job. If no ``taskType`` is
     specified than all tasks will be aborted. Please note that it doesn't
@@ -73,7 +79,7 @@ Methods
 
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job for which to abort task.
-    :param string-or-arrayOfStrings taskType:
+    :param string-or-arrayOfStrings taskTypes:
         Specifies specific type of task to abort. Scheduler will abort all tasks
         that depend on specified task type.
     :returns:
@@ -243,7 +249,7 @@ Task types
 ----------
 
 * ``taskType.simulation``: ``simulation``
-* ``taskType.simulation``: ``basicStatistics``
-* ``taskType.simulation``: ``idleTimes``
-* ``taskType.simulation``: ``throghput``
-* ``taskType.simulation``: ``fullStatistics``.
+* ``taskType.basicStatistics``: ``basicStatistics``
+* ``taskType.idleTimes``: ``idleTimes``
+* ``taskType.throughput``: ``throughput``
+* ``taskType.fullStatistics``: ``fullStatistics``.

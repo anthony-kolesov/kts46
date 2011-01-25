@@ -34,7 +34,7 @@ in :file:`config/local.ini` file. For simulation those python packages are requi
 import yaml
 from datetime import timedelta # for YAML
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 __author__ = "Anthony Kolesov"
 
 

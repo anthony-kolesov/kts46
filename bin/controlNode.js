@@ -1,23 +1,39 @@
+// Modules
 var http = require('http'),
-  RPCHandler = require('jsonrpc').RPCHandler,
-  address = "127.0.0.1",
-  versionString = "ControlNode v0.1.3 on nodejs",
-  port = 46212,
-  rpcMethods = {
-    hello: function(rpc){
-      rpc.response("Hello! I am " + versionString);
-    }
-  }
-;
+    urllib = require('url'),
+    RPCHandler = require('jsonrpc').RPCHandler,
+    scheduler = require('./kts46-scheduler');
 
-http.createServer(function (req, res) {
+
+// Configuration
+var cfg = {
+  port: 46212,
+  address: "",
+  jsonRpcPath: "/jsonrpc",
+  debugRpc: false
+};
+
+
+// Local variables
+var version = "0.1.4"
+    versionString = "ControlNode " + version + " on node.js";
+
+var handleHttpRequest = function(req, res) {
   if(req.method == "POST"){
-    // if POST request, handle RPC
-    new RPCHandler(req, res, rpcMethods, false);
+    // Define whether this is JSON request.
+    if (urllib.parse(req.url).pathname == cfg.jsonRpcPath) {
+      new RPCHandler(req, res, scheduler.rpcMethods, cfg.debugRpc);
+    } else {
+      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.end('Unknown path!\n');
+    }
   } else {
     res.writeHead(200, {'Content-Type': 'text/plain'});
     res.end('Hello World\n');
   }
-}).listen(port, address);
+};
 
-console.log(['Server running at http://', address, ':', port, '/'].join(''));
+
+// Run server.
+http.createServer(handleHttpRequest).listen(cfg.port, cfg.address);
+console.log(['Server running at http://', cfg.address, ':', cfg.port, '/'].join(''));
