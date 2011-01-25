@@ -22,7 +22,7 @@ that run on nodes. One node can host several or one component. In extreme
 cases all components of system can run on one node.
 
 Mongodb is used as a storage and proper connection settings must be provided
-in ``config/local.ini`` file. For simulation those python packages are required:
+in :file:`config/local.ini` file. For simulation those python packages are required:
 
 * ``numpy``
 * ``pyYAML``

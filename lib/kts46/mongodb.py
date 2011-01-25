@@ -17,11 +17,11 @@
 """Wraps functionality of MongoDB to provide storage facility specific to
 application requirements.
 
-:class:`Storage` represents MongoDB instance. It acts like a type specific
-dictionary for `SimulationProject` s which represent databases on server.
+:py:class:`Storage` represents MongoDB instance. It acts like a type specific
+dictionary for :py:class:`SimulationProject` s which represent databases on server.
 On their hand projects act like type specific dictionaries for
-`SimulationJob` s. And jobs act like dictionaries for their
-`SimulationState` s.
+:py:class:`SimulationJob` s. And jobs act like dictionaries for their
+simulation states.
 
 """
 
@@ -62,7 +62,7 @@ class Storage(object):
         :param projectName: name of project to create.
         :type projectName: str
         :returns: newly created project.
-        :rtype: kts46.mongodb.SimulationProject
+        :rtype: :py:class:`kts46.mongodb.SimulationProject`
         :raises StorageException: If project already exists.
         """
 
@@ -83,7 +83,7 @@ class Storage(object):
         :param key: project name.
         :type key: str
         :returns: Project with specified name.
-        :rtype: kts46.mongodb.SimulationProject
+        :rtype: :py:class:`kts46.mongodb.SimulationProject`
         :raises KeyError: if project with specified name doesn't exists.
         """
 
@@ -168,7 +168,7 @@ class SimulationProject(object):
         :param definition: definition of job written in YAML.
         :type definition: str
         :returns: created job.
-        :rtype: SimulationJob
+        :rtype: :py:class:`SimulationJob`
         :raises StorageException: if job with specified name already exists.
         """
 
@@ -186,7 +186,7 @@ class SimulationProject(object):
         :param key: name of job to get.
         :type key: str
         :returns: job with specified name
-        :rtype: SimulationJob
+        :rtype: :py:class:`SimulationJob`
         :raises KeyError: if job with specified name doesn't exists.
         """
         if key not in self:
@@ -254,7 +254,7 @@ class SimulationJob(object):
         """Create new :class:`SimulationJob` instance .
 
         :param project: project to which job belongs.
-        :type project: SimulationProject
+        :type project: :py:class:`SimulationProject`
         :param name: name of this job.
         :type name: str
         :param definition: YAML definition of job. If it is omitted than job
@@ -412,7 +412,7 @@ class StateStorage(object):
         """Creates new instance of :class:`StateStorage` class.
 
         :param job: job for which this storage belongs.
-        :type job: SimulationJob
+        :type job: :py:class:`SimulationJob`
         :param fullStateGeneratorCallback: function that returns current full
          state of the model.
         :type fullStateGeneratorCallback: callable
