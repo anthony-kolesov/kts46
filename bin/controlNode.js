@@ -10,9 +10,11 @@ var cfg = {
   port: 46212,
   address: "",
   jsonRpcPath: "/jsonrpc",
-  debugRpc: false
+  debugRpc: false,
+  mongodbAddress: ['192.168.1.5', 27017]
 };
-
+// Configure scheduler module.
+scheduler.cfg.mongodbAddress = cfg.mongodbAddress;
 
 // Local variables
 var version = "0.1.4"
@@ -36,4 +38,5 @@ var handleHttpRequest = function(req, res) {
 
 // Run server.
 http.createServer(handleHttpRequest).listen(cfg.port, cfg.address);
-console.log(['Server running at http://', cfg.address, ':', cfg.port, '/'].join(''));
+console.log(['Server running at http://', cfg.address, ':', cfg.port, ' on ',
+             process.version].join(''));
