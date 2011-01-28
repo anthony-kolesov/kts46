@@ -193,7 +193,7 @@ Project.prototype.addJob = function(jobInfo){
 
 
 // Adds required tasks to queue if required with dependency calculation.
-var _addTaskImplementation = function(projectName, jobName, taskTypes) {
+var addTaskImplementation = function(projectName, jobName, taskTypes) {
     var handleNoJob = (function(){
         this.response.error({type: 'JobNotFound'});
     }).bind(this);
@@ -254,6 +254,25 @@ var _addTaskImplementation = function(projectName, jobName, taskTypes) {
 };
 
 
+var abortTaskImplementation = function(projectName, jobName) {
+    var len = 0;
+    if (projects.hasOwnProperty(projectName)){
+        var p = projects[projectName];
+        if (p.hasJob(jobName)) {
+            var j = p.getJob(joibName);
+            len = j.currentTasks.length;
+            if (len > 0) {
+                waitingQueue = waitingQueue.filter(function(item){
+                    return item.project !== projectName || item.job !== jobName;
+                });
+                j.currentTasks = [];
+            }
+        }
+    }
+    this.response(len);
+};
+
+
 // RPC methods.
 var hello = function(rpc){
   rpc.response("Hello! I am ControlNode on node.js");
@@ -274,9 +293,21 @@ var addTask = function(rpc) {
     if (taskTypes == null) return;
 
     var context = new SchedulerContext(rpc);
-    _addTaskImplementation.bind(context)(projectName, jobName, taskTypes);
+    addTaskImplementation.bind(context)(projectName, jobName, taskTypes);
 };
 
+
+var abortTask = function(rpc) {
+    var projectName = argument[1],
+        jobName = argument[2];
+
+    if (checkType(rpc, projectName, "projectName", "string") ||
+        checkType(rpc, jobName, "jobName", "string") ) {
+        return;
+    }
+
+    abortTaskImplementation.bind(new SchedulerContext(rpc))(projectName, jobName);
+};
 
 exports.rpcMethods = {hello: hello, addTask: addTask};
 exports.cfg = cfg;
