@@ -69,6 +69,7 @@ Methods
     :throws UnknownTaskType:
         Specified task type is unknown to scheduler. ``error.taskType`` will
         contain name of this unknown type.
+    :throws JobNotFound: Specified job or project doesn't exists.
 
 
 .. js:function:: abortTask(projectName, jobName[, taskTypes])

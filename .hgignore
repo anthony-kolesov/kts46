@@ -5,3 +5,4 @@ glob:*.pyc
 glob:config/local.ini
 relre:couchdb.(stderr|stdout)
 glob:doc/build
+glob:bin/mongodb
