@@ -33,64 +33,33 @@ Methods
     :returns: String with greeting and version.
 
 
-.. js:function:: addTask(projectName, jobName[, taskTypes])
+.. js:function:: addTask(projectName, jobName)
 
-    Adds to queue of waiting tasks new task for the specified job. Task can
-    derive several other tasks and some of them may be run simultaneously and
-    scheduler will try to do so. For example to do anything with model results
-    first simulation has to be done. Statistics types can be performed
-    independently of each other and will be scheduled as different tasks.
-
-    .. note::
-        If multiple tasks are specified and if exception will be thrown it will
-        correspond to first failed task type - other task types may have or may
-        have not errors. Also if any task type throws error than no tasks will
-        be added. That is, call of this method is atomic.
-
-    .. warning::
-        For reasons of complexity specifiying task types are not implemented in
-        current version of scheduler.
+    Adds to queue of waiting tasks new task for the specified job. If simulation
+    hasn't been done then simulation task will be added. When simulation will be
+    finished following statistics tasks will be added. Statistics types can be
+    performed independently of each other and will be scheduled as different
+    tasks.
 
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job that is executed in this task.
-    :param string-or-arrayOfStrings taskTypes:
-        Specifies specific type of task that has to be done on job. If not
-        specified or array is null than scheduler will do all available tasks
-        for this job according to preferences. For available values see
-        :ref:`kts46-cn-taskTypes`. If array of strings is provided than all of
-        them will be scheduled. If any of specified types is unknown than
-        nothing will be scheduled. Null values are ignored. Note that statistics
-        tasks require simulation to be done. If dependencies are not done than
-        scheduler will run them.
     :returns: "success" string. May become a dictionary in future.
     :throws DuplicateTask:
-        Explicitly specified task is already running. This can be thrown only to
-        specified types. ``taskType`` field of ``error`` object will contain
-        name of failed task type.
+        Task for this job is already running. ``error.taskType`` field of
+        object will contain name of failed task type.
     :throws AlreadyDone:
         Explicitly specified task is alread done. ``error.taskType`` will have
         failes taskType type.
-    :throws UnknownTaskType:
-        Specified task type is unknown to scheduler. ``error.taskType`` will
-        contain name of this unknown type.
     :throws JobNotFound: Specified job or project doesn't exists.
 
 
-.. js:function:: abortTask(projectName, jobName[, taskTypes])
+.. js:function:: abortTask(projectName, jobName)
 
-    Aborts currently running tasks for specified job. If no ``taskType`` is
-    specified than all tasks will be aborted. Please note that it doesn't
-    guaranteed that tasks currently running on workers will be aborted.
-
-    .. warning::
-        For reasons of complexity specifiying task types are not implemented in
-        current version of scheduler.
+    Aborts currently running tasks for specified job. Please note that it
+    doesn't guaranteed that tasks currently running on workers will be aborted.
 
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job for which to abort task.
-    :param string-or-arrayOfStrings taskTypes:
-        Specifies specific type of task to abort. Scheduler will abort all tasks
-        that depend on specified task type.
     :returns:
         (int) Number of directly aborted tasks. Dependent tasks doesn't count.
         So if zero is returned there were no active tasks for this job.
