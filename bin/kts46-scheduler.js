@@ -36,7 +36,7 @@ var parseTaskTypes = function(taskTypes, rpc) {
         effTaskTypes = [taskTypes];
     } else if (taskTypesType === "undefined") {
         effTaskTypes = [];
-    } else if (!taskTypes.hasOwnProperty("length")) {
+    } else if (Array.isArray(taskTypes)) {
         rpc.error({'type': 'InvalidArgumentType', 'argumentName': 'taskTypes'});
         return null;
     }
@@ -77,31 +77,66 @@ var findInDb = function() {
 
     var client = this.getDbClient(db);
     client.open(function(err, pClient) {
-        if (err) onMongodbError.bind(context)(err, client);
+        if (err) { onMongodbError.bind(context)(err, client); return; }
         client.collection(collectionName, function(err, collection) {
-            if (err) onMongodbError.bind(context)(err, client);
-            else {
-                collection.find(spec, fields, function(err, cursor){
-                    if (err) onMongodbError.bind(context)(err, client);
-                    else {
-                        onFinished(cursor);
-                    }
-                });
-            }
+            if (err) { onMongodbError.bind(context)(err, client); return; }
+            collection.find(spec, fields, function(err, cursor){
+                if (err) onMongodbError.bind(context)(err, client);
+                else { onFinished(cursor); }
+            });
         } );
     });
 };
 
+
+// Update documents in database.
+var updateDocuments = function(db, collectionName, spec, changes, multi, onFinished) {
+    var context = this;
+    var client = this.getDbClient(db);
+    client.open(function(err, pClient) {
+        if (err) {
+            onMongodbError.bind(context)(err, client);
+            return;
+        }
+        client.collection(collectionName, function(err, collection) {
+            if (err) {
+                onMongodbError.bind(context)(err, client);
+                return;
+            }
+            collection.update(spec, changes, {multi: multi}, function(err, cursor){
+                if (err) {
+                    onMongodbError.bind(context)(err, client);
+                } else {
+                    if (onFinished) onFinished();
+                }
+            });
+        } );
+    });
+};
+
+
 var loadProject = function(project, onFinished) {
     var fields =  {'currentFullState': 0};
-    findInDb.bind(this)(project.name, 'progresses', {}, fields, function(cursor){
+    var context = this;
+    findInDb.call(this, project.name, 'progresses', {}, fields, function(cursor){
         cursor.toArray(function(err, a){
             a.forEach(function(item){
                 project.addJob(item);
             });
             cursor.close();
-            cursor.db.close();
-            if (onFinished) onFinished();
+            findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor) {
+                cursor.toArray(function(err, a){
+                    a.forEach(function(item){
+                        var j = project.getJob(item.name);
+                        j.duration = item.simulationParameters.duration;
+                        j.batchLength = item.simulationParameters.batchLength;
+                        j.stepDuration = item.simulationParameters.stepDuration;
+                    });
+                });
+                cursor.close();
+                cursor.db.close();
+                if (onFinished) onFinished();
+            });
         });
     });
 };
@@ -161,9 +196,23 @@ var jobExists = function(projectName, jobName, onExists, onNotExists) {
     projectExists.bind(this)(projectName, handleProjectExists, onNotExists);
 };
 
-var taskExists = function(job, taskType) {
-    var cur = job.currentTasks || [];
-    return cur.indexOf(taskType) !== -1;
+var taskExists = function(projectName, jobName, taskType) {
+    //var cur = job.currentTasks || [];
+    //return cur.indexOf(taskType) !== -1;
+
+    var mask = function(task) {
+        return task.project === projectName && task.job === jobName
+                && task.type === taskType;
+    };
+    if (waitingQueue.some(mask)) {
+        return true;
+    }
+    for (var key in waitingActivation) {
+        if (waitingActivation.hasOwnProperty(key)
+            && mask(waitingActivation[key]) )
+            return true;
+    }
+    return false;
 };
 
 
@@ -173,7 +222,7 @@ var SchedulerContext = function(jsonRpcResponse) {
     this.server = new mongodb.Server(cfg.mongodbAddress[0], cfg.mongodbAddress[1], {});
 };
 SchedulerContext.prototype.getDbClient = function(projectName) {
-    return new mongodb.Db(projectName, this.server);
+    return new mongodb.Db(projectName, this.server, {native_parser: true});
 };
 
 var Project = function(name){
@@ -188,7 +237,6 @@ Project.prototype.getJob = function(jobName){
 };
 Project.prototype.addJob = function(jobInfo){
     this.jobs[jobInfo.jobname] = jobInfo;
-    jobInfo.currentTasks = [];
 };
 
 
@@ -199,34 +247,40 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
     }).bind(this);
     var handleHasJob = (function(project, job){
         var getTask = function(type) {
-            return {
+            var a = {
                 project: projectName,
                 job: job.jobname,
                 taskType: type
             };
+            if (type === taskType.simulation) {
+                a['startState'] = job.done;
+                a['duration'] = job.duration;
+                a['batchLength'] = job.batchLength;
+                a['stepDuration'] = job.stepDuration;
+            }
+            return a;
         };
 
         if (job.done < job.totalStep) {
-            if (!taskExists(job, taskType.simulation)) {
+            if (!taskExists(projectName, jobName, taskType.simulation)) {
                 waitingQueue.push(getTask(taskType.simulation));
-                job.currentTasks.push(taskType.simulation);
             } else {
                 this.response.error({type: 'DuplicateTask',
                                     taskType:taskType.simulation});
             }
         } else if (job.fullStatistics === false) {
             // Statistics are parallel.
-            if (taskExists(job, taskType.basicStatistics)) {
+            if (taskExists(projectName, jobName, taskType.basicStatistics)) {
                 this.response.error({type: 'DuplicateTask',
                                     taskType:taskType.basicStatistics});
                 return;
             }
-            if (taskExists(job, taskType.idleTimes) ) {
+            if (taskExists(projectName, jobNAme, taskType.idleTimes) ) {
                 this.response.error({type: 'DuplicateTask',
                                     taskType:taskType.idleTimes});
                 return;
             }
-            if (taskExists(job, taskType.throughput) ) {
+            if (taskExists(projectName, jobName, taskType.throughput) ) {
                 this.response.error({type: 'DuplicateTask',
                                     taskType:taskType.throughput});
                 return;
@@ -234,15 +288,12 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
 
             if (job.basicStatistics === false) {
                 waitingQueue.push(getTask(taskType.basicStatistics));
-                job.currentTasks.push(taskType.basicStatistics);
             }
             if (job.idleTimes === false) {
                 waitingQueue.push(getTask(taskType.idleTimes));
-                job.currentTasks.push(taskType.idleTimes);
             }
             if (job.throughtput === false) {
                 waitingQueue.push(getTask(taskType.throughput));
-                job.currentTasks.push(taskType.throughput);
             }
         } else {
             this.response.error({type: 'AlreadyDone'});
@@ -255,23 +306,197 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
 
 
 var abortTaskImplementation = function(projectName, jobName) {
-    var len = 0;
-    if (projects.hasOwnProperty(projectName)){
-        var p = projects[projectName];
-        if (p.hasJob(jobName)) {
-            var j = p.getJob(joibName);
-            len = j.currentTasks.length;
-            if (len > 0) {
-                waitingQueue = waitingQueue.filter(function(item){
-                    return item.project !== projectName || item.job !== jobName;
-                });
-                j.currentTasks = [];
-            }
+    var len = 0,
+        queueLen = waitingQueue.length;
+    // Clear waiting tasks.
+    waitingQueue = waitingQueue.filter(function(item){
+        return item.project !== projectName || item.job !== jobName;
+    });
+    len = queueLen - waitingQueue.length;
+
+    // Clear waiting for activation.
+    for(var key in waitingActivation){
+        var val = waitingActivation[key];
+        if (val.project === projectName && val.job === jobName) {
+            delete waitingActivation[key];
+            len += 1;
         }
     }
+
     this.response(len);
 };
 
+
+var getTasksImplementation = function(workerId, taskTypes){
+    if (waitingActivation.hasOwnProperty(workerId) ||
+        runningTasks.hasOwnProperty(workerId)) {
+        this.response.error({type: 'WorkerHasTask'});
+        return;
+    }
+
+    var task = null;
+    for(var i=0, l=waitingQueue.length; i<l; ++i) {
+        var it = waitingQueue[i];
+        if (taskTypes.indexOf(it.type) !== -1) {
+            task = it;
+            delete waitingQueue[i]; // remove this task from queue
+            break;
+        }
+    }
+
+    if (task === null){
+        task = {empty: true};
+    } else {
+        task['empty'] = false;
+        task['databases'] = [{host: cfg.mongodbAddress[0],
+                              port: cfg.mongodbAddress[1]}];
+        task['lastUpdate'] = newDate();
+        task['sig'] = task['lastUpdate'].toJSON();
+        waitingActivation[workerId] = task;
+    }
+    this.response.response(task);
+};
+
+
+var acceptTaskImplementation = function(workerId, sig){
+    if (workerId in waitingActivation) {
+        var t = waitingActivation[workerId];
+        if (t.sig === sig) {
+            delete waitingActivation[workerId];
+            runningTasks[workerId] = t;
+            t.lastUpdate = new Date();
+            t.sig = t.lastUpdate.toJSON();
+            this.response.response({sig: t.sig});
+        } else {
+            this.response.error({type:'InvalidSignature'});
+        }
+    } else {
+        this.response.error({type:'InvalidWorkerId'});
+    }
+};
+
+
+var rejectTaskImplementation = function(workerId, sig) {
+    if (workerId in waitingActivation) {
+        var t = waitingActivation[workerId];
+        if (t.sig === sig) {
+            delete waitingActivation[workerId];
+            waitingQueue.push(t);
+            delete t['sig'];
+            delete t['empty'];
+        } else {
+            this.response.error({type:'InvalidSignature'});
+        }
+    } else {
+        this.response.error({type:'InvalidWorkerId'});
+    }
+};
+
+
+var taskFinishedImplementation = function(workerId, sig) {
+    // Check task existence.
+    if (!(workerId in runningTasks)) {
+        this.response.error({type:'InvalidWorkerId'});
+        return;
+    }
+
+    var task = runningTasks[workerId];
+    // Check signature
+    if (task.sig !== sig) {
+        this.response.error({type:'InvalidSignature'});
+        return;
+    }
+
+    delete runningTasks[workerId];
+    var job = projects[task.project][task.job];
+    var dbChange = {'$set':{}};
+    var dbSpec = {'_id': task.job};
+    var startNext = false;
+    // Store
+    if (task.type === taskType.simulation) {
+        job.done += job.batchLength;
+        // Special case
+        delete change['$set'];
+        change['$inc'] = {'done': job.batchLength };
+        startNext = true;
+    } else if (task.type === taskType.basicStatistics) {
+        job.basicStatistics = true;
+        change['$set']['basicStatistics'] = true;
+    } else if (task.type === taskType.idleTimes) {
+        job.idleTimes = true;
+        change['$set']['idleTimes'] = true;
+    } else if (task.type === taskType.throughput) {
+        job.throughput = true;
+        change['$set']['throughput'] = true;
+    }
+
+    if (job.basicStatistics && job.idleTimes && job.throughput) {
+        job.fullStatistics = true;
+        change['$set']['fullStatistics'] = true;
+    }
+
+    // Update db.
+    var onSuccess = function(needNext) {
+        this.response.response("success");
+        // Start simulation tasks
+        if (needNext)
+            process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
+    };
+    updateDocuments(task.project, 'progresses', dbSpec, dbChange, false,
+                    onSuccess.bind(this, startNext));
+};
+
+
+var taskInProgressImplementation = function(workerId, sig) {
+    // Check task existence.
+    if (!(workerId in runningTasks)) {
+        this.response.error({type:'InvalidWorkerId'});
+        return;
+    }
+
+    var task = runningTasks[workerId];
+    // Check signature
+    if (task.sig !== sig) {
+        this.response.error({type:'InvalidSignature'});
+        return;
+    }
+
+    task.lastUpdate = new Date();
+    task.sig = task.lastUpdate.toJSON();
+    this.response.response({'sig':task.sig});
+};
+
+
+var getCurrentTasksImplementation = function() {
+    var result = [];
+    for (var wid in waitingActivation) {
+        if (waitingActivation.hasOwnProperty(wid)) {
+            result.push({'id': wid, 'sig': waitingActivation[wid].sig});
+        }
+    }
+    for (var wid in runningTasks) {
+        if (runningTasks.hasOwnProperty(wid)) {
+            result.push({'id': wid, 'sig': runningTasks[wid].sig});
+        }
+    }
+    this.response.response(result);
+};
+
+
+var restartTasksImplementation = function(tasks) {
+    tasks.forEach(function(task){
+        // Try running tasks first, then waiting acception.
+        if (task.id in runningTasks) {
+            var currentTask = runningTasks[task.id];
+            delete runningTasks[task.id];
+            waitingQueue.push(currentTask);
+        } else if (task.id in waitingActivation) {
+            var currentTask = waitingActivation[task.id];
+            delete runningTasks[task.id];
+            waitingQueue.push(currentTask);
+        }
+    });
+};
 
 // RPC methods.
 var hello = function(rpc){
@@ -309,6 +534,73 @@ var abortTask = function(rpc) {
     abortTaskImplementation.bind(new SchedulerContext(rpc))(projectName, jobName);
 };
 
-exports.rpcMethods = {hello: hello, addTask: addTask};
+
+var getTask = function(rpc){
+    var taskTypes = parseTaskTypes(arguments[1], rpc);
+    if (taskTypes == null) return;
+    getTasksImplementation.call(new SchedulerContext(rpc), taskTypes);
+};
+
+
+var acceptTask = function(rpc, workerId, sig){
+    if (checkType(rpc, workerId, "workerId", "string") ||
+        checkType(rpc, sig, "sig", "string") ) {
+        return;
+    }
+    acceptTaskImplementation.call(new SchedulerContext(rpc), workerId, sig);
+};
+
+
+var rejectTask = function(rpc, workerId, sig) {
+    if (checkType(rpc, workerId, "workerId", "string") ||
+        checkType(rpc, sig, "sig", "string") ) {
+        return;
+    }
+    rejectTaskImplementation.call(new SchedulerContext(rpc), workerId, sig);
+};
+
+
+var taskFinished = function(rpc, workerId, sig){
+    if (checkType(rpc, workerId, "workerId", "string") ||
+        checkType(rpc, sig, "sig", "string") ) {
+        return;
+    }
+    taskFinished.call(new SchedulerContext(rpc), workerId, sig);
+};
+
+
+var taskInProgress = function(rpc, workerId, sig){
+    if (checkType(rpc, workerId, "workerId", "string") ||
+        checkType(rpc, sig, "sig", "string") ) {
+        return;
+    }
+    taskInProgress.call(new SchedulerContext(rpc), workerId, sig);
+};
+
+
+var getCurrentTasks = function(rpc) {
+    getCurrentTasksImplementation.call(new SchedulerContext(rpc));
+};
+
+var restartTasks = function(rpc, tasks) {
+    if (!Array.isArray(tasks)) {
+        rpc.error({'type':'InvalidArgumentType', 'argumentName': 'tasks'});
+        return;
+    }
+    tasks.forEach(function(item, index){
+        if (!('id' in item) || !('sig' in item)) {
+            rpc.error({'type':'InvalidArgumentType',
+                      'argumentName': 'tasks['+index+']'});
+            return;
+        }
+    });
+
+    restartTasksImplementation.call(new SchedulerContext(rpc), tasks);
+};
+
+exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
+    'getTask': getTask, 'acceptTask': acceptTask, 'rejectTask': rejectTask,
+    'taskFinished': taskFinished, 'taskInProgress': taskInProgress
+};
 exports.cfg = cfg;
 // exports.taskType = taskType;
