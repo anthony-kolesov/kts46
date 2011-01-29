@@ -31,30 +31,29 @@ function JSONRPC_Client(host, port, path) {
         'path': path || '/jsonrpc',
         'method': 'POST'
     };
-    this.requestId = 0;
+    this.requestId = 1; // Don't start with error or call will not work.
 }
 
-JSONRPC_Client.prototype.call = function() {
-    var methodName = arguments.shift();
-    var callback = arguments.pop();
+
+JSONRPC_Client.prototype.call = function(methodName) {
+    var cbk = arguments[arguments.length-1];
     var params = [];
-    for (var i=0, l=arguments.length; i < l; ++i){
+    for (var i=1, l=arguments.length-2; i < l; ++i)
         params.push(arguments[i]);
-    }
-    var callObject = {"method": method, "params":params, "id": this.requestId++};
 
-    var onResponse = function(callback, dataChunk) {
-        callback(JSON.parse(dataChunk));
-    }
+    var callObject = {method: methodName, params:params, id: this.requestId++};
 
-    var request = http.request(this.options, function(response) {
-        response.setEncoding('utf8');
-        response.on('data', onResponse.bind({}, callback));
+    var onResponse = function (callback, chunk) {
+        callback(JSON.parse(chunk));
+    };
+
+    var req = http.request(this.options, function(res) {
+        res.setEncoding('utf8');
+        res.on('data', onResponse.bind({}, cbk));
     });
-
     // write data to request body
-    request.write(JSON.stringify(callObject));
-    request.end();
+    req.write(JSON.stringify(callObject));
+    req.end();
 };
 
 exports.Client = JSONRPC_Client;
