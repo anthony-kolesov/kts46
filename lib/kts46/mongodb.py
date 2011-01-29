@@ -454,29 +454,29 @@ class StateStorage(object):
         ``close`` method."""
         if len(self.buffer) > 0:
             self.job.progress['done'] += len(self.buffer)
-            #self.job.progress['currentStateId'] = str(self.bulk_queue[-1]['time'])
-
-            if self.fullStateGeneratorCallback is not None:
-                self.job.progress['currentFullState'] = self.fullStateGeneratorCallback()
-            else:
-                self.job.progress['currentFullState'] = ''
-
+            
             cars = [ ]
             for state in self.buffer:
                 for carId, car in state['cars'].items():
-                    #car['stateid'] = state['_id']
                     car['job'] = state['job']
                     car['time'] = state['time']
                     car['carid'] = carId
                     cars.append(car)
                 del state['cars']
 
-            # self.buffer.append(self.job.progress)
             self.db.progresses.save(self.job.progress)
             self.db.states.insert(self.buffer)
             self.db.cars.insert(cars)
             self.buffer = []
 
+
     def close(self):
         "Save all unsaved data to server."
+        
+        # Save full state only at the end of simulation sessions.        
+        if self.fullStateGeneratorCallback is not None:
+            self.job.progress['currentFullState'] = self.fullStateGeneratorCallback()
+        else:
+            self.job.progress['currentFullState'] = ''
+        
         self.dump()
