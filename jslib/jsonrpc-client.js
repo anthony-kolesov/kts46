@@ -38,7 +38,7 @@ function JSONRPC_Client(host, port, path) {
 JSONRPC_Client.prototype.call = function(methodName) {
     var cbk = arguments[arguments.length-1];
     var params = [];
-    for (var i=1, l=arguments.length-2; i < l; ++i)
+    for (var i=1, l=arguments.length-1; i < l; ++i)
         params.push(arguments[i]);
 
     var callObject = {method: methodName, params:params, id: this.requestId++};
