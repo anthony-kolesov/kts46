@@ -52,7 +52,7 @@ class SimulationServer(object):
 
         # Load current state: load state and set time
         curState = job.currentFullState
-        if len(curState) > 0:
+        if curState is not None:
             model.loadYAML(curState)
             t = timedeltaToSeconds(model.time)
         else:
