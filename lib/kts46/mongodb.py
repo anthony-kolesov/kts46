@@ -290,7 +290,7 @@ class SimulationJob(object):
             'totalSteps': math.floor(simulationTime / simulationStep),
             'batches': math.floor(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
-            'currentFullState': '',
+            # 'currentFullState': '',
             'basicStatistics': False, 'idleTimes': False, 'throughput': False,
             'fullStatistics': False,
             'jobname': self.name
@@ -404,6 +404,19 @@ class SimulationJob(object):
         """
         return round(value, 6)
 
+    @property
+    def currentFullState(self):
+        doc = self.db.fullStates.find_one({'_id': self.name})
+        if doc is not None:
+            return doc['yaml']
+        else:
+            return None
+
+    @currentFullState.setter
+    def currentFullState(self, value):
+        doc = {'yaml': value, '_id': self.name}
+        self.db.fullStates.save(doc)
+
 
 class StateStorage(object):
     "Represents storage for simulation states."
@@ -454,7 +467,7 @@ class StateStorage(object):
         ``close`` method."""
         if len(self.buffer) > 0:
             self.job.progress['done'] += len(self.buffer)
-            
+
             cars = [ ]
             for state in self.buffer:
                 for carId, car in state['cars'].items():
@@ -472,11 +485,9 @@ class StateStorage(object):
 
     def close(self):
         "Save all unsaved data to server."
-        
-        # Save full state only at the end of simulation sessions.        
-        if self.fullStateGeneratorCallback is not None:
-            self.job.progress['currentFullState'] = self.fullStateGeneratorCallback()
-        else:
-            self.job.progress['currentFullState'] = ''
-        
+        # Save full state only at the end of simulation sessions.
+        #if self.fullStateGeneratorCallback is not None:
+        #    self.job.progress['currentFullState'] = self.fullStateGeneratorCallback()
+        #else:
+        #    self.job.progress['currentFullState'] = ''
         self.dump()
