@@ -47,6 +47,10 @@ Methods
         have not errors. Also if any task type throws error than no tasks will
         be added. That is, call of this method is atomic.
 
+    .. warning::
+        For reasons of complexity specifiying task types are not implemented in
+        current version of scheduler.
+
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job that is executed in this task.
     :param string-or-arrayOfStrings taskTypes:
@@ -77,6 +81,10 @@ Methods
     Aborts currently running tasks for specified job. If no ``taskType`` is
     specified than all tasks will be aborted. Please note that it doesn't
     guaranteed that tasks currently running on workers will be aborted.
+
+    .. warning::
+        For reasons of complexity specifiying task types are not implemented in
+        current version of scheduler.
 
     :param string projectName: Name of project to which task belongs.
     :param string jobName: Name of job for which to abort task.
@@ -185,7 +193,7 @@ Methods
 
     :returns:
         An array of objects with two fields: ``id`` is a worker id, and ``sig``
-        is a signature of task state. Both accepted and waitign for acception
+        is a signature of task state. Both accepted and waiting for acception
         tasks are in this array.
 
 
@@ -237,8 +245,15 @@ Task
 
 .. js:attribute:: task.databases
 
-    Array of strings that are paths to databases. Worker must try to use them
-    starting from first, if it doesn't work try to use second and so on.
+    Array of objects that are paths to databases. Each object contains two
+    fields: ``host`` - a string with database host, and ``port`` - an integer
+    width database port on the host. Worker must try to use them starting from
+    first, if it doesn't work try to use second and so on.
+
+.. js:attribute:: task.startState
+
+    Integer number to specify starting state for simulation. This attribure
+    makes sense only for simulation tasks and doesn't provided for other tasks.
 
 
 Constants
