@@ -1,6 +1,5 @@
 var vows = require('vows'),
     assert = require('assert'),
-    fs = require('fs'),
     http = require('http');
 
 var options = {
@@ -9,6 +8,13 @@ var options = {
   path: '/jsonrpc',
   method: 'POST'
 };
+
+var existingProject = 'node_test',
+    existingJob = 'node_test_done',
+    existingJobDone = 'node_test_done',
+    existingJobUndone = 'undone',
+    unexistingProject = 'QQQSDFSDFq3498',
+    unexistingJob = 'QQQSDFSDFq3498sfsdf';
 
 var callServer = function(method, params, cbk) {
   var req = http.request(options, function(res) {
@@ -27,17 +33,16 @@ var callServer = function(method, params, cbk) {
 
 // Macroses
 var assertArgTypeInvalid = function(r, e) {
-    return assertArgInvalid("InvalidArgumentType");
+    return assertHasError("InvalidArgumentType");
 };
-var assertArgInvalid = function(errorName){
+var assertHasError = function(errorName){
     return function(r, e) {
         assert.isNotNull(r.error);
         assert.strictEqual(r.error.type, errorName);
     };
 };
-var assertHasError = function(r, e) {
+var assertNoResult = function(r, e) {
     assert.isNull(r.result);
-    assert.isNotNull(r.error);
 };
 var assertErrorArgName = function(argName) {
     return function(r, e) {
@@ -46,8 +51,18 @@ var assertErrorArgName = function(argName) {
     };
 };
 
+var resultIsSuccess = function(r, e) {
+    // console.log(arguments);
+    // var r = arguments['0'];
+    assert.strictEqual(r.result, "success");
+};
 
-vows.describe('Division by Zero').addBatch({
+var assertNoError = function(r, e) {
+    assert.isNull(r.error);
+};
+
+vows.describe('ktds46 Control node scheduler').addBatch({
+
     "when calling hello": {
         topic: function(){callServer("hello", [], this.callback);},
         "must return string": function(response, e) {
@@ -55,81 +70,75 @@ vows.describe('Division by Zero').addBatch({
           assert.isNull(response.error);
         }
     },
+
     "when calling addTask": {
         "with invalid project name": {
             topic: function(){callServer("addTask", [11, "j1"],this.callback);},
             "InvalidTypeArgument must be raised": assertArgTypeInvalid,
-            "result must be null": assertHasError,
+            "result must be null": assertNoResult,
             "argument name must be projectName": assertErrorArgName("projectName")
         },
         "with null project name": {
             topic: function(){callServer("addTask", [null, "j1"],this.callback);},
             "InvalidTypeArgument must be raised": assertArgTypeInvalid,
-            "result must be null": assertHasError,
+            "result must be null": assertNoResult,
             "argument name must be projectName": assertErrorArgName("projectName")
         },
         "with invalid job name": {
             topic: function(){callServer("addTask", ["p1", 1], this.callback);},
             "InvalidTypeArgument must be raised": assertArgTypeInvalid,
-            "result must be null": assertHasError,
+            "result must be null": assertNoResult,
             "argument name must be jobName": assertErrorArgName("jobName")
         },
         "with null job name": {
             topic: function(){callServer("addTask", ["p1", null], this.callback);},
             "InvalidTypeArgument must be raised": assertArgTypeInvalid,
-            "result must be null": assertHasError,
+            "result must be null": assertNoResult,
             "argument name must be jobName": assertErrorArgName("jobName")
         },
-        "with invalid task type type": {
-            topic: function(){
-                callServer("addTask", ["p1", "j1", ["idleTimes", null, 1] ], this.callback);},
-            "InvalidTypeArgument must be raised": assertArgTypeInvalid,
-            "result must be null": assertHasError,
-            "argument name must be taskTypes": assertErrorArgName("taskTypes[2]")
-        },
-        "with unknown task type": {
-            topic: function(){
-                callServer("addTask", ["p1", "j1",["simulation", "lalla"] ],
-                           this.callback);
-            },
-            "UnknownTaskType must be raised": assertArgInvalid("UnknownTaskType"),
-            "result must be null": assertHasError,
-            "argument name must be taskTypes": assertErrorArgName("taskTypes[1]"),
-            "taskType must be lalla": function(r, e) {
-                assert.isNotNull(r.error);
-                assert.strictEqual(r.error.taskType, "lalla");
-            }
-        },
+
         "for project that doesn't exist": {
             topic: function() {
-                callServer("addTask", ["QQA123", "exp_1_9-s4"], this.callback);
+                callServer("addTask", [unexistingProject, existingJob], this.callback);
             },
-            "there must be JobNotFound": function(r, e) {
-                assert.isNull(r.result);
-                assert.isNotNull(r.error);
-                assert.strictEqual(r.error.type, 'JobNotFound');
-            }
+            "there mustn't be result": assertNoResult,
+            "there ust be JobNotFound": assertHasError("JobNotFound")
         },
+
         "for job that doesn't exist": {
             topic: function() {
-                callServer("addTask", ["exp_3", "QQQSDFSDFq3498"], this.callback);
+                callServer("addTask", [existingProject, unexistingJob], this.callback);
             },
-            "there must be JobNotFound": function(r, e) {
-                assert.isNull(r.result);
-                assert.isNotNull(r.error);
-                assert.strictEqual(r.error.type, 'JobNotFound');
-            }
+            "there mustn't be result": assertNoResult,
+            "there ust be JobNotFound": assertHasError("JobNotFound")
         },
+
         "with valid args for done task": {
             topic: function() {
-                callServer("addTask", ["exp_3", "exp_1_9-s4"], this.callback);
+                callServer("addTask", [existingProject, existingJobDone],
+                           this.callback);
             },
-            "there must be AlreadyDone": function(r, e) {
-                assert.isNull(r.result);
-                assert.isNotNull(r.error);
-                assert.strictEqual(r.error.type, 'AlreadyDone');
+            "there mustn't be result": assertNoResult,
+            "there ust be AlreadyDone": assertHasError("AlreadyDone")
+        },
+
+        "for undone task": {
+            topic: function() {
+                callServer("addTask", [existingProject, existingJobUndone],this.callback);
+            },
+            "result must be success": resultIsSuccess,
+            "there mustn't be errors": assertNoError,
+            "but if adding it again": {
+                topic: function(a) {
+                    console.log(a);
+                    callServer("addTask", [existingProject, existingJobUndone],this.callback);
+                },
+                "there must be error": assertHasError('DuplicateTask'),
+                "ne result must be returned": assertNoResult
             }
         }
+
+
     }
-}).export(module);
-//}).run();
+//}).export(module);
+}).run();

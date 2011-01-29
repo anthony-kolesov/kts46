@@ -8,14 +8,14 @@ first version of scheduler API described `here <http://code.google.com/p/kts46/w
 .. note::
     `JSON-RPC v1.0 <http://json-rpc.org/wiki/specification>`_ is used.
 
-.. note ::
+.. note::
     Also please note that if documentation says that "function throws exception
     DuplicateTask", than actually that means that content of reponse
     ``error.type`` field will be "DuplicateTask". If explicitly said in
     documentation error object may contain other fields with more specific
     description of error, mainly ``msg`` field.
 
-All method throws ``InvalidArgumentType`` error if arguments has an invalid
+All methods throws ``InvalidArgumentType`` error if arguments has an invalid
 type. ``error.argumentName`` will contain name of failed argument. Example
 values:
 
@@ -30,7 +30,13 @@ Methods
 .. js:function:: hello()
 
     Just to be able to check whether server is alive.
-    :returns: String with greeting and version.
+
+    :returns: String with greeting.
+
+    .. note::
+
+        Proposed feature: return not a string, but an object with some
+        information about node, like version and supported features.
 
 
 .. js:function:: addTask(projectName, jobName)

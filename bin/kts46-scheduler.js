@@ -200,7 +200,7 @@ var taskExists = function(projectName, jobName, taskType) {
     //var cur = job.currentTasks || [];
     //return cur.indexOf(taskType) !== -1;
 
-    var mask = function(task) {
+    var mask = function(task, index) {
         return task.project === projectName && task.job === jobName
                 && task.type === taskType;
     };
@@ -250,7 +250,7 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
             var a = {
                 project: projectName,
                 job: job.jobname,
-                taskType: type
+                type: type
             };
             if (type === taskType.simulation) {
                 a['startState'] = job.done;
@@ -261,7 +261,7 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
             return a;
         };
 
-        if (job.done < job.totalStep) {
+        if (job.done < job.totalSteps) {
             if (!taskExists(projectName, jobName, taskType.simulation)) {
                 waitingQueue.push(getTask(taskType.simulation));
             } else {
@@ -275,7 +275,7 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
                                     taskType:taskType.basicStatistics});
                 return;
             }
-            if (taskExists(projectName, jobNAme, taskType.idleTimes) ) {
+            if (taskExists(projectName, jobName, taskType.idleTimes) ) {
                 this.response.error({type: 'DuplicateTask',
                                     taskType:taskType.idleTimes});
                 return;
@@ -469,6 +469,9 @@ var taskInProgressImplementation = function(workerId, sig) {
 
 var getCurrentTasksImplementation = function() {
     var result = [];
+    for (var i in waitingQueue) {
+        result.push(waitingQueue[i]);
+    }
     for (var wid in waitingActivation) {
         if (waitingActivation.hasOwnProperty(wid)) {
             result.push({'id': wid, 'sig': waitingActivation[wid].sig});
@@ -600,7 +603,8 @@ var restartTasks = function(rpc, tasks) {
 
 exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
     'getTask': getTask, 'acceptTask': acceptTask, 'rejectTask': rejectTask,
-    'taskFinished': taskFinished, 'taskInProgress': taskInProgress
+    'taskFinished': taskFinished, 'taskInProgress': taskInProgress,
+    'getCurrentTasks': getCurrentTasks, 'restartTasks': restartTasks
 };
 exports.cfg = cfg;
 // exports.taskType = taskType;
