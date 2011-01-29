@@ -51,8 +51,9 @@ class SimulationServer(object):
                              self.cfg.getint('worker', 'dbBufferLength'))
 
         # Load current state: load state and set time
-        if len(job.progress['currentFullState']) > 0:
-            model.loadYAML(job.progress['currentFullState'])
+        curState = job.currentFullState
+        if len(curState) > 0:
+            model.loadYAML(curState)
             t = timedeltaToSeconds(model.time)
         else:
             t = 0.0
@@ -79,5 +80,6 @@ class SimulationServer(object):
             t += step
 
         # Finalize.
+        job.currentFullState = model.asYAML()
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
