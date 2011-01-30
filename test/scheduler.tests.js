@@ -1,5 +1,4 @@
 var RPCClient = require('../jslib/jsonrpc-client').Client,
-    callServer = require('../jslib/jsonrpc-client').callServer,
     assert = require('assert');
 
 // Setup assert.
