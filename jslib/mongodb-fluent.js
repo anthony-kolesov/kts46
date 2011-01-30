@@ -47,7 +47,7 @@ var find = function(client, collectionName, spec, fields, onFinished, onError) {
 // Update documents in database.
 // onFinished: function()
 // onError: function(errorObject)
-var update = function(client, db, collectionName, spec, changes, options, onFinished, onError) {
+var update = function(client, collectionName, spec, changes, options, onFinished, onError) {
     // var client = this.getDbClient(db);
     client.open(function(err, pClient) {
         if (err) { onMongodbError(err, client, onError); return; }
