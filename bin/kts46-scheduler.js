@@ -28,15 +28,12 @@ var checkType = function(rpc, arg, argname, type) {
 
 /* Ensures that provided taskTypes are correct. */
 var parseTaskTypes = function(taskTypes, rpc) {
-    var taskTypesType = typeof(taskTypes),
-        effTaskTypes = taskTypes;
+    var effTaskTypes = taskTypes;
 
     // Is string, undefined or array.
-    if (taskTypesType === "string") {
-        effTaskTypes = [taskTypes];
-    } else if (taskTypesType === "undefined") {
+    if (typeof(taskTypes) === "undefined") {
         effTaskTypes = [];
-    } else if (Array.isArray(taskTypes)) {
+    } else if (!Array.isArray(taskTypes)) {
         rpc.error({'type': 'InvalidArgumentType', 'argumentName': 'taskTypes'});
         return null;
     }
@@ -51,11 +48,6 @@ var parseTaskTypes = function(taskTypes, rpc) {
                 return null;
             }
         }
-    }
-
-    // Default if none is provided.
-    if (effTaskTypes.length === 0) {
-        effTaskTypes.push(taskType.fullStatistics);
     }
 
     return effTaskTypes;
@@ -529,10 +521,7 @@ var addTask = function(rpc) {
 };
 
 
-var abortTask = function(rpc) {
-    var projectName = argument[1],
-        jobName = argument[2];
-
+var abortTask = function(rpc, projectName, jobName) {
     if (checkType(rpc, projectName, "projectName", "string") ||
         checkType(rpc, jobName, "jobName", "string") ) {
         return;
@@ -542,10 +531,13 @@ var abortTask = function(rpc) {
 };
 
 
-var getTask = function(rpc){
-    var taskTypes = parseTaskTypes(arguments[1], rpc);
+var getTask = function(rpc, workerId){
+    if (checkType(rpc, workerId, "workerId", "string")) {
+        return;
+    }
+    var taskTypes = parseTaskTypes(arguments[2], rpc);
     if (taskTypes == null) return;
-    getTasksImplementation.call(new SchedulerContext(rpc), taskTypes);
+    getTasksImplementation.call(new SchedulerContext(rpc), workerId, taskTypes);
 };
 
 
