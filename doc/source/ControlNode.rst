@@ -69,9 +69,6 @@ Methods
     :returns:
         (int) Number of directly aborted tasks. Dependent tasks doesn't count.
         So if zero is returned there were no active tasks for this job.
-    :throws UnknownTaskType:
-        Specified task type is unknown to scheduler. ``error.taskType`` will
-        contain name of this unknown type.
 
 
 .. js:function:: getTask(workedId, taskTypes)
@@ -184,6 +181,9 @@ Methods
         Tasks to reset. Array contains objects with two fields: ``id`` is a
         worker id and ``sig`` is a task state signature. If signature or id
         doesn't match with known values scheduler will skip them quitly.
+    :returns:
+        A dictionary with one field: ``restarted`` with a number of restarted
+        tasks.
 
 
 Types

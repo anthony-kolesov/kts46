@@ -469,9 +469,9 @@ var taskInProgressImplementation = function(workerId, sig) {
 
 var getCurrentTasksImplementation = function() {
     var result = [];
-    for (var i in waitingQueue) {
-        result.push(waitingQueue[i]);
-    }
+    //for (var i in waitingQueue) {
+    //    result.push(waitingQueue[i]);
+    //}
     for (var wid in waitingActivation) {
         if (waitingActivation.hasOwnProperty(wid)) {
             result.push({'id': wid, 'sig': waitingActivation[wid].sig});
@@ -487,18 +487,22 @@ var getCurrentTasksImplementation = function() {
 
 
 var restartTasksImplementation = function(tasks) {
+    var restarted = 0;
     tasks.forEach(function(task){
         // Try running tasks first, then waiting acception.
         if (task.id in runningTasks) {
             var currentTask = runningTasks[task.id];
             delete runningTasks[task.id];
             waitingQueue.push(currentTask);
+            restarted += 1;
         } else if (task.id in waitingActivation) {
             var currentTask = waitingActivation[task.id];
             delete runningTasks[task.id];
             waitingQueue.push(currentTask);
+            restarted += 1;
         }
     });
+    this.response.response({'restarted': restarted});
 };
 
 // RPC methods.
