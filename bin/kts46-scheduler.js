@@ -64,55 +64,6 @@ var onMongodbError2 = function(rpc, err){
     console.log(err);
 };
 
-
-/*var findInDb = function() {
-    var db = arguments[0];
-    var collectionName = arguments[1];
-    var onFinished = arguments[arguments.length-1];
-    var spec = arguments.length > 3 ? arguments[2] : null;
-    var fields = arguments.length > 4 ? arguments[3] : null;
-    var context = this;
-
-    var client = this.getDbClient(db);
-    client.open(function(err, pClient) {
-        if (err) { onMongodbError.bind(context)(err, client); return; }
-        client.collection(collectionName, function(err, collection) {
-            if (err) { onMongodbError.bind(context)(err, client); return; }
-            collection.find(spec, fields, function(err, cursor){
-                if (err) onMongodbError.bind(context)(err, client);
-                else { onFinished(cursor); }
-            });
-        } );
-    });
-};*/
-
-
-// Update documents in database.
-var updateDocuments = function(db, collectionName, spec, changes, multi, onFinished) {
-    var context = this;
-    var client = this.getDbClient(db);
-    client.open(function(err, pClient) {
-        if (err) {
-            onMongodbError.bind(context)(err, client);
-            return;
-        }
-        client.collection(collectionName, function(err, collection) {
-            if (err) {
-                onMongodbError.bind(context)(err, client);
-                return;
-            }
-            collection.update(spec, changes, {multi: multi}, function(err, cursor){
-                if (err) {
-                    onMongodbError.bind(context)(err, client);
-                } else {
-                    if (onFinished) onFinished();
-                }
-            });
-        } );
-    });
-};
-
-
 var loadProject = function(project, onFinished) {
     var fields =  {'currentFullState': 0};
     var context = this;
@@ -462,8 +413,8 @@ var taskFinishedImplementation = function(workerId, sig) {
         if (needNext)
             process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
     };
-    updateDocuments.call(this, task.project, 'progresses', dbSpec, dbChange, false,
-                    onSuccess.bind(this, startNext));
+    fluentMongodb.update(this.getDbClient(task.project), 'progresses', dbSpec, dbChange, false,
+                        onSuccess.bind(this, startNext), onMongodbError2.bind(this));
 };
 
 
