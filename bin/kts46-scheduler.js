@@ -112,22 +112,38 @@ var loadProject = function(project, onFinished) {
     var context = this;
     findInDb.call(this, project.name, 'progresses', {}, fields, function(cursor){
         cursor.toArray(function(err, a){
-            a.forEach(function(item){
-                project.addJob(item);
-            });
-            cursor.close();
-            findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor) {
-                cursor.toArray(function(err, a){
-                    a.forEach(function(item){
-                        var j = project.getJob(item.name);
-                        j.duration = item.simulationParameters.duration;
-                        j.batchLength = item.simulationParameters.batchLength;
-                        j.stepDuration = item.simulationParameters.stepDuration;
+            a.forEach(function(item, index, array){
+                var j = {
+                    '_id': item._id,
+                    'fullStatistics': item.fullStatistics,
+                    'done': item.done,
+                    'totalSteps': item.totalSteps,
+                    'batches': item.batches,
+                    'jobname': item.jobname,
+                    'basicStatistics': item.basicStatistics,
+                    'idleTimes': item.idleTimes,
+                    'throughput': item.throughput
+                };
+                project.addJob(j);
+                if (index === array.length - 1) {
+                    cursor.close();
+                    findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor2) {
+                        cursor2.toArray(function(err, a){
+                            a.forEach(function(item, index, array){
+                                var j = project.getJob(item.name);
+                                j.duration = item.simulationParameters.duration;
+                                j.batchLength = item.simulationParameters.batchLength;
+                                j.stepDuration = item.simulationParameters.stepDuration;
+                                // Last
+                                if (index === array.length - 1) {
+                                    cursor2.close();
+                                    cursor2.db.close();
+                                    if (onFinished) onFinished();
+                                }
+                            });
+                        });
                     });
-                });
-                cursor.close();
-                cursor.db.close();
-                if (onFinished) onFinished();
+                }
             });
         });
     });
@@ -314,12 +330,11 @@ var abortTaskImplementation = function(projectName, jobName) {
             len += 1;
         }
     }
-
-    this.response(len);
+    this.response.response(len);
 };
 
 
-var getTasksImplementation = function(workerId, taskTypes){
+var getTaskImplementation = function(workerId, taskTypes){
     if (waitingActivation.hasOwnProperty(workerId) ||
         runningTasks.hasOwnProperty(workerId)) {
         this.response.error({type: 'WorkerHasTask'});
@@ -331,8 +346,7 @@ var getTasksImplementation = function(workerId, taskTypes){
         var it = waitingQueue[i];
         if (taskTypes.indexOf(it.type) !== -1) {
             task = it;
-            delete waitingQueue[i]; // remove this task from queue
-            break;
+            waitingQueue.splice(i, 1);
         }
     }
 
@@ -342,7 +356,7 @@ var getTasksImplementation = function(workerId, taskTypes){
         task['empty'] = false;
         task['databases'] = [{host: cfg.mongodbAddress[0],
                               port: cfg.mongodbAddress[1]}];
-        task['lastUpdate'] = newDate();
+        task['lastUpdate'] = new Date();
         task['sig'] = task['lastUpdate'].toJSON();
         waitingActivation[workerId] = task;
     }
@@ -376,6 +390,7 @@ var rejectTaskImplementation = function(workerId, sig) {
             waitingQueue.push(t);
             delete t['sig'];
             delete t['empty'];
+            this.response.response("success");
         } else {
             this.response.error({type:'InvalidSignature'});
         }
@@ -400,7 +415,7 @@ var taskFinishedImplementation = function(workerId, sig) {
     }
 
     delete runningTasks[workerId];
-    var job = projects[task.project][task.job];
+    var job = projects[task.project].getJob(task.job);
     var dbChange = {'$set':{}};
     var dbSpec = {'_id': task.job};
     var startNext = false;
@@ -408,18 +423,18 @@ var taskFinishedImplementation = function(workerId, sig) {
     if (task.type === taskType.simulation) {
         job.done += job.batchLength;
         // Special case
-        delete change['$set'];
-        change['$inc'] = {'done': job.batchLength };
+        delete dbChange['$set'];
+        dbChange['$inc'] = {'done': job.batchLength };
         startNext = true;
     } else if (task.type === taskType.basicStatistics) {
         job.basicStatistics = true;
-        change['$set']['basicStatistics'] = true;
+        dbChange['$set']['basicStatistics'] = true;
     } else if (task.type === taskType.idleTimes) {
         job.idleTimes = true;
-        change['$set']['idleTimes'] = true;
+        dbChange['$set']['idleTimes'] = true;
     } else if (task.type === taskType.throughput) {
         job.throughput = true;
-        change['$set']['throughput'] = true;
+        dbChange['$set']['throughput'] = true;
     }
 
     if (job.basicStatistics && job.idleTimes && job.throughput) {
@@ -434,7 +449,7 @@ var taskFinishedImplementation = function(workerId, sig) {
         if (needNext)
             process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
     };
-    updateDocuments(task.project, 'progresses', dbSpec, dbChange, false,
+    updateDocuments.call(this, task.project, 'progresses', dbSpec, dbChange, false,
                     onSuccess.bind(this, startNext));
 };
 
@@ -489,7 +504,7 @@ var restartTasksImplementation = function(tasks) {
             restarted += 1;
         } else if (task.id in waitingActivation) {
             var currentTask = waitingActivation[task.id];
-            delete runningTasks[task.id];
+            delete waitingActivation[task.id];
             waitingQueue.push(currentTask);
             restarted += 1;
         }
@@ -536,8 +551,8 @@ var getTask = function(rpc, workerId){
         return;
     }
     var taskTypes = parseTaskTypes(arguments[2], rpc);
-    if (taskTypes == null) return;
-    getTasksImplementation.call(new SchedulerContext(rpc), workerId, taskTypes);
+    if (taskTypes === null) return;
+    getTaskImplementation.call(new SchedulerContext(rpc), workerId, taskTypes);
 };
 
 
@@ -564,7 +579,7 @@ var taskFinished = function(rpc, workerId, sig){
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    taskFinished.call(new SchedulerContext(rpc), workerId, sig);
+    taskFinishedImplementation.call(new SchedulerContext(rpc), workerId, sig);
 };
 
 
@@ -573,7 +588,7 @@ var taskInProgress = function(rpc, workerId, sig){
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    taskInProgress.call(new SchedulerContext(rpc), workerId, sig);
+    taskInProgressImplementation.call(new SchedulerContext(rpc), workerId, sig);
 };
 
 

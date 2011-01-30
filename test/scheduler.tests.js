@@ -12,6 +12,10 @@ assert.isNull = function(val, msg) {
 assert.isNotNull = function(val, msg) {
     assert.notStrictEqual(val, null, msg);
 };
+assert.RPCHasNoError = function(rpc) {
+    if (rpc.error) {console.log(rpc);}
+    assert.strictEqual(rpc.error, null);
+};
 
 var getClient = function() {
     return new RPCClient('192.168.1.2', 46212);
@@ -54,16 +58,24 @@ var abortTaskUnknown = function() {
     client.call("abortTask", existingProject, existingJobDone, onAbortUnknownTask);
 };
 var onAbortUnknownTask = function(data) {
+    assert.RPCHasNoError(data);
     assert.strictEqual(0, data.result);
-    assert.isNull(data.error);
+    abortTaskKnown();
+};
+var abortTaskKnown = function() {
+    client.call("abortTask", existingProject, existingJobUndone, onAbortKnownTask);
+};
+var onAbortKnownTask = function(data) {
+    assert.RPCHasNoError(data);
+    assert.strictEqual(1, data.result);
     abortTaskKnownAgain();
 };
 var abortTaskKnownAgain = function() {
     client.call("abortTask", existingProject, existingJobUndone, onAbortKnownTaskAgain);
 };
 var onAbortKnownTaskAgain = function(data) {
+    assert.RPCHasNoError(data);
     assert.strictEqual(0, data.result);
-    assert.isNull(data.error);
     returnTaskToDo();
 };
 var returnTaskToDo = function() {
@@ -73,8 +85,9 @@ var getTask = function() {
     client.call("getTask", wid, ['simulation', 'idleTimes'], onHasTask);
 };
 var onHasTask = function(data) {
+    assert.RPCHasNoError(data);
     assert.strictEqual(false, data.result.empty);
-    globals.task = data.result;
+    global.task = data.result;
     client.call("getTask", wid, ['simulation', 'idleTimes'], onHasTaskAlready);
 };
 var onHasTaskAlready = function(data) {
@@ -84,7 +97,7 @@ var onHasTaskAlready = function(data) {
     rejectTaskWithInvalidWid();
 };
 var rejectTaskWithInvalidWid = function() {
-    client.call("rejectTask", wid+'adasdsad', globals.task.sig, onRejectWithInvalidWid);
+    client.call("rejectTask", wid+'adasdsad', global.task.sig, onRejectWithInvalidWid);
 };
 var onRejectWithInvalidWid = function(data) {
     assert.isNull(data.result);
@@ -92,7 +105,7 @@ var onRejectWithInvalidWid = function(data) {
     rejectTaskWithInvalidSig();
 };
 var rejectTaskWithInvalidSig = function() {
-    client.call("rejectTask", wid, globals.task.sig + 'asdasd', onRejectWithInvalidSig);
+    client.call("rejectTask", wid, global.task.sig + 'asdasd', onRejectWithInvalidSig);
 };
 var onRejectWithInvalidSig = function(data) {
     assert.isNull(data.result);
@@ -100,17 +113,9 @@ var onRejectWithInvalidSig = function(data) {
     rejectTaskValid();
 };
 var rejectTaskValid = function() {
-    client.call("rejectTask", wid, globals.task.sig, onRejectValid);
+    client.call("rejectTask", wid, global.task.sig, onRejectValid);
 };
 var onRejectValid = function(data) {
-    assert.isNull(data.error);
-    assert.strictEqual(data.result, "sucess");
-    readdTask();
-};
-var readdTask = function() {
-    client.call('addTask', existingProject, existingJobUndone, onTaskReadded);
-};
-var onTaskReadded = function(data) {
     assert.isNull(data.error);
     assert.strictEqual(data.result, "success");
     regetTask();
@@ -119,12 +124,13 @@ var regetTask = function() {
     client.call("getTask", wid, ['simulation', 'idleTimes'], onHasTaskAgain);
 };
 var onHasTaskAgain = function(data) {
+    assert.RPCHasNoError(data);
     assert.strictEqual(false, data.result.empty);
-    globals.task = data.result;
+    global.task = data.result;
     acceptTaskWithInvalidWid();
 };
 var acceptTaskWithInvalidWid = function() {
-    client.call("acceptTask", wid+'adasdsad', globals.task.sig, onAcceptWithInvalidWid );
+    client.call("acceptTask", wid+'adasdsad', global.task.sig, onAcceptWithInvalidWid );
 };
 var onAcceptWithInvalidWid = function(data) {
     assert.isNull(data.result);
@@ -132,7 +138,7 @@ var onAcceptWithInvalidWid = function(data) {
     acceptTaskWithInvalidSig();
 };
 var acceptTaskWithInvalidSig = function() {
-    client.call("acceptTask", wid, globals.task.sig + 'asdasd', onAcceptWithInvalidSig);
+    client.call("acceptTask", wid, global.task.sig + 'asdasd', onAcceptWithInvalidSig);
 };
 var onAcceptWithInvalidSig = function(data) {
     assert.isNull(data.result);
@@ -140,17 +146,17 @@ var onAcceptWithInvalidSig = function(data) {
     acceptTaskValid();
 };
 var acceptTaskValid = function() {
-    client.call("acceptTask", wid, globals.task.sig, onRejectValid);
+    client.call("acceptTask", wid, global.task.sig, onAcceptValid);
 };
 var onAcceptValid = function(data) {
     assert.isNull(data.error);
     assert.isString(data.result.sig);
-    globals.task.sig = data.result.sig;
+    global.task.sig = data.result.sig;
     taskInProgressWithInvalidWid();
 };
 
 var taskInProgressWithInvalidWid = function() {
-    client.call("taskInProgress", wid+'adasdsad', globals.task.sig, onAcceptWithInvalidWid);
+    client.call("taskInProgress", wid+'adasdsad', global.task.sig, onTaskInProgressWithInvalidWid);
 };
 var onTaskInProgressWithInvalidWid = function(data) {
     assert.isNull(data.result);
@@ -158,7 +164,7 @@ var onTaskInProgressWithInvalidWid = function(data) {
     taskInProgressWithInvalidSig();
 };
 var taskInProgressWithInvalidSig = function() {
-    client.call("taskInProgress", wid, globals.task.sig + 'asdasd', onTaskInProgressWithInvalidSig);
+    client.call("taskInProgress", wid, global.task.sig + 'asdasd', onTaskInProgressWithInvalidSig);
 };
 var onTaskInProgressWithInvalidSig = function(data) {
     assert.isNull(data.result);
@@ -166,18 +172,18 @@ var onTaskInProgressWithInvalidSig = function(data) {
     taskInProgressTaskValid();
 };
 var taskInProgressTaskValid = function() {
-    client.call("taskInProgress", wid, globals.task.sig, onTaskInProgressValid);
+    client.call("taskInProgress", wid, global.task.sig, onTaskInProgressValid);
 };
 var onTaskInProgressValid = function(data) {
     assert.isNull(data.error);
     assert.isString(data.result.sig);
-    globals.task.sig = data.result.sig;
+    global.task.sig = data.result.sig;
     taskFinishedWithInvalidWid();
 };
 
 
 var taskFinishedWithInvalidWid = function() {
-    client.call("taskFinished", wid+'adasdsad', globals.task.sig, onTaskFinishedWithInvalidWid);
+    client.call("taskFinished", wid+'adasdsad', global.task.sig, onTaskFinishedWithInvalidWid);
 };
 var onTaskFinishedWithInvalidWid = function(data) {
     assert.isNull(data.result);
@@ -185,7 +191,7 @@ var onTaskFinishedWithInvalidWid = function(data) {
     taskFinishedWithInvalidSig();
 };
 var taskFinishedWithInvalidSig = function() {
-    client.call("taskFinished", wid, globals.task.sig + 'asdasd', onTaskFinishedWithInvalidSig);
+    client.call("taskFinished", wid, global.task.sig + 'asdasd', onTaskFinishedWithInvalidSig);
 };
 var onTaskFinishedWithInvalidSig = function(data) {
     assert.isNull(data.result);
@@ -193,7 +199,7 @@ var onTaskFinishedWithInvalidSig = function(data) {
     taskFinishedValid();
 };
 var taskFinishedValid = function(){
-    client.call("taskFinished", wid, globals.task.sig, onTaskFinishedValid);
+    client.call("taskFinished", wid, global.task.sig, onTaskFinishedValid);
 };
 var onTaskFinishedValid = function(data) {
     assert.isNull(data.error);
@@ -202,9 +208,9 @@ var onTaskFinishedValid = function(data) {
 };
 
 var getCurrentTasksNothing = function() {
-    client.call("getCurrentTasks", ongetCurrentTasksNothing);
+    client.call("getCurrentTasks", onGetCurrentTasksNothing);
 };
-var ongetCurrentTasksNothing = function(data) {
+var onGetCurrentTasksNothing = function(data) {
     assert.isNull(data.error);
     assert.ok(Array.isArray(data.result));
     assert.strictEqual(data.result.length, 0);
@@ -216,8 +222,8 @@ var regetTask2 = function() {
 };
 var onHasTaskAgain2 = function(data) {
     assert.strictEqual(false, data.result.empty);
-    globals.task = data.result;
-    assert.strictEqual(data.result.type, "idleTimes");
+    global.task = data.result;
+    //assert.strictEqual(data.result.type, "idleTimes");
     getCurrentTasks();
 };
 
@@ -230,11 +236,11 @@ var onGetCurrentTasks = function(data) {
     assert.strictEqual(data.result.length, 1);
     assert.strictEqual(data.result[0].id, wid);
     assert.strictEqual(data.result[0].sig, global.task.sig);
-    restartTasks();
+    setTimeout(restartTasks, 1000);
 };
 
 var restartTasks = function() {
-    client.call("restartTasks", [{'id':wid, 'sig':globals.task.sig}], onRestartTasks);
+    client.call("restartTasks", [{'id':wid, 'sig':global.task.sig}], onRestartTasks);
 };
 var onRestartTasks = function(data) {
     assert.isNull(data.error);
@@ -258,8 +264,8 @@ var regetTask3 = function() {
 };
 var onHasTaskAgain3 = function(data) {
     assert.strictEqual(false, data.result.empty);
-    globals.task = data.result;
-    assert.strictEqual(data.result.type, "idleTimes");
+    global.task = data.result;
+    // assert.strictEqual(data.result.type, "idleTimes");
 };
 
 client.call('hello', onHello);
