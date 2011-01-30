@@ -1,4 +1,5 @@
-var mongodb = require('./mongodb');
+var mongodb = require('./mongodb'),
+    fluentMongodb = require('../jslib/mongodb-fluent');
 
 // Scheduler constants
 var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
@@ -58,8 +59,13 @@ var onMongodbError = function(err, client){
     console.log(err);
     client.close();
 };
+var onMongodbError2 = function(rpc, err){
+    rpc.error({type: 'MongoDBError', msg: err.message});
+    console.log(err);
+};
 
-var findInDb = function() {
+
+/*var findInDb = function() {
     var db = arguments[0];
     var collectionName = arguments[1];
     var onFinished = arguments[arguments.length-1];
@@ -78,7 +84,7 @@ var findInDb = function() {
             });
         } );
     });
-};
+};*/
 
 
 // Update documents in database.
@@ -110,7 +116,9 @@ var updateDocuments = function(db, collectionName, spec, changes, multi, onFinis
 var loadProject = function(project, onFinished) {
     var fields =  {'currentFullState': 0};
     var context = this;
-    findInDb.call(this, project.name, 'progresses', {}, fields, function(cursor){
+    var client = context.getDbClient(project.name);
+    fluentMongodb.find(client, 'progresses', {}, fields, function(cursor){
+    // findInDb.call(this, project.name, 'progresses', {}, fields, function(cursor){
         cursor.toArray(function(err, a){
             a.forEach(function(item, index, array){
                 var j = {
@@ -127,7 +135,10 @@ var loadProject = function(project, onFinished) {
                 project.addJob(j);
                 if (index === array.length - 1) {
                     cursor.close();
-                    findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor2) {
+                    client.close();
+                    var client2 = context.getDbClient(project.name);
+                    fluentMongodb.find(client2, 'jobs', {}, {'yaml':0}, function(cursor2) {
+                    //findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor2) {
                         cursor2.toArray(function(err, a){
                             a.forEach(function(item, index, array){
                                 var j = project.getJob(item.name);
@@ -137,16 +148,16 @@ var loadProject = function(project, onFinished) {
                                 // Last
                                 if (index === array.length - 1) {
                                     cursor2.close();
-                                    cursor2.db.close();
+                                    client2.close();
                                     if (onFinished) onFinished();
                                 }
                             });
                         });
-                    });
+                    }, onMongodbError.bind({}, this.response) );
                 }
             });
         });
-    });
+    }, onMongodbError.bind({}, this.response));
 };
 
 // Checks whether specified project exists.
@@ -161,14 +172,16 @@ var projectExists = function(projectName, onExists, onNotExists) {
     } else {
         // Try to find it in the database.
         var client = this.getDbClient(projectName);
-        client.open(function(err, p_client){
+        fluentMongodb.find(client, 'info', {'_id': 'project'}, {}, function(cursor){ 
+        
+        //client.open(function(err, p_client){
             // Even if db doesn't exist there is no error. So we need to check
             // for dummy `info.project` document.
-            if (err) { onError(err, client); return; }
-            client.collection('info', function(err, collection){
-                if (err) { onError(err, client); return; }
-                collection.find({'_id': 'project'}, function(err, cursor){
-                    if (err) { onError(err, client); return; }
+            //if (err) { onError(err, client); return; }
+            //client.collection('info', function(err, collection){
+            //    if (err) { onError(err, client); return; }
+            //    collection.find({'_id': 'project'}, function(err, cursor){
+            //        if (err) { onError(err, client); return; }
                     cursor.count(function(err, number){
                         cursor.close();
                         if (err) { onError(err, client); return; }
@@ -186,9 +199,9 @@ var projectExists = function(projectName, onExists, onNotExists) {
                         }
                         client.close();
                     });
-                });
-            });
-        });
+            //    });
+            //});
+        }, onMongodbError2.bind(context));
     }
 };
 

@@ -235,7 +235,7 @@ var onGetCurrentTasks = function(data) {
     assert.strictEqual(data.result.length, 1);
     assert.strictEqual(data.result[0].id, wid);
     assert.strictEqual(data.result[0].sig, global.task.sig);
-    setTimeout(restartTasks, 1000);
+    restartTasks();
 };
 
 var restartTasks = function() {
