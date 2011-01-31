@@ -37,13 +37,13 @@ class Car(yaml.YAMLObject):
         width and position in metrs.
         """
         if id is None:
-            self._id = str(uuid4())
+            self.id = str(uuid4())
         else:
-            self._id = str(id)
-        self._speed = speed
-        self._length = length
-        self._width = width
-        self._position = position
+            self.id = str(id)
+        self.speed = speed
+        self.length = length
+        self.width = width
+        self.position = position
         self.line = line
         self.state = Car.INACTIVE
 
@@ -59,41 +59,16 @@ class Car(yaml.YAMLObject):
                 "Backwards moving isn't currently allowed."
             logging.getLogger('roadModel').error(msg)
             raise Exception(msg)
-        self._position += distance
-
-
-    def get_speed(self):
-        "Get car speed in m/s."
-        return self._speed
-
-
-    def get_length(self):
-        "Get car length in meters."
-        return self._length
-
-
-    def get_width(self):
-        "Get car width in meters."
-        return self._width
-
-
-    def get_position(self):
-        "Get car position in meters from road start."
-        return self._position
-
-
-    def get_id(self):
-        "Get car id."
-        return self._id
+        self.position += distance
 
 
     def get_description_data(self):
         """Get dictionary with data describing this car.
 
         :rtype: dict"""
-        return {'id': self.get_id(),
-                'length': self.get_length(),
-                'width': self.get_width()
+        return {'id': self.id,
+                'length': self.length,
+                'width': self.width
         }
 
 
@@ -101,9 +76,10 @@ class Car(yaml.YAMLObject):
         """Get data describing current state of car.
 
         :rtype: dict"""
-        d = {'pos': round(self.get_position(), 2),
+        d = {'pos': round(self.position, 2),
              'line': self.line
         }
         if self.state != Car.DEFAULT:
             d['state'] = self.state
         return d
+    

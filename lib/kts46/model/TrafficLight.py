@@ -35,39 +35,37 @@ class SimpleSemaphore(yaml.YAMLObject):
         """Creates a new simple semaphore."""
         self.id = id if (id is not None) else uuid4()
         self.position = position
-        self._last_switch_time = timedelta()
-        self._state = SimpleSemaphore.__red_state
+        self.lastSwitchTime = timedelta()
+        self.state = SimpleSemaphore.__red_state
         self.greenDuration = 5
         self.redDuration = 5
 
     def switch(self, currentTime):
         "Switches semaphore to the other state and records current time."
-        if self._state == SimpleSemaphore.__green_state:
-            self._state = SimpleSemaphore.__red_state
+        if self.state == SimpleSemaphore.__green_state:
+            self.state = SimpleSemaphore.__red_state
         else:
-            self._state = SimpleSemaphore.__green_state
-        self._last_switch_time = currentTime
+            self.state = SimpleSemaphore.__green_state
+        self.lastSwitchTime = currentTime
 
-    def get_position(self): return self.position
-    def get_state(self): return self._state
-    def is_green(self): return self._state == SimpleSemaphore.__green_state
-    def get_last_switch_time(self): return self._last_switch_time
-    def get_id(self): return self.id
+    @property
+    def isGreen(self):
+        return self.state == SimpleSemaphore.__green_state
 
     def getNextSwitchTime(self):
-        if self.is_green():
+        if self.isGreen:
             addTime = self.greenDuration
         else:
             addTime = self.redDuration
-        return self.get_last_switch_time() + addTime
+        return self.lastSwitchTime + addTime
 
     def get_description_data(self):
-        return {'id': self.get_id(),
-                'position': self.get_position()
+        return {'id': self.id,
+                'position': self.position
         }
 
     def get_state_data(self):
-        return {'state': self.get_state()}
+        return {'state': self.state}
 
     # Little metaprogramming magic, so it is possible to set duration as float
     # (in seconds). Also store in unicode explicitly.
