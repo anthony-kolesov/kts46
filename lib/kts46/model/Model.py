@@ -76,30 +76,30 @@ class Model(object):
                 # Update state.
                 if car.state == Car.ADDED: car.state = Car.ACTIVE
 
-                distanceToMove = car.get_speed() * timeStep.seconds
-                distanceToMove += car.get_speed() * timeStep.microseconds * 1e-6
-                distanceToMove += car.get_speed() * timeStep.days * 86400 # 3600 * 24
+                distanceToMove  = car.speed * timeStep.seconds
+                distanceToMove += car.speed * timeStep.microseconds * 1e-6
+                distanceToMove += car.speed * timeStep.days * 86400 # 3600 * 24
 
                 # Check for red traffic light.
-                nearestTL = self.get_nearest_traffic_light(car.get_position())
-                if nearestTL is not None and not nearestTL.is_green():
-                    if nearestTL.get_position() - car.get_position() - stopDistance < distanceToMove:
-                        distanceToMove = nearestTL.get_position() - car.get_position() - stopDistance
+                nearestTL = self.get_nearest_traffic_light(car.position)
+                if nearestTL is not None and not nearestTL.isGreen:
+                    if nearestTL.position - car.position - stopDistance < distanceToMove:
+                        distanceToMove = nearestTL.position - car.position - stopDistance
                         if distanceToMove < 0:
                             distanceToMove = 0.0
 
                 # Check for leading car.
-                nearestCar = self.get_nearest_car(car.get_position(), car.line)
+                nearestCar = self.get_nearest_car(car.position, car.line)
                 if nearestCar is not None:
-                    nearestCarBack = nearestCar.get_position() - nearestCar.get_length()
+                    nearestCarBack = nearestCar.position - nearestCar.length
                     possiblePosition = nearestCarBack - stopDistance
-                    if possiblePosition - car.get_position() < distanceToMove:
-                        distanceToMove = possiblePosition - car.get_position()
+                    if possiblePosition - car.position < distanceToMove:
+                        distanceToMove = possiblePosition - car.position
                         if distanceToMove < 0:
                             distanceToMove = 0.0
 
                 car.move(distanceToMove)
-                if self._road.length < car.get_position():
+                if self._road.length < car.position:
                     car.state = Car.DELETED
             else:
                 toRemove.append(car)
@@ -109,7 +109,7 @@ class Model(object):
         # Generate new car.
         # It is always added to the queue and if there is enough place then
         # it will be instantly added to the road.
-        carsToAdd, newLastCarTime = self.howMuchCarsToAdd(newTime)
+        carsToAdd, newLastCarTime = self.howManyCarsToAdd(newTime)
         self.addCars(carsToAdd)
         self._lastCarGenerationTime = newLastCarTime
 
@@ -193,9 +193,9 @@ class Model(object):
             if hasattr(i, "state") and i.state == Car.DELETED:
                 continue
 
-            pos = i.get_position()
+            pos = i.position
             if hasattr(i, "get_length"):
-                pos -= i.get_length()
+                pos -= i.length
             if pos > position and ((current is None) or current_pos > pos):
                 current = i
                 current_pos = pos
@@ -204,7 +204,7 @@ class Model(object):
     def canAddCar(self, line=0):
         "Defines whether car can be added to specified line."
         lastCar = self.get_nearest_car(-100.0, line) # Detect cars which are comming on the road.
-        return lastCar is None or lastCar.get_position() - lastCar.get_length() > self.params.safeDistance
+        return lastCar is None or lastCar.position - lastCar.length > self.params.safeDistance
 
     def _addCar(self, car):
         "Add car to the model, but not to the road."
@@ -216,11 +216,11 @@ class Model(object):
         # Traffic lights
         lights = {}
         for light in self._lights:
-            lights[light.get_id()] = light.get_state_data()
+            lights[light.id] = light.get_state_data()
         # Cars
         cars = {}
         for car in self._cars:
-            cars[car.get_id()] = car.get_state_data()
+            cars[car.id] = car.get_state_data()
         # Result.
         return {'cars': cars, 'lights': lights}
 
@@ -229,7 +229,7 @@ class Model(object):
         data = {}
         data['lights'] = {}
         for light in self._lights:
-            data['lights'][light.get_id()] = light.get_description_data()
+            data['lights'][light.id] = light.get_description_data()
         if self._road is not None:
             data['road'] = self._road.getDescriptionData()
         return json.dumps(data)
