@@ -1,5 +1,6 @@
-var mongodb = require('./mongodb'),
-    fluentMongodb = require('../jslib/mongodb-fluent');
+var mongodb = require('../jslib/mongodb'),
+    fluentMongodb = require('../jslib/mongodb-fluent'),
+    ProjectStorage = require('../jslib/projectStorage').Storage;
 
 // Scheduler constants
 var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
@@ -14,6 +15,7 @@ var waitingActivation = {};
 var runningTasks = {};
 var projects = {};
 var cfg = {};
+var projectsStorage = new ProjectStorage();
 
 
 // Util methods.
@@ -69,7 +71,6 @@ var loadProject = function(project, onFinished) {
     var context = this;
     var client = context.getDbClient(project.name);
     fluentMongodb.find(client, 'progresses', {}, fields, function(cursor){
-    // findInDb.call(this, project.name, 'progresses', {}, fields, function(cursor){
         cursor.toArray(function(err, a){
             a.forEach(function(item, index, array){
                 var j = {
@@ -89,7 +90,6 @@ var loadProject = function(project, onFinished) {
                     client.close();
                     var client2 = context.getDbClient(project.name);
                     fluentMongodb.find(client2, 'jobs', {}, {'yaml':0}, function(cursor2) {
-                    //findInDb.call(context, project.name, 'jobs', {}, {'yaml':0}, function(cursor2) {
                         cursor2.toArray(function(err, a){
                             a.forEach(function(item, index, array){
                                 var j = project.getJob(item.name);
@@ -124,34 +124,23 @@ var projectExists = function(projectName, onExists, onNotExists) {
         // Try to find it in the database.
         var client = this.getDbClient(projectName);
         fluentMongodb.find(client, 'info', {'_id': 'project'}, {}, function(cursor){ 
-        
-        //client.open(function(err, p_client){
-            // Even if db doesn't exist there is no error. So we need to check
-            // for dummy `info.project` document.
-            //if (err) { onError(err, client); return; }
-            //client.collection('info', function(err, collection){
-            //    if (err) { onError(err, client); return; }
-            //    collection.find({'_id': 'project'}, function(err, cursor){
-            //        if (err) { onError(err, client); return; }
-                    cursor.count(function(err, number){
-                        cursor.close();
-                        if (err) { onError(err, client); return; }
-                        if (number === 0) {
-                            if (onNotExists) onNotExists();
-                        } else if (number === 1) {
-                            // Store info in cache.
-                            var p = projects[projectName] = new Project(projectName);
-                            loadProject.bind(context)(p, function(){
-                                if (onExists) onExists(p);
-                            });
-                        } else {
-                            jsrpc.error(
-                             "Whow! Internal error: info.project has count > 1");
-                        }
-                        client.close();
+            cursor.count(function(err, number){
+                cursor.close();
+                if (err) { onError(err, client); return; }
+                if (number === 0) {
+                    if (onNotExists) onNotExists();
+                } else if (number === 1) {
+                    // Store info in cache.
+                    var p = projects[projectName] = new Project(projectName);
+                    loadProject.bind(context)(p, function(){
+                        if (onExists) onExists(p);
                     });
-            //    });
-            //});
+                } else {
+                    jsrpc.error(
+                     "Whow! Internal error: info.project has count > 1");
+                }
+                client.close();
+            });
         }, onMongodbError2.bind(context));
     }
 };
@@ -582,4 +571,3 @@ exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
     'getCurrentTasks': getCurrentTasks, 'restartTasks': restartTasks
 };
 exports.cfg = cfg;
-// exports.taskType = taskType;
