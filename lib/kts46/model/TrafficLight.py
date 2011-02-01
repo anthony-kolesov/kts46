@@ -13,11 +13,10 @@
 # limitations under the License.
 
 
-import yaml
 from datetime import timedelta
 from uuid import uuid4
 
-class SimpleSemaphore(yaml.YAMLObject):
+class SimpleSemaphore(object):
     """Simple semaphore that works in one direction.
 
     Duration of green and red lights states are setted separatly.
@@ -26,14 +25,12 @@ class SimpleSemaphore(yaml.YAMLObject):
     unicode.
     """
 
-    yaml_tag = u"!semaphore"
-    yaml_loader = yaml.SafeLoader
     __green_state = "g"
     __red_state = "r"
 
     def __init__(self, id=None, position=0, greenDuration=5, redDuration=5):
         """Creates a new simple semaphore."""
-        self.id = id if (id is not None) else uuid4()
+        self.id = str(id if (id is not None) else uuid4())
         self.position = position
         self.lastSwitchTime = timedelta()
         self.state = SimpleSemaphore.__red_state
@@ -59,29 +56,22 @@ class SimpleSemaphore(yaml.YAMLObject):
             addTime = self.redDuration
         return self.lastSwitchTime + addTime
 
-    def get_description_data(self):
+    def getDescriptionData(self):
         return {'id': self.id,
                 'position': self.position
         }
 
-    def get_state_data(self):
-        return {'state': self.state}
+    def getStateData(self):
+        return {
+            'state': self.state,
+            'lastSwitchTime': self.lastSwitchTime
+        }
 
     # Little metaprogramming magic, so it is possible to set duration as float
     # (in seconds). Also store in unicode explicitly.
     def __setattr__(self, name, value):
         effValue = value
-        if name == "id" and value is not str:
-            effValue = str(value)
-        elif (name == "greenDuration" or name == "redDuration") and\
-                not isinstance(value, timedelta):
+        if ((name == "greenDuration" or name == "redDuration") and
+                not isinstance(value, timedelta)):
             effValue = timedelta(seconds=value)
-        yaml.YAMLObject.__setattr__(self, name, effValue)
-
-    @classmethod
-    def from_yaml(cls, loader, node):
-        data = loader.construct_mapping(node)
-        a = SimpleSemaphore()
-        for attrName, attrValue in data.iteritems():
-            a.__setattr__(attrName, attrValue)
-        return a
+        object.__setattr__(self, name, effValue)

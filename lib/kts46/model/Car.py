@@ -13,14 +13,10 @@
 # limitations under the License.
 
 import logging
-import yaml
 from uuid import uuid4
 
-class Car(yaml.YAMLObject):
+class Car(object):
     "Represent a car in the model."
-
-    yaml_tag = u"!car"
-    yaml_loader = yaml.SafeLoader
 
     INACTIVE = 'inactive'
     ADDED = 'add'
@@ -40,7 +36,7 @@ class Car(yaml.YAMLObject):
             self.id = str(uuid4())
         else:
             self.id = str(id)
-        self.speed = speed
+        self.desiredSpeed = speed
         self.length = length
         self.width = width
         self.position = position
@@ -62,17 +58,18 @@ class Car(yaml.YAMLObject):
         self.position += distance
 
 
-    def get_description_data(self):
+    def getDescriptionData(self):
         """Get dictionary with data describing this car.
 
         :rtype: dict"""
         return {'id': self.id,
                 'length': self.length,
-                'width': self.width
+                'width': self.width,
+                'desiredSpeed': self.desiredSpeed
         }
 
 
-    def get_state_data(self):
+    def getStateData(self):
         """Get data describing current state of car.
 
         :rtype: dict"""
@@ -82,4 +79,12 @@ class Car(yaml.YAMLObject):
         if self.state != Car.DEFAULT:
             d['state'] = self.state
         return d
+    
+    def load(self, description, state={}):
+        self.id = description['id']
+        self.length = description['length']
+        self.width = description['width']
+        self.desiredSpeed = description['desiredSpeed']
+        if 'pos' in state: self.position = state['pos']
+        if 'line' in state: self.line = state['line']
     
