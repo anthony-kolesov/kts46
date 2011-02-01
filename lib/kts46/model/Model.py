@@ -46,9 +46,8 @@ class Model(object):
         self.time = timedelta()
         self._cars = []
         self._enterQueue = []
-        self._lastSendCars = {}
         self._lights = []
-        self._road = None
+        self._road = Road()
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
@@ -76,9 +75,9 @@ class Model(object):
                 # Update state.
                 if car.state == Car.ADDED: car.state = Car.ACTIVE
 
-                distanceToMove  = car.speed * timeStep.seconds
-                distanceToMove += car.speed * timeStep.microseconds * 1e-6
-                distanceToMove += car.speed * timeStep.days * 86400 # 3600 * 24
+                distanceToMove  = car.desiredSpeed * timeStep.seconds
+                distanceToMove += car.desiredSpeed * timeStep.microseconds * 1e-6
+                distanceToMove += car.desiredSpeed * timeStep.days * 86400 # 3600 * 24
 
                 # Check for red traffic light.
                 nearestTL = self.get_nearest_traffic_light(car.position)
@@ -211,28 +210,48 @@ class Model(object):
         self._cars.append(car)
         car.state = Car.ADDED
 
-    def get_state_data(self):
+    def getStateData(self):
         """Returns object data that represents current state of a model."""
+        data = {}
         # Traffic lights
         lights = {}
         for light in self._lights:
-            lights[light.id] = light.get_state_data()
+            lights[light.id] = light.getStateData()
+        data['lights'] = lights
+        
         # Cars
         cars = {}
         for car in self._cars:
-            cars[car.id] = car.get_state_data()
+            cars[car.id] = car.getStateData()
+            cars[car.id].update(car.getDescriptionData())
+        data['cars'] = cars
+            
+        # Enter queue
+        enterQueue = []
+        for car in self._enterQueue:
+            enterQueue.push(car.getStateData())
+            enterQueue[-1].update(car.getDescriptionData())
+        data['enterQueue'] = enterQueue
+        
+        # Fields
+        data['time'] = self.time
+        data['lastCarGenerationTime'] = self._lastCarGenerationTime
+        data['params'] = self.params
+        data['lastCardId'] = self._lastCarId
+            
         # Result.
-        return {'cars': cars, 'lights': lights}
+        return data
 
-    def get_description_data(self):
+    def getDescriptionData(self):
         "Gets dictionary describing model."
         data = {}
-        data['lights'] = {}
+        lights = {}
         for light in self._lights:
-            data['lights'][light.id] = light.get_description_data()
+            lights[light.id] = light.getDescriptionData()
+        data['lights'] = lights
         if self._road is not None:
             data['road'] = self._road.getDescriptionData()
-        return json.dumps(data)
+        return data
 
     def loadYAML(self, yamlData):
         """Loads model from YAML string.
@@ -268,7 +287,6 @@ class Model(object):
         if 'lastCarId' in objData: self._lastCarId = objData['lastCarId']
         # cars, last send cars, enter queue
         if 'cars' in objData: self._cars = objData['cars']
-        if 'lastSendCars' in objData: self._lastSendCars = objData['lastSendCars']
         if 'enterQueue' in objData: self._enterQueue = objData['enterQueue']
 
 
@@ -285,8 +303,36 @@ class Model(object):
         d['time'] = self.time
         d['cars'] = self._cars
         d['enterQueue'] = self._enterQueue
-        d['lastSendCars'] = self._lastSendCars
         d['lastCarGenerationTime'] = self._lastCarGenerationTime
         d['lastCarId'] = self._lastCarId
 
         return yaml.dump(d)
+
+        
+    def load(self, description, state):
+        "Loads object from JSON data."
+    
+        self._road.load(description['road'])
+    
+        for lightData in description['lights'].itervalues():
+            light = SimpleSemaphore()
+            light.load(lightData, state['lights'].get(lightData['id'], {})
+        
+        for carData in state['cars'].itervalues():
+            c = Car()
+            c.load(carData, carData)
+            self._cars.append(c)
+            
+        for carData in state['enterQueue']:
+            c = Car()
+            c.load(carData, carData)
+            self._enterQueueappend(c)
+        
+        # Fields
+        self.time = data['time']
+        self._lastCarGenerationTime = data['lastCarGenerationTime']
+        self.params = data['params']
+        self._lastCarId = data['lastCardId']
+            
+        
+        
