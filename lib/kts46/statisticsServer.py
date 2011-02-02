@@ -45,8 +45,7 @@ class StatisticsServer:
         av = numpy.average(arr)
         stdd = numpy.std(arr)
 
-        definition = yaml.safe_load(job.definition)
-        avgSpeed = definition['road'].length / av
+        avgSpeed = job.definition['road']['length'] / av
 
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
@@ -131,7 +130,7 @@ class StatisticsServer:
                 #    if carPosition is not None:
                 #        carsAmount += 1
                 #self.log.info("Point %g finished by local method", point)
-            throughput = float(carsAmount) / job.simulationParameters['duration'] * 3600
+            throughput = float(carsAmount) / job.definition['simulationParameters']['duration'] * 3600
             result.append({'cars': carsAmount, 'rate': job.round(throughput),
                            'pos': point})
         job.statistics['throughput'] = result

@@ -21,9 +21,7 @@ application requirements.
 dictionary for :py:class:`SimulationProject` s which represent databases on server.
 On their hand projects act like type specific dictionaries for
 :py:class:`SimulationJob` s. And jobs act like dictionaries for their
-simulation states.
-
-"""
+simulation states."""
 
 import logging
 import math # Math.floor
@@ -104,7 +102,7 @@ class Storage(object):
 
         # local and admin are utility databases.
         if item not in ['local', 'admin'] and item in self.server.database_names():
-            if self.server[item].info.find_one('project') is not None:
+            if self.server[item].info.find_one({'_id': 'project', 'v': 2}) is not None:
                 return True
         return False
 
@@ -155,7 +153,7 @@ class SimulationProject(object):
 
         # ensure that database exists
         if self.db.info.find_one('project') is None:
-            self.db.info.insert({'_id':'project', 'name': name})
+            self.db.info.insert({'_id':'project', 'name': name, 'v': 2})
             self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
             self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
 
@@ -264,6 +262,7 @@ class SimulationJob(object):
         self.project = project
         self.db = project.db
         self.name = name
+        self.id = name
         self.progress = None
         self.statistics = None
         self.definition = definition
@@ -274,29 +273,24 @@ class SimulationJob(object):
 
     def _create(self):
         "Creats new job on the server from definition."
-        # Store simulation parameters.
-        objData = yaml.safe_load(self.definition)
-        simParams = objData['simulationParameters']
+        
+        simParams = self.definition['simulationParameters']
         simulationTime = simParams['duration']
         simulationStep = simParams['stepDuration']
         simulationBatchLength = simParams['batchLength']
-        self.simulationParameters = simParams
 
-        self.db.jobs.insert({'name': self.name, 'yaml': self.definition,
-                             'type': 'job', 'simulationParameters': simParams,
-                             '_id': self.name})
-        self.db.progresses.insert({'_id': self.name,
-            #'job': self.docid,
+        self.db.jobs.insert({'name': self.name, 'definition': self.definition,
+                             '_id': self.id})
+        self.db.progresses.insert({'_id': self.id,
             'totalSteps': math.floor(simulationTime / simulationStep),
             'batches': math.floor(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
-            # 'currentFullState': '',
             'basicStatistics': False, 'idleTimes': False, 'throughput': False,
             'fullStatistics': False,
             'jobname': self.name
         })
 
-        self.statistics = {'_id': self.name,
+        self.statistics = {'_id': self.id,
             'average': None, 'stdeviation': None,
             'averageSpeed': None,
             'idleTimes': {},
@@ -309,12 +303,11 @@ class SimulationJob(object):
         "Loads existing job from the server."
         doc = self.db.jobs.find_one(self.name)
 
-        self.definition = doc['yaml']
-        self.simulationParameters = doc['simulationParameters']
+        self.definition = doc['definition']
 
-        p = self.db.progresses.find_one(self.name)
+        p = self.db.progresses.find_one(self.id)
         self.progress = p
-        self.statistics = self.db.statistics.find_one(self.name)
+        self.statistics = self.db.statistics.find_one(self.id)
 
         # Update old documents
         updated = False
@@ -406,29 +399,26 @@ class SimulationJob(object):
 
     @property
     def currentFullState(self):
-        doc = self.db.fullStates.find_one({'_id': self.name})
+        doc = self.db.fullStates.find_one({'_id': self.id})
         if doc is not None:
-            return doc['yaml']
+            return doc['data']
         else:
             return None
 
     @currentFullState.setter
     def currentFullState(self, value):
-        doc = {'yaml': value, '_id': self.name}
+        doc = {'data': value, '_id': self.id}
         self.db.fullStates.save(doc)
 
 
 class StateStorage(object):
     "Represents storage for simulation states."
 
-    def __init__(self, job, fullStateGeneratorCallback=None, batchLength=None):
+    def __init__(self, job, batchLength=None):
         """Creates new instance of :class:`StateStorage` class.
 
         :param job: job for which this storage belongs.
         :type job: :py:class:`SimulationJob`
-        :param fullStateGeneratorCallback: function that returns current full
-         state of the model.
-        :type fullStateGeneratorCallback: callable
         :param batchLength: length of batches that to send to the server.
          If None then length from job parameters will be used.
         :type batchLength: int
@@ -440,7 +430,6 @@ class StateStorage(object):
             self.bufferSize = job.simulationParameters['batchLength']
         else:
             self.bufferSize = batchLength
-        self.fullStateGeneratorCallback = fullStateGeneratorCallback
 
 
     def add(self, time, data):
@@ -468,7 +457,7 @@ class StateStorage(object):
         if len(self.buffer) > 0:
             self.job.progress['done'] += len(self.buffer)
 
-            cars = [ ]
+            cars = []
             for state in self.buffer:
                 for carId, car in state['cars'].items():
                     car['job'] = state['job']
@@ -477,7 +466,7 @@ class StateStorage(object):
                     cars.append(car)
                 del state['cars']
 
-            self.db.progresses.save(self.job.progress)
+            #self.db.progresses.save(self.job.progress)
             self.db.states.insert(self.buffer)
             self.db.cars.insert(cars)
             self.buffer = []
@@ -485,9 +474,5 @@ class StateStorage(object):
 
     def close(self):
         "Save all unsaved data to server."
-        # Save full state only at the end of simulation sessions.
-        #if self.fullStateGeneratorCallback is not None:
-        #    self.job.progress['currentFullState'] = self.fullStateGeneratorCallback()
-        #else:
-        #    self.job.progress['currentFullState'] = ''
         self.dump()
+        self.job.save()

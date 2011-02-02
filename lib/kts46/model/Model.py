@@ -19,6 +19,7 @@ import random
 import yaml
 from datetime import timedelta
 
+import kts46.utils
 from Car import Car
 from Road import Road
 from TrafficLight import SimpleSemaphore
@@ -60,7 +61,7 @@ class Model(object):
 
         :param milliseconds: length of step in milliseconds.
         :type milliseconds: int"""
-        stopDistance = self.params.safeDistance
+        stopDistance = self.params['safeDistance']
 
         timeStep = timedelta(milliseconds=milliseconds)
         newTime = self.time + timeStep # Time after step is performed.
@@ -146,8 +147,8 @@ class Model(object):
 
         :param amount: Amount of cars to add to queue.
         :type amount: int"""
-        speedMultiplier = self.params.maxSpeed - self.params.minSpeed
-        speedAdder = self.params.minSpeed
+        speedMultiplier = self.params['maxSpeed'] - self.params['minSpeed']
+        speedAdder = self.params['minSpeed']
         for i in xrange(amount):
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             self._lastCarId += 1
@@ -159,7 +160,7 @@ class Model(object):
 
     def howManyCarsToAdd(self, newTime):
         "Define how many cars can be added to the model."
-        newCarGenRate = self.params.carGenerationInterval
+        newCarGenRate = timedelta(seconds=3600/self.params['inputRate']) 
         lastCarTime = self._lastCarGenerationTime
         carsToGenerate = 0
         while lastCarTime <= newTime:
@@ -203,7 +204,7 @@ class Model(object):
     def canAddCar(self, line=0):
         "Defines whether car can be added to specified line."
         lastCar = self.get_nearest_car(-100.0, line) # Detect cars which are comming on the road.
-        return lastCar is None or lastCar.position - lastCar.length > self.params.safeDistance
+        return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
 
     def _addCar(self, car):
         "Add car to the model, but not to the road."
@@ -217,38 +218,38 @@ class Model(object):
         lights = {}
         for light in self._lights:
             lights[light.id] = light.getStateData()
-        data['lights'] = lights
-        
+        data['trafficLights'] = lights
+
         # Cars
         cars = {}
         for car in self._cars:
             cars[car.id] = car.getStateData()
             cars[car.id].update(car.getDescriptionData())
         data['cars'] = cars
-            
+
         # Enter queue
         enterQueue = []
         for car in self._enterQueue:
             enterQueue.push(car.getStateData())
             enterQueue[-1].update(car.getDescriptionData())
         data['enterQueue'] = enterQueue
-        
+
         # Fields
-        data['time'] = self.time
-        data['lastCarGenerationTime'] = self._lastCarGenerationTime
-        data['params'] = self.params
+        data['time'] = kts46.utils.timedelta2str(self.time)
+        data['lastCarGenerationTime'] = kts46.utils.timedelta2str(self._lastCarGenerationTime)
         data['lastCardId'] = self._lastCarId
-            
+
         # Result.
         return data
 
     def getDescriptionData(self):
         "Gets dictionary describing model."
         data = {}
+        data['modelParameters'] = self.params
         lights = {}
         for light in self._lights:
             lights[light.id] = light.getDescriptionData()
-        data['lights'] = lights
+        data['trafficLights'] = lights
         if self._road is not None:
             data['road'] = self._road.getDescriptionData()
         return data
@@ -261,21 +262,21 @@ class Model(object):
         objData = yaml.safe_load(yamlData)
         # fields
         if "carGenerationInterval" in objData:
-            self.params.carGenerationInterval = \
+            self.params['carGenerationInterval'] = \
                 timedelta(seconds=objData["carGenerationInterval"])
-            self.params.inputRate = 3600 / objData["carGenerationInterval"]
+            self.params['inputRate'] = 3600 / objData["carGenerationInterval"]
         if "inputRate" in objData:
             inputRate = objData["inputRate"]
             # Store both but inputRate is used for storage while
             # carGenerationInterval is used in model.
-            self.params.inputRate = inputRate
-            self.params.carGenerationInterval = timedelta(seconds=3600/inputRate)
+            self.params['inputRate'] = inputRate
+            self.params['carGenerationInterval'] = timedelta(seconds=3600/inputRate)
         if "safeDistance" in objData:
-           self.params.safeDistance = objData["safeDistance"]
+           self.params['safeDistance'] = objData["safeDistance"]
         if "maxSpeed" in objData:
-           self.params.maxSpeed = objData["maxSpeed"]
+           self.params['maxSpeed'] = objData["maxSpeed"]
         if "minSpeed" in objData:
-           self.params.minSpeed = objData["minSpeed"]
+           self.params['minSpeed'] = objData["minSpeed"]
         # collections
         if "road" in objData:
             self._road = objData["road"]
@@ -293,10 +294,10 @@ class Model(object):
     def asYAML(self):
         "Returns YAML string which represents current model including it state."
         d = {}
-        d["inputRate"] = self.params.inputRate
-        d["safeDistance"] = self.params.safeDistance
-        d["maxSpeed"] = self.params.maxSpeed
-        d["minSpeed"] = self.params.minSpeed
+        d["inputRate"] = self.params['inputRate']
+        d["safeDistance"] = self.params['safeDistance']
+        d["maxSpeed"] = self.params['maxSpeed']
+        d["minSpeed"] = self.params['minSpeed']
         d["road"] = self._road
         d["trafficLights"] = self._lights
 
@@ -308,31 +309,33 @@ class Model(object):
 
         return yaml.dump(d)
 
-        
-    def load(self, description, state):
+
+    def load(self, description, state=None):
         "Loads object from JSON data."
-    
+
+        self.params = description['modelParameters']
         self._road.load(description['road'])
-    
-        for lightData in description['lights'].itervalues():
+
+        for lightData in description['trafficLights'].itervalues():
             light = SimpleSemaphore()
-            light.load(lightData, state['lights'].get(lightData['id'], {})
-        
-        for carData in state['cars'].itervalues():
-            c = Car()
-            c.load(carData, carData)
-            self._cars.append(c)
-            
-        for carData in state['enterQueue']:
-            c = Car()
-            c.load(carData, carData)
-            self._enterQueueappend(c)
-        
-        # Fields
-        self.time = data['time']
-        self._lastCarGenerationTime = data['lastCarGenerationTime']
-        self.params = data['params']
-        self._lastCarId = data['lastCardId']
-            
-        
-        
+            lState = {}
+            if state is not None:
+                lState = state['trafficLights'][lightData['id']]
+            light.load(lightData, lState)
+            self._lights.append(light)
+
+        if state is not None:
+            for carData in state['cars'].itervalues():
+                c = Car()
+                c.load(carData, carData)
+                self._cars.append(c)
+
+            for carData in state['enterQueue']:
+                c = Car()
+                c.load(carData, carData)
+                self._enterQueueappend(c)
+
+            # Fields
+            self.time = kts46.utils.str2timedelta(state['time'])
+            self._lastCarGenerationTime = kts46.utils.str2timedelta(state['lastCarGenerationTime'])
+            self._lastCarId = state['lastCardId']

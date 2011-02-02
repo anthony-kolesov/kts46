@@ -15,6 +15,7 @@
 
 from datetime import timedelta
 from uuid import uuid4
+import kts46.utils
 
 class SimpleSemaphore(object):
     """Simple semaphore that works in one direction.
@@ -64,7 +65,7 @@ class SimpleSemaphore(object):
     def getStateData(self):
         return {
             'state': self.state,
-            'lastSwitchTime': self.lastSwitchTime
+            'lastSwitchTime': kts46.utils.timedelta2str(self.lastSwitchTime)
         }
 
     # Little metaprogramming magic, so it is possible to set duration as float
@@ -75,3 +76,12 @@ class SimpleSemaphore(object):
                 not isinstance(value, timedelta)):
             effValue = timedelta(seconds=value)
         object.__setattr__(self, name, effValue)
+
+        
+    def load(self, description, state={}):
+        self.id = description['id']
+        self.position = description['position']
+        if 'state' in state: self.state = state['state']
+        if 'lastSwitchTime' in state:
+            self.lastSwitchTime = kts46.utils.str2timedelta(state['lastSwitchTime'])
+    
