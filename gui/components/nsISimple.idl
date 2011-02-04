@@ -1,0 +1,8 @@
+#include "nsISupports.idl"
+[scriptable, uuid(ce32e3ff-36f8-425f-94be-d85b26e634ee)]
+interface nsISimple : nsISupports
+{
+    attribute string yourName;
+    void write( );
+    void change(in string aValue);
+};
