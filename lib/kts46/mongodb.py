@@ -446,8 +446,8 @@ class StateStorage(object):
         d['_id'] = self.job.getStateDocumentId(str(time))
 
         self.buffer.append(d)
-        if len(self.buffer) >= self.bufferSize:
-            self.dump()
+        #if len(self.buffer) >= self.bufferSize:
+        #    self.dump()
 
 
     def dump(self):
@@ -455,24 +455,32 @@ class StateStorage(object):
         ``add`` when length of buffer is more than batchLength and by
         ``close`` method."""
         if len(self.buffer) > 0:
+            print("{2} Progress from {0} to {1}".format( self.job.progress['done'],
+                self.job.progress['done'] + len(self.buffer),
+                self.job.name))
+            
+            
             self.job.progress['done'] += len(self.buffer)
 
-            cars = []
-            for state in self.buffer:
-                for carId, car in state['cars'].items():
-                    car['job'] = state['job']
-                    car['time'] = state['time']
-                    car['carid'] = carId
-                    cars.append(car)
-                del state['cars']
+            while len(self.buffer) > 0:
+                cars = []
+                states = []
+                for state in self.buffer[:50]:
+                    for carId, car in state['cars'].items():
+                        car['job'] = state['job']
+                        car['time'] = state['time']
+                        car['carid'] = carId
+                        cars.append(car)
+                    del state['cars']
+                    states.append(state)
 
-            #self.db.progresses.save(self.job.progress)
-            self.db.states.insert(self.buffer)
-            self.db.cars.insert(cars)
-            self.buffer = []
+                self.db.states.insert(states)
+                self.db.cars.insert(cars)
+                self.buffer = self.buffer[50:]
+            self.job.save()
 
 
     def close(self):
         "Save all unsaved data to server."
         self.dump()
-        self.job.save()
+        #self.job.save()
