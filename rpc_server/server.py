@@ -27,8 +27,11 @@ from optparse import OptionParser
 from time import sleep
 # Project imports
 PROJECT_LIB_PATH = '../lib/'
+PROJECT_LIB_PATH_2 = '../pylib/'
 if PROJECT_LIB_PATH not in sys.path:
     sys.path.append(PROJECT_LIB_PATH)
+if PROJECT_LIB_PATH_2 not in sys.path:
+    sys.path.append(PROJECT_LIB_PATH_2)
 import kts46.utils
 from kts46.server.worker import Worker
 from kts46.server.rpc import RPCServer
