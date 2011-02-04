@@ -66,10 +66,11 @@ class SimulationServer(object):
         stepAsMs = step * 1000 # step in milliseconds
         stepsN = duration / step
         stepsCount = 0
-        self.logger.debug('Start time: {0}, step: {0}'.format(t, step))
+        self.logger.info('Start time: {0}, step: {0}'.format(t, step))
 
         # Run.
         while t <= duration and stepsCount < batchLength:
+            #self.logger.info('Start time: {0}, step cnt: {0}'.format(t, stepsCount))
             model.run_step(stepAsMs)
             stepsCount += 1
             data = model.getStateData()
