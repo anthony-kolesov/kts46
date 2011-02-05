@@ -316,11 +316,11 @@ class Model(object):
         self.params = description['modelParameters']
         self._road.load(description['road'])
 
-        for lightData in description['trafficLights'].itervalues():
-            light = SimpleSemaphore()
+        for lightId, lightData in description['trafficLights'].iteritems():
+            light = SimpleSemaphore(id=lightId)
             lState = {}
             if state is not None:
-                lState = state['trafficLights'][lightData['id']]
+                lState = state['trafficLights'][lightId]
             light.load(lightData, lState)
             self._lights.append(light)
 

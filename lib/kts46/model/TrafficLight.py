@@ -58,7 +58,7 @@ class SimpleSemaphore(object):
         return self.lastSwitchTime + addTime
 
     def getDescriptionData(self):
-        return {'id': self.id,
+        return {#'id': self.id,
                 'position': self.position
         }
 
@@ -79,8 +79,8 @@ class SimpleSemaphore(object):
 
         
     def load(self, description, state={}):
-        self.id = description['id']
         self.position = description['position']
+        if 'id' in description: self.id = description['id']
         if 'state' in state: self.state = state['state']
         if 'lastSwitchTime' in state:
             self.lastSwitchTime = kts46.utils.str2timedelta(state['lastSwitchTime'])
