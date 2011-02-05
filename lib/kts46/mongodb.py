@@ -310,36 +310,36 @@ class SimulationJob(object):
         self.statistics = self.db.statistics.find_one(self.id)
 
         # Update old documents
-        updated = False
-        if 'throughput' not in self.statistics:
-            self.statistics['throughput'] = []
-            updated = True
+        # updated = False
+        # if 'throughput' not in self.statistics:
+            # self.statistics['throughput'] = []
+            # updated = True
 
-        if 'basicStatistics' not in p:
-            if 'finished' in self.statistics:
-                p['basicStatistics'] = self.statistics['finished']
-            else:
-                p['basicStatistics'] = False
-            updated = True
-        if 'idleTiems' not in p:
-            p['idleTimes'] = len(self.statistics['idleTimes']) > 0
-            updated = True
-        if 'throughput' not in p:
-            if 'throughput' in self.statistics:
-                p['throughput'] = len(self.statistics['throughput']) > 0
-            else:
-                p['throughput'] = False
-            updated = True
-        if 'fullStatistics' not in p:
-            p['fullStatistics'] = (p['basicStatistics'] and
-                                   p['idleTimes'] and
-                                   p['throughput'])
-            updated = True
-        if 'jobname' not in p:
-            p['jobname'] = self.name
-            updated = True
+        # if 'basicStatistics' not in p:
+            # if 'finished' in self.statistics:
+                # p['basicStatistics'] = self.statistics['finished']
+            # else:
+                # p['basicStatistics'] = False
+            # updated = True
+        # if 'idleTiems' not in p:
+            # p['idleTimes'] = len(self.statistics['idleTimes']) > 0
+            # updated = True
+        # if 'throughput' not in p:
+            # if 'throughput' in self.statistics:
+                # p['throughput'] = len(self.statistics['throughput']) > 0
+            # else:
+                # p['throughput'] = False
+            # updated = True
+        # if 'fullStatistics' not in p:
+            # p['fullStatistics'] = (p['basicStatistics'] and
+                                   # p['idleTimes'] and
+                                   # p['throughput'])
+            # updated = True
+        # if 'jobname' not in p:
+            # p['jobname'] = self.name
+            # updated = True
 
-        if updated: self.save()
+        # if updated: self.save()
 
 
     def getStateDocumentId(self, time):
@@ -465,7 +465,7 @@ class StateStorage(object):
             while len(self.buffer) > 0:
                 cars = []
                 states = []
-                for state in self.buffer[:50]:
+                for state in self.buffer[:self.bufferSize]:
                     for carId, car in state['cars'].items():
                         car['job'] = state['job']
                         car['time'] = state['time']
@@ -476,7 +476,7 @@ class StateStorage(object):
 
                 self.db.states.insert(states)
                 self.db.cars.insert(cars)
-                self.buffer = self.buffer[50:]
+                self.buffer = self.buffer[self.bufferSize:]
             self.job.save()
 
 
