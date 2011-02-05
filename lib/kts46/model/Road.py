@@ -12,13 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import yaml
-
-class Road(yaml.YAMLObject):
+class Road(object):
     "Defines a road in the model."
-
-    yaml_tag = u"!road"
-    yaml_loader = yaml.SafeLoader
 
     def __init__(self, length=1000, width=10, lines=1):
         "Creates new road."
@@ -32,3 +27,8 @@ class Road(yaml.YAMLObject):
                 'width': self.width,
                 'lines': self.lines
                }
+               
+    def load(self, description):
+        self.length = description['length']
+        self.width = description['width']
+        self.lines = description['lines']

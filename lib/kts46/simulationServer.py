@@ -1,23 +1,21 @@
-"""
-License:
-   Copyright 2010-2011 Anthony Kolesov
+# License:
+# Copyright 2010-2011 Anthony Kolesov
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-"""
 
 import logging
 from kts46.model.Model import Model, ModelParams
-#from kts46.modelParams import ModelParams
 from kts46.mongodb import StateStorage
 
 
@@ -40,23 +38,24 @@ class SimulationServer(object):
 
         jobId = job.name
 
-        model = Model(ModelParams())
-        model.loadYAML(job.definition)
-        step = job.simulationParameters['stepDuration']
-        duration = job.simulationParameters['duration']
-        batchLength = job.simulationParameters['batchLength']
-
-        # Prepare infrastructure.
-        saver = StateStorage(job, model.asYAML,
-                             self.cfg.getint('worker', 'dbBufferLength'))
-
+        model = Model({'inputRate': 1200, 'safeDistance': 20, 'minSpeed': 10,
+            'maxSpeed': 20})
+       
         # Load current state: load state and set time
         curState = job.currentFullState
         if curState is not None:
-            model.loadYAML(curState)
+            model.load(job.definition, curState)
             t = timedeltaToSeconds(model.time)
         else:
-            t = 0.0
+            model.load(job.definition)
+            t = 0.0        
+        
+        step = job.definition['simulationParameters']['stepDuration']
+        duration = job.definition['simulationParameters']['duration']
+        batchLength = job.definition['simulationParameters']['batchLength']
+
+        # Prepare infrastructure.
+        saver = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'))
 
         # Reset job progress step counter.
         if t == 0.0:
@@ -65,21 +64,20 @@ class SimulationServer(object):
 
         # Prepare values.
         stepAsMs = step * 1000 # step in milliseconds
-        stepsN = job.simulationParameters['duration'] / step
+        stepsN = duration / step
         stepsCount = 0
-        self.logger.debug('Start time: {0}, step: {0}'.format(t, step))
 
         # Run.
         while t <= duration and stepsCount < batchLength:
             model.run_step(stepAsMs)
             stepsCount += 1
-            data = model.get_state_data()
+            data = model.getStateData()
             data['job'] = jobId
             # Round time to milliseconds
             saver.add(round(t, 3), data)
             t += step
 
         # Finalize.
-        job.currentFullState = model.asYAML()
+        job.currentFullState = model.getStateData()
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))

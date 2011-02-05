@@ -13,11 +13,11 @@
 # limitations under the License.
 
 
-import yaml
 from datetime import timedelta
 from uuid import uuid4
+import kts46.utils
 
-class SimpleSemaphore(yaml.YAMLObject):
+class SimpleSemaphore(object):
     """Simple semaphore that works in one direction.
 
     Duration of green and red lights states are setted separatly.
@@ -26,64 +26,62 @@ class SimpleSemaphore(yaml.YAMLObject):
     unicode.
     """
 
-    yaml_tag = u"!semaphore"
-    yaml_loader = yaml.SafeLoader
     __green_state = "g"
     __red_state = "r"
 
     def __init__(self, id=None, position=0, greenDuration=5, redDuration=5):
         """Creates a new simple semaphore."""
-        self.id = id if (id is not None) else uuid4()
+        self.id = str(id if (id is not None) else uuid4())
         self.position = position
-        self._last_switch_time = timedelta()
-        self._state = SimpleSemaphore.__red_state
+        self.lastSwitchTime = timedelta()
+        self.state = SimpleSemaphore.__red_state
         self.greenDuration = 5
         self.redDuration = 5
 
     def switch(self, currentTime):
         "Switches semaphore to the other state and records current time."
-        if self._state == SimpleSemaphore.__green_state:
-            self._state = SimpleSemaphore.__red_state
+        if self.state == SimpleSemaphore.__green_state:
+            self.state = SimpleSemaphore.__red_state
         else:
-            self._state = SimpleSemaphore.__green_state
-        self._last_switch_time = currentTime
+            self.state = SimpleSemaphore.__green_state
+        self.lastSwitchTime = currentTime
 
-    def get_position(self): return self.position
-    def get_state(self): return self._state
-    def is_green(self): return self._state == SimpleSemaphore.__green_state
-    def get_last_switch_time(self): return self._last_switch_time
-    def get_id(self): return self.id
+    @property
+    def isGreen(self):
+        return self.state == SimpleSemaphore.__green_state
 
     def getNextSwitchTime(self):
-        if self.is_green():
+        if self.isGreen:
             addTime = self.greenDuration
         else:
             addTime = self.redDuration
-        return self.get_last_switch_time() + addTime
+        return self.lastSwitchTime + addTime
 
-    def get_description_data(self):
-        return {'id': self.get_id(),
-                'position': self.get_position()
+    def getDescriptionData(self):
+        return {#'id': self.id,
+                'position': self.position
         }
 
-    def get_state_data(self):
-        return {'state': self.get_state()}
+    def getStateData(self):
+        return {
+            'state': self.state,
+            'lastSwitchTime': kts46.utils.timedelta2str(self.lastSwitchTime)
+        }
 
     # Little metaprogramming magic, so it is possible to set duration as float
     # (in seconds). Also store in unicode explicitly.
     def __setattr__(self, name, value):
         effValue = value
-        if name == "id" and value is not str:
-            effValue = str(value)
-        elif (name == "greenDuration" or name == "redDuration") and\
-                not isinstance(value, timedelta):
+        if ((name == "greenDuration" or name == "redDuration") and
+                not isinstance(value, timedelta)):
             effValue = timedelta(seconds=value)
-        yaml.YAMLObject.__setattr__(self, name, effValue)
+        object.__setattr__(self, name, effValue)
 
-    @classmethod
-    def from_yaml(cls, loader, node):
-        data = loader.construct_mapping(node)
-        a = SimpleSemaphore()
-        for attrName, attrValue in data.iteritems():
-            a.__setattr__(attrName, attrValue)
-        return a
+        
+    def load(self, description, state={}):
+        self.position = description['position']
+        if 'id' in description: self.id = description['id']
+        if 'state' in state: self.state = state['state']
+        if 'lastSwitchTime' in state:
+            self.lastSwitchTime = kts46.utils.str2timedelta(state['lastSwitchTime'])
+    

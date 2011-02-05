@@ -13,14 +13,10 @@
 # limitations under the License.
 
 import logging
-import yaml
 from uuid import uuid4
 
-class Car(yaml.YAMLObject):
+class Car(object):
     "Represent a car in the model."
-
-    yaml_tag = u"!car"
-    yaml_loader = yaml.SafeLoader
 
     INACTIVE = 'inactive'
     ADDED = 'add'
@@ -37,13 +33,13 @@ class Car(yaml.YAMLObject):
         width and position in metrs.
         """
         if id is None:
-            self._id = str(uuid4())
+            self.id = str(uuid4())
         else:
-            self._id = str(id)
-        self._speed = speed
-        self._length = length
-        self._width = width
-        self._position = position
+            self.id = str(id)
+        self.desiredSpeed = speed
+        self.length = length
+        self.width = width
+        self.position = position
         self.line = line
         self.state = Car.INACTIVE
 
@@ -59,51 +55,36 @@ class Car(yaml.YAMLObject):
                 "Backwards moving isn't currently allowed."
             logging.getLogger('roadModel').error(msg)
             raise Exception(msg)
-        self._position += distance
+        self.position += distance
 
 
-    def get_speed(self):
-        "Get car speed in m/s."
-        return self._speed
-
-
-    def get_length(self):
-        "Get car length in meters."
-        return self._length
-
-
-    def get_width(self):
-        "Get car width in meters."
-        return self._width
-
-
-    def get_position(self):
-        "Get car position in meters from road start."
-        return self._position
-
-
-    def get_id(self):
-        "Get car id."
-        return self._id
-
-
-    def get_description_data(self):
+    def getDescriptionData(self):
         """Get dictionary with data describing this car.
 
         :rtype: dict"""
-        return {'id': self.get_id(),
-                'length': self.get_length(),
-                'width': self.get_width()
+        return {'id': self.id,
+                'length': self.length,
+                'width': self.width,
+                'desiredSpeed': self.desiredSpeed
         }
 
 
-    def get_state_data(self):
+    def getStateData(self):
         """Get data describing current state of car.
 
         :rtype: dict"""
-        d = {'pos': round(self.get_position(), 2),
+        d = {'pos': round(self.position, 2),
              'line': self.line
         }
         if self.state != Car.DEFAULT:
             d['state'] = self.state
         return d
+    
+    def load(self, description, state={}):
+        self.id = description['id']
+        self.length = description['length']
+        self.width = description['width']
+        self.desiredSpeed = description['desiredSpeed']
+        if 'pos' in state: self.position = state['pos']
+        if 'line' in state: self.line = state['line']
+    
