@@ -20,12 +20,12 @@ import xmlrpclib, logging, sys
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
-sys.path.append('../lib/')
+sys.path.append('../pylib/')
 import kts46.utils
 
 
 if __name__ == '__main__':
-    cfg = kts46.utils.getConfiguration(('../config/rpc_client.ini',))
+    cfg = kts46.utils.getConfiguration(('../etc/rpc_client.ini',))
     kts46.utils.configureLogging(cfg)
     logger = logging.getLogger(cfg.get('log', 'loggerName'))
 
