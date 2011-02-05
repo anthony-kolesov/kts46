@@ -51,8 +51,8 @@ def configureLogging(cfg):
 
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
-        maxBytes=cfg.get('log', 'maxBytesInFile'),
-        backupCount=cfg.get('log', 'backupCountOfFile'))
+        maxBytes=cfg.getint('log', 'maxBytesInFile'),
+        backupCount=cfg.getint('log', 'backupCountOfFile'))
     rfhandler.setLevel(logging.INFO)
     rfhandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
     logging.getLogger('').addHandler(rfhandler)
