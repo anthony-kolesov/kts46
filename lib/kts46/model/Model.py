@@ -333,9 +333,10 @@ class Model(object):
             for carData in state['enterQueue']:
                 c = Car()
                 c.load(carData, carData)
-                self._enterQueueappend(c)
+                self._enterQueue.append(c)
 
             # Fields
             self.time = kts46.utils.str2timedelta(state['time'])
             self._lastCarGenerationTime = kts46.utils.str2timedelta(state['lastCarGenerationTime'])
             self._lastCarId = state['lastCardId']
+
