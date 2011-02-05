@@ -18,6 +18,7 @@ database."""
 import logging
 import sys
 import json
+import yaml
 from kts46.mongodb import Storage
 
 
@@ -71,7 +72,7 @@ class DatabaseServer:
         :param definition: definition of job written in YAML.
         :type jobName: str
         """
-        self.storage[projectName].addJob(jobName, json.loads(definition))
+        self.storage[projectName].addJob(jobName, yaml.load(definition))
 
 
     def jobExists(self, projectName, jobName):
