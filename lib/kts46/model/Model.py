@@ -230,7 +230,7 @@ class Model(object):
         # Enter queue
         enterQueue = []
         for car in self._enterQueue:
-            enterQueue.push(car.getStateData())
+            enterQueue.append(car.getStateData())
             enterQueue[-1].update(car.getDescriptionData())
         data['enterQueue'] = enterQueue
 
