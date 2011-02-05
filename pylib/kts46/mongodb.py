@@ -468,7 +468,7 @@ class StateStorage(object):
                 states = []
                 for state in self.buffer[:self.bufferSize]:
                     for carId, car in state['cars'].items():
-                        car['_id'] = "{0};{1}".format(state['id'], carId)
+                        car['_id'] = "{0};{1}".format(state['_id'], carId)
                         car['job'] = state['job']
                         car['time'] = state['time']
                         car['carid'] = carId
