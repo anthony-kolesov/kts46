@@ -426,6 +426,7 @@ class StateStorage(object):
         self.db = job.db
         self.job = job
         self.buffer = []
+        self.lastTime = None
         if batchLength is None:
             self.bufferSize = job.simulationParameters['batchLength']
         else:
@@ -446,6 +447,7 @@ class StateStorage(object):
         d['_id'] = self.job.getStateDocumentId(str(time))
 
         self.buffer.append(d)
+        self.lastTime = time
         #if len(self.buffer) >= self.bufferSize:
         #    self.dump()
 
@@ -455,13 +457,18 @@ class StateStorage(object):
         ``add`` when length of buffer is more than batchLength and by
         ``close`` method."""
         if len(self.buffer) > 0:
-            self.job.progress['done'] += len(self.buffer)
+            if self.lastTime is None:
+                self.job.progress['done'] += len(self.buffer)
+            else:
+                stepDuration = self.job.definition['simulationParameters']['stepDuration']
+                self.job.progress['done'] = math.floor(self.lastTime / stepDuration)
 
             while len(self.buffer) > 0:
                 cars = []
                 states = []
                 for state in self.buffer[:self.bufferSize]:
                     for carId, car in state['cars'].items():
+                        car['_id'] = "{0};{1}".format(state['id'], carId)
                         car['job'] = state['job']
                         car['time'] = state['time']
                         car['carid'] = carId
