@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"Some useful function."
+"Some useful functions."
 
 import logging, logging.handlers
 import xmlrpclib
@@ -28,7 +28,7 @@ def getConfiguration(customConfigFiles=[]):
         will override those from default files.
     :return: application confguration.
     """
-    configFiles = ['../config/default.ini', '../config/local.ini']
+    configFiles = ['../etc/default.ini', '../etc/local.ini']
     configFiles.extend(customConfigFiles)
     cfg = SafeConfigParser()
     cfg.read(configFiles)
