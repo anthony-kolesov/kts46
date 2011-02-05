@@ -55,7 +55,7 @@ class SimulationServer(object):
         batchLength = job.definition['simulationParameters']['batchLength']
 
         # Prepare infrastructure.
-        saver = StateStorage(job, self.cfg.getint('worker', 'dbBufferLength'))
+        saver = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'))
 
         # Reset job progress step counter.
         if t == 0.0:
