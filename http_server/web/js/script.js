@@ -340,7 +340,8 @@ var kts46 = (function($){
             });
             view.setRows(rows);
         } else {
-            view.setRows(0, data.getNumberOfRows()-1);
+            if (data.getNumberOfRows() > 0)
+                view.setRows(0, data.getNumberOfRows()-1);
         }
 
         var table = $(document).data('google-table');
