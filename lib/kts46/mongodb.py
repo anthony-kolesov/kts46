@@ -455,11 +455,6 @@ class StateStorage(object):
         ``add`` when length of buffer is more than batchLength and by
         ``close`` method."""
         if len(self.buffer) > 0:
-            print("{2} Progress from {0} to {1}".format( self.job.progress['done'],
-                self.job.progress['done'] + len(self.buffer),
-                self.job.name))
-            
-            
             self.job.progress['done'] += len(self.buffer)
 
             while len(self.buffer) > 0:
