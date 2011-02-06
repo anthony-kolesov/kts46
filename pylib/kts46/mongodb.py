@@ -281,8 +281,8 @@ class SimulationJob(object):
         self.db.jobs.insert({'name': self.name, 'definition': self.definition,
                              '_id': self.id})
         self.db.progresses.insert({'_id': self.id,
-            'totalSteps': math.floor(simulationTime / simulationStep),
-            'batches': math.floor(simulationTime / simulationStep / simulationBatchLength),
+            'totalSteps': math.ceil(simulationTime / simulationStep),
+            'batches': math.ceil(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
             'basicStatistics': False, 'idleTimes': False, 'throughput': False,
             'fullStatistics': False,

@@ -30,8 +30,8 @@ var getDbClient = function(server, dbName) {
 // onError: function(errorObject)
 var find = function(client, collectionName, spec, fields, onFinished, onError) {
     //var client = this.getDbClient(db);
-    client.open(function(err, pClient) {
-        if (err) { onMongodbError(err, client, onError); return; }
+    
+    var onHasConnection = function() {
         client.collection(collectionName, function(err, collection) {
             if (err) { onMongodbError(err, client, onError); return; }
             collection.find(spec, fields, function(err, cursor){
@@ -40,9 +40,36 @@ var find = function(client, collectionName, spec, fields, onFinished, onError) {
                     process.nextTick( onFinished.bind({}, cursor) );
             });
         } );
-    });
+    };
+    
+    if (client.state == 'connected') {
+        onHasConnection();
+    } else {
+        client.open(function(err, pClient) {
+            if (err) { onMongodbError(err, client, onError); return; }
+            onHasConnection();
+        });
+    }
 };
 
+
+var findOne = function(client, collectionName, spec, fields, onFinished, onError) {
+    client.open(function(err, pClient) {
+        if (err) { onMongodbError(err, client, onError); return; }
+        client.collection(collectionName, function(err, collection) {
+            if (err) { onMongodbError(err, client, onError); return; }
+            var opts = {limit: 1};
+            collection.find(spec, fields, opts, function(err, cursor){
+                if (err) { onMongodbError(err, client, onError); return; }
+                cursor.nextObject(function(err, obj){
+                    if (err) { onMongodbError(err, client, onError); return; }
+                    if (onFinished)
+                        process.nextTick( onFinished.bind({}, obj) );
+                });
+            });
+        } );
+    });
+};
 
 // Update documents in database.
 // onFinished: function()
@@ -62,4 +89,5 @@ var update = function(client, collectionName, spec, changes, options, onFinished
 };
 
 exports.find = find;
+exports.findOne = findOne;
 exports.update = update;
