@@ -16,7 +16,6 @@ import json
 import logging
 import math
 import random
-import yaml
 from datetime import timedelta
 
 import kts46.utils
@@ -160,7 +159,7 @@ class Model(object):
 
     def howManyCarsToAdd(self, newTime):
         "Define how many cars can be added to the model."
-        newCarGenRate = timedelta(seconds=3600/self.params['inputRate']) 
+        newCarGenRate = timedelta(seconds=3600/self.params['inputRate'])
         lastCarTime = self._lastCarGenerationTime
         carsToGenerate = 0
         while lastCarTime <= newTime:
@@ -242,6 +241,7 @@ class Model(object):
         # Result.
         return data
 
+
     def getDescriptionData(self):
         "Gets dictionary describing model."
         data = {}
@@ -253,61 +253,6 @@ class Model(object):
         if self._road is not None:
             data['road'] = self._road.getDescriptionData()
         return data
-
-    def loadYAML(self, yamlData):
-        """Loads model from YAML string.
-
-        :param yamlData: definition of model in YAML.
-        :type yamlData: str"""
-        objData = yaml.safe_load(yamlData)
-        # fields
-        if "carGenerationInterval" in objData:
-            self.params['carGenerationInterval'] = \
-                timedelta(seconds=objData["carGenerationInterval"])
-            self.params['inputRate'] = 3600 / objData["carGenerationInterval"]
-        if "inputRate" in objData:
-            inputRate = objData["inputRate"]
-            # Store both but inputRate is used for storage while
-            # carGenerationInterval is used in model.
-            self.params['inputRate'] = inputRate
-            self.params['carGenerationInterval'] = timedelta(seconds=3600/inputRate)
-        if "safeDistance" in objData:
-           self.params['safeDistance'] = objData["safeDistance"]
-        if "maxSpeed" in objData:
-           self.params['maxSpeed'] = objData["maxSpeed"]
-        if "minSpeed" in objData:
-           self.params['minSpeed'] = objData["minSpeed"]
-        # collections
-        if "road" in objData:
-            self._road = objData["road"]
-        if "trafficLights" in objData:
-            self._lights = objData["trafficLights"]
-        if 'time' in objData: self.time = objData['time']
-        if 'lastCarGenerationTime' in objData:
-            self._lastCarGenerationTime = objData['lastCarGenerationTime']
-        if 'lastCarId' in objData: self._lastCarId = objData['lastCarId']
-        # cars, last send cars, enter queue
-        if 'cars' in objData: self._cars = objData['cars']
-        if 'enterQueue' in objData: self._enterQueue = objData['enterQueue']
-
-
-    def asYAML(self):
-        "Returns YAML string which represents current model including it state."
-        d = {}
-        d["inputRate"] = self.params['inputRate']
-        d["safeDistance"] = self.params['safeDistance']
-        d["maxSpeed"] = self.params['maxSpeed']
-        d["minSpeed"] = self.params['minSpeed']
-        d["road"] = self._road
-        d["trafficLights"] = self._lights
-
-        d['time'] = self.time
-        d['cars'] = self._cars
-        d['enterQueue'] = self._enterQueue
-        d['lastCarGenerationTime'] = self._lastCarGenerationTime
-        d['lastCarId'] = self._lastCarId
-
-        return yaml.dump(d)
 
 
     def load(self, description, state=None):

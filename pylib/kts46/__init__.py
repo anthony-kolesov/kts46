@@ -30,28 +30,6 @@ in :file:`config/local.ini` file. For simulation those python packages are requi
 
 """
 
-
-import yaml
-from datetime import timedelta # for YAML
-
 __version__ = '0.1.4'
 __author__ = "Anthony Kolesov"
 
-
-# Init YAML staff.
-def _timedeltaYAMLRepresenter(dumper, data):
-    # Only days, seconds and microseconds are stored internally.
-    fmt = u'{0}d{1}s{2}'
-    value = fmt.format(data.days, data.seconds, data.microseconds)
-    return dumper.represent_scalar(u'!timedelta', value)
-
-def _timedeltaYAMLConstructor(loader, node):
-    value = loader.construct_scalar(node)
-    days, rest = value.split('d')
-    seconds, mcs = rest.split('s')
-    return timedelta(days=int(days), seconds=int(seconds), microseconds=int(mcs))
-
-# It is required to explicitly specify SafeLoader or this loader will not see
-# constructor.
-yaml.add_constructor(u'!timedelta', _timedeltaYAMLConstructor, yaml.SafeLoader)
-yaml.add_representer(timedelta, _timedeltaYAMLRepresenter)

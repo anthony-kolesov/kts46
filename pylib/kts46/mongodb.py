@@ -26,7 +26,6 @@ simulation states."""
 import logging
 import math # Math.floor
 import pymongo # connect with db
-import yaml # parse model definition
 
 
 class StorageException(Exception):

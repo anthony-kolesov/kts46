@@ -16,7 +16,6 @@ import json
 import logging
 import math
 import numpy
-import yaml
 
 class StatisticsServer:
     "Class to calculate model simulation statistics."
