@@ -54,22 +54,18 @@ var find = function(client, collectionName, spec, fields, onFinished, onError) {
 
 
 var findOne = function(client, collectionName, spec, fields, onFinished, onError) {
-    client.open(function(err, pClient) {
-        if (err) { onMongodbError(err, client, onError); return; }
-        client.collection(collectionName, function(err, collection) {
+    var onReady = function(cursor){
+        cursor.nextObject(function(err, obj){
             if (err) { onMongodbError(err, client, onError); return; }
-            var opts = {limit: 1};
-            collection.find(spec, fields, opts, function(err, cursor){
-                if (err) { onMongodbError(err, client, onError); return; }
-                cursor.nextObject(function(err, obj){
-                    if (err) { onMongodbError(err, client, onError); return; }
-                    if (onFinished)
-                        process.nextTick( onFinished.bind({}, obj) );
-                });
-            });
-        } );
-    });
+            if (onFinished) {
+                cursor.close();
+                process.nextTick( onFinished.bind({}, obj) );
+            }
+        });
+    };
+    find(client, collectionName, spec, fields, onReady, onError);
 };
+
 
 // Update documents in database.
 // onFinished: function()

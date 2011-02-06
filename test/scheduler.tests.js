@@ -17,13 +17,13 @@ assert.RPCHasNoError = function(rpc) {
 };
 
 var getClient = function() {
-    return new RPCClient('192.168.1.2', 46212);
+    return new RPCClient('192.168.1.3', 46212);
 }
 var client = getClient();
 
 // Locals
 var existingProject = 'node_test',
-    existingJobDone = 'node_test_done',
+    existingJobDone = 'done',
     existingJobUndone = 'undone',
     unexistingProject = 'QQQSDFSDFq3498',
     unexistingJob = 'QQQSDFSDFq3498sfsdf',

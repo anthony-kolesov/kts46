@@ -6,21 +6,30 @@ var Storage = function(dbServer) {
 };
 
 Storage.prototype._getDbClient = function(projectName) {
-    return new mongodb.Db(projectName, this.dbServer, {native_parser: true});
+    return new mongodb.Db(projectName, this.dbServer, {native_parser: false});
 };
 
+/*
+Callbacks:
+    onHasJob(job)
+    onError(error)
+*/
 Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
     var onJobLoaded = function(jobDocument) {
+        if (jobDocument === null) {
+            if (onHasJob) onHasJob(null);
+            return;
+        }
+    
         var j = {
-            duration: jobDocument.simulationParameters.duration,
-            batchLength: jobDocument.simulationParameters.batchLength,
-            stepDuration: jobDocument.simulationParameters.stepDuration,
+            duration: jobDocument.definition.simulationParameters.duration,
+            batchLength: jobDocument.definition.simulationParameters.batchLength,
+            stepDuration: jobDocument.definition.simulationParameters.stepDuration,
             name: jobDocument.name,
             id: jobDocument._id
         };
-        loadJobProgress(j);
         fluentMongodb.findOne(client, 'progresses', {}, {},
-            onProgressLoaded.bind({}, job), onError );
+            onProgressLoaded.bind({}, j), onError );
     };
     
     var onProgressLoaded = function(job, progressDocument) {
@@ -28,7 +37,7 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
         job.done = progressDocument.done;
         job.totalSteps = progressDocument.totalSteps;
         job.batches = progressDocument.batches;
-        job.jobname = progressDocument.jobname;
+        // job.jobname = progressDocument.jobname;
         job.basicStatistics = progressDocument.basicStatistics;
         job.idleTimes = progressDocument.idleTimes;
         job.throughput = progressDocument.throughput;
@@ -38,18 +47,9 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
     };
     
     var spec = {'_id': jobName};
-    var fields = {'name':1,
-        'definition.simulationParameters.duration': 1,
-        'definition.simulationParameters.batchLength': 1,
-        'definition.simulationParameters.stepDuration': 1};
-    var client = this._getDbClient(project.name);
+    var fields = {'name':1, 'definition': 1};
+    var client = this._getDbClient(projectName);
     fluentMongodb.findOne(client, 'jobs', spec, fields, onJobLoaded, onError);
 };
 
 exports.Storage = Storage;
-
-/*
-API:
-    class Storage: 
-        method getJob(projectName, jobName)
-*/

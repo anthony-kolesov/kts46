@@ -9,13 +9,18 @@ var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
 };
 
 
+var getDbServer = function() {
+    var mongodbAddress = ['192.168.1.5', 27017];
+    return new mongodb.Server(mongodbAddress[0], mongodbAddress[1], {});
+};
+
 // Module locals
 var waitingQueue = [];
 var waitingActivation = {};
 var runningTasks = {};
-var projects = {};
+//var projects = {};
 var cfg = {};
-var projectsStorage = new ProjectStorage();
+var projectStorage = new ProjectStorage(getDbServer());
 
 
 // Util methods.
@@ -66,7 +71,7 @@ var onMongodbError2 = function(rpc, err){
     console.log(err);
 };
 
-var loadProject = function(project, onFinished) {
+/*var loadProject = function(project, onFinished) {
     var fields =  {'currentFullState': 0};
     var context = this;
     var client = context.getDbClient(project.name);
@@ -109,10 +114,10 @@ var loadProject = function(project, onFinished) {
             });
         });
     }, onMongodbError.bind({}, this.response));
-};
+};*/
 
 // Checks whether specified project exists.
-var projectExists = function(projectName, onExists, onNotExists) {
+/*var projectExists = function(projectName, onExists, onNotExists) {
     var jsrpc = this.response,
         context = this;
     // Error handler.
@@ -123,7 +128,7 @@ var projectExists = function(projectName, onExists, onNotExists) {
     } else {
         // Try to find it in the database.
         var client = this.getDbClient(projectName);
-        fluentMongodb.find(client, 'info', {'_id': 'project'}, {}, function(cursor){ 
+        fluentMongodb.find(client, 'info', {'_id': 'project'}, {}, function(cursor){
             cursor.count(function(err, number){
                 cursor.close();
                 if (err) { onError(err, client); return; }
@@ -143,10 +148,10 @@ var projectExists = function(projectName, onExists, onNotExists) {
             });
         }, onMongodbError2.bind(context));
     }
-};
+};*/
 
 // Checks whether specified job exists.
-var jobExists = function(projectName, jobName, onExists, onNotExists) {
+/*var jobExists = function(projectName, jobName, onExists, onNotExists) {
     var handleProjectExists = function(project) {
         if (project.hasJob(jobName)) {
             if (onExists) onExists(project, project.getJob(jobName));
@@ -155,7 +160,7 @@ var jobExists = function(projectName, jobName, onExists, onNotExists) {
         }
     };
     projectExists.bind(this)(projectName, handleProjectExists, onNotExists);
-};
+};*/
 
 var taskExists = function(projectName, jobName, taskType) {
     //var cur = job.currentTasks || [];
@@ -180,13 +185,13 @@ var taskExists = function(projectName, jobName, taskType) {
 // Types
 var SchedulerContext = function(jsonRpcResponse) {
     this.response = jsonRpcResponse;
-    this.server = new mongodb.Server(cfg.mongodbAddress[0], cfg.mongodbAddress[1], {});
+    this.server = getDbServer();
 };
 SchedulerContext.prototype.getDbClient = function(projectName) {
     return new mongodb.Db(projectName, this.server, {native_parser: true});
 };
 
-var Project = function(name){
+/*var Project = function(name){
     this.name = name;
     this.jobs = {};
 };
@@ -199,18 +204,24 @@ Project.prototype.getJob = function(jobName){
 Project.prototype.addJob = function(jobInfo){
     this.jobs[jobInfo.jobname] = jobInfo;
 };
-
+*/
 
 // Adds required tasks to queue if required with dependency calculation.
 var addTaskImplementation = function(projectName, jobName, taskTypes) {
-    var handleNoJob = (function(){
-        this.response.error({type: 'JobNotFound'});
-    }).bind(this);
-    var handleHasJob = (function(project, job){
+    // var handleNoJob = (function(){
+        // this.response.error({type: 'JobNotFound'});
+    // }).bind(this);
+    var handleHasJob = (function(job){
+
+        if (job === null) {
+            this.response.error({type: 'JobNotFound'});
+            return;
+        }
+
         var getTask = function(type) {
             var a = {
                 project: projectName,
-                job: job.jobname,
+                job: job.id,
                 type: type
             };
             if (type === taskType.simulation) {
@@ -262,7 +273,8 @@ var addTaskImplementation = function(projectName, jobName, taskTypes) {
         }
         this.response.response('success');
     }).bind(this);
-    jobExists.bind(this)(projectName, jobName, handleHasJob, handleNoJob);
+
+    projectStorage.getJob(projectName, jobName, handleHasJob, onMongodbError2.bind(this.response));
 };
 
 
@@ -368,42 +380,13 @@ var taskFinishedImplementation = function(workerId, sig) {
     }
 
     delete runningTasks[workerId];
-    var job = projects[task.project].getJob(task.job);
-    var dbChange = {'$set':{}};
-    var dbSpec = {'_id': task.job};
     var startNext = false;
-    // Store
     if (task.type === taskType.simulation) {
-        job.done += job.batchLength;
-        // Special case
-        delete dbChange['$set'];
-        dbChange['$inc'] = {'done': job.batchLength };
         startNext = true;
-    } else if (task.type === taskType.basicStatistics) {
-        job.basicStatistics = true;
-        dbChange['$set']['basicStatistics'] = true;
-    } else if (task.type === taskType.idleTimes) {
-        job.idleTimes = true;
-        dbChange['$set']['idleTimes'] = true;
-    } else if (task.type === taskType.throughput) {
-        job.throughput = true;
-        dbChange['$set']['throughput'] = true;
     }
 
-    if (job.basicStatistics && job.idleTimes && job.throughput) {
-        job.fullStatistics = true;
-        change['$set']['fullStatistics'] = true;
-    }
-
-    // Update db.
-    var onSuccess = function(needNext) {
-        this.response.response("success");
-        // Start simulation tasks
-        if (needNext)
-            process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
-    };
-    fluentMongodb.update(this.getDbClient(task.project), 'progresses', dbSpec, dbChange, false,
-                        onSuccess.bind(this, startNext), onMongodbError2.bind(this));
+    if (startNext)
+        process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
 };
 
 
@@ -564,6 +547,9 @@ var restartTasks = function(rpc, tasks) {
 
     restartTasksImplementation.call(new SchedulerContext(rpc), tasks);
 };
+
+
+
 
 exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
     'getTask': getTask, 'acceptTask': acceptTask, 'rejectTask': rejectTask,
