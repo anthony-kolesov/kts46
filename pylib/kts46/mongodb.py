@@ -445,10 +445,19 @@ class StateStorage(object):
         d['job'] = self.job.name
         d['_id'] = self.job.getStateDocumentId(str(time))
 
-        self.buffer.append(d)
-        self.lastTime = time
-        #if len(self.buffer) >= self.bufferSize:
-        #    self.dump()
+        cars = []
+        for carId, car in d['cars'].items():
+            car['_id'] = "{0};{1}".format(d['_id'], carId)
+            car['job'] = d['job']
+            car['time'] = d['time']
+            car['carid'] = carId
+            cars.append(car)
+        del d['cars']
+        del d['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
+        
+        self.db.states.insert(d, safe=True)
+        self.db.cars.insert(cars, safe=True)
+        self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': 1}}, safe=True)
 
 
     def dump(self):
@@ -456,13 +465,7 @@ class StateStorage(object):
         ``add`` when length of buffer is more than batchLength and by
         ``close`` method."""
         if len(self.buffer) > 0:
-            bufferLength = len(self.buffer)
-            #if self.lastTime is None:
-            #    self.job.progress['done'] += len(self.buffer)
-            #else:
-            #    stepDuration = self.job.definition['simulationParameters']['stepDuration']
-            #    self.job.progress['done'] = math.ceil(self.lastTime / stepDuration) + 1
-
+            statesAdded = len(self.buffer)
             while len(self.buffer) > 0:
                 cars = []
                 states = []
@@ -474,16 +477,17 @@ class StateStorage(object):
                         car['carid'] = carId
                         cars.append(car)
                     del state['cars']
+                    del state['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
                     states.append(state)
 
-                self.db.states.insert(states)
-                self.db.cars.insert(cars)
+                self.db.states.insert(states, safe=True)
+                self.db.cars.insert(cars, safe=True)
                 self.buffer = self.buffer[self.bufferSize:]
-            #self.job.save()
-            self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': bufferLength}})
+            self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': statesAdded}}, safe=True)
 
 
     def close(self):
         "Save all unsaved data to server."
-        self.dump()
+        pass
+        #self.dump()
         #self.job.save()
