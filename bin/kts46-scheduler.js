@@ -71,101 +71,8 @@ var onMongodbError2 = function(rpc, err){
     console.log(err);
 };
 
-/*var loadProject = function(project, onFinished) {
-    var fields =  {'currentFullState': 0};
-    var context = this;
-    var client = context.getDbClient(project.name);
-    fluentMongodb.find(client, 'progresses', {}, fields, function(cursor){
-        cursor.toArray(function(err, a){
-            a.forEach(function(item, index, array){
-                var j = {
-                    '_id': item._id,
-                    'fullStatistics': item.fullStatistics,
-                    'done': item.done,
-                    'totalSteps': item.totalSteps,
-                    'batches': item.batches,
-                    'jobname': item.jobname,
-                    'basicStatistics': item.basicStatistics,
-                    'idleTimes': item.idleTimes,
-                    'throughput': item.throughput
-                };
-                project.addJob(j);
-                if (index === array.length - 1) {
-                    cursor.close();
-                    client.close();
-                    var client2 = context.getDbClient(project.name);
-                    fluentMongodb.find(client2, 'jobs', {}, {'yaml':0}, function(cursor2) {
-                        cursor2.toArray(function(err, a){
-                            a.forEach(function(item, index, array){
-                                var j = project.getJob(item.name);
-                                j.duration = item.simulationParameters.duration;
-                                j.batchLength = item.simulationParameters.batchLength;
-                                j.stepDuration = item.simulationParameters.stepDuration;
-                                // Last
-                                if (index === array.length - 1) {
-                                    cursor2.close();
-                                    client2.close();
-                                    if (onFinished) onFinished();
-                                }
-                            });
-                        });
-                    }, onMongodbError.bind({}, this.response) );
-                }
-            });
-        });
-    }, onMongodbError.bind({}, this.response));
-};*/
-
-// Checks whether specified project exists.
-/*var projectExists = function(projectName, onExists, onNotExists) {
-    var jsrpc = this.response,
-        context = this;
-    // Error handler.
-    var onError = onMongodbError.bind(this.response);
-
-    if (projects.hasOwnProperty(projectName)) {
-        if (onExists) onExists(projects[projectName]);
-    } else {
-        // Try to find it in the database.
-        var client = this.getDbClient(projectName);
-        fluentMongodb.find(client, 'info', {'_id': 'project'}, {}, function(cursor){
-            cursor.count(function(err, number){
-                cursor.close();
-                if (err) { onError(err, client); return; }
-                if (number === 0) {
-                    if (onNotExists) onNotExists();
-                } else if (number === 1) {
-                    // Store info in cache.
-                    var p = projects[projectName] = new Project(projectName);
-                    loadProject.bind(context)(p, function(){
-                        if (onExists) onExists(p);
-                    });
-                } else {
-                    jsrpc.error(
-                     "Whow! Internal error: info.project has count > 1");
-                }
-                client.close();
-            });
-        }, onMongodbError2.bind(context));
-    }
-};*/
-
-// Checks whether specified job exists.
-/*var jobExists = function(projectName, jobName, onExists, onNotExists) {
-    var handleProjectExists = function(project) {
-        if (project.hasJob(jobName)) {
-            if (onExists) onExists(project, project.getJob(jobName));
-        } else {
-            if (onNotExists) onNotExists();
-        }
-    };
-    projectExists.bind(this)(projectName, handleProjectExists, onNotExists);
-};*/
 
 var taskExists = function(projectName, jobName, taskType) {
-    //var cur = job.currentTasks || [];
-    //return cur.indexOf(taskType) !== -1;
-
     var mask = function(task, index) {
         return task.project === projectName && task.job === jobName
                 && task.type === taskType;
@@ -191,28 +98,10 @@ SchedulerContext.prototype.getDbClient = function(projectName) {
     return new mongodb.Db(projectName, this.server, {native_parser: true});
 };
 
-/*var Project = function(name){
-    this.name = name;
-    this.jobs = {};
-};
-Project.prototype.hasJob = function(jobName){
-    return this.jobs.hasOwnProperty(jobName);
-};
-Project.prototype.getJob = function(jobName){
-    return this.jobs[jobName];
-};
-Project.prototype.addJob = function(jobInfo){
-    this.jobs[jobInfo.jobname] = jobInfo;
-};
-*/
 
 // Adds required tasks to queue if required with dependency calculation.
 var addTaskImplementation = function(projectName, jobName, taskTypes) {
-    // var handleNoJob = (function(){
-        // this.response.error({type: 'JobNotFound'});
-    // }).bind(this);
     var handleHasJob = (function(job){
-
         if (job === null) {
             this.response.error({type: 'JobNotFound'});
             return;
