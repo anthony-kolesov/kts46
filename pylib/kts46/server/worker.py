@@ -104,7 +104,8 @@ class Worker:
             job = self.getJob(projectName, jobName)
 
             if task.get('type') == 'simulation':
-                self.log.info('Starting simulation task: {0}.{1}.'.format(projectName, jobName))
+                self.log.info('Starting simulation task: {0}.{1} [{2}/{3}].'.format(
+                    projectName, jobName, job.progress['done'], job.progress['totalSteps']))
                 simServer = SimulationServer(self.cfg)
                 simServer.runSimulationJob(job)
             elif task.get('type') == 'statistics':
