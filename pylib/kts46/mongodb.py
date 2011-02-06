@@ -445,10 +445,19 @@ class StateStorage(object):
         d['job'] = self.job.name
         d['_id'] = self.job.getStateDocumentId(str(time))
 
-        self.buffer.append(d)
-        self.lastTime = time
-        #if len(self.buffer) >= self.bufferSize:
-        #    self.dump()
+        cars = []
+        for carId, car in d['cars'].items():
+            car['_id'] = "{0};{1}".format(d['_id'], carId)
+            car['job'] = d['job']
+            car['time'] = d['time']
+            car['carid'] = carId
+            cars.append(car)
+        del d['cars']
+        del d['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
+        
+        self.db.states.insert(d, safe=True)
+        self.db.cars.insert(cars, safe=True)
+        self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': 1}}, safe=True)
 
 
     def dump(self):
@@ -479,5 +488,6 @@ class StateStorage(object):
 
     def close(self):
         "Save all unsaved data to server."
-        self.dump()
+        pass
+        #self.dump()
         #self.job.save()
