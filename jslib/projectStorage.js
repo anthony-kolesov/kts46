@@ -6,7 +6,7 @@ var Storage = function(dbServer) {
 };
 
 Storage.prototype._getDbClient = function(projectName) {
-    return new mongodb.Db(projectName, this.dbServer, {native_parser: false});
+    return new mongodb.Db(projectName, this.dbServer, {native_parser: true});
 };
 
 /*
