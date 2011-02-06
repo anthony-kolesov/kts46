@@ -33,15 +33,15 @@ var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
 
 var Scheduler = function(){
     this.mongodbAddress = ['192.168.1.5', 27017];
-    this.projectStorage = new ProjectStorage(this.getDbServer());
+    this.projectStorage = new ProjectStorage(getDbServer(this));
     this.waitingQueue = [];
     this.waitingActivation = {};
     this.runningTasks = {};
 };
 
 
-Scheduler.prototype.getDbServer = function() {
-    return new mongodb.Server(this.mongodbAddress[0], this.mongodbAddress[1], {});
+var getDbServer = function(scheduler) {
+    return new mongodb.Server(scheduler.mongodbAddress[0], scheduler.mongodbAddress[1], {});
 };
 
 
@@ -131,8 +131,8 @@ Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes
         }
         response.response('success');
     };
-
-    projectStorage.getJob(projectName, jobName, handleHasJob, onMongodbError.bind(response));
+    
+    this.projectStorage.getJob(projectName, jobName, handleHasJob, onMongodbError.bind(response));
 };
 
 
@@ -183,7 +183,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
             this.waitingQueue.splice(i, 1);
         }
     }
-
+    
     if (task === null){
         task = {empty: true};
     } else {
@@ -194,7 +194,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         task['sig'] = task['lastUpdate'].toJSON();
         waitingActivation[workerId] = task;
     }
-    this.response.response(task);
+    response.response(task);
 };
 
 
@@ -216,7 +216,7 @@ Scheduler.prototype.acceptTask = function(response, workerId, sig){
 };
 
 
-Sscheduler.prototype.rejectTask = function(response, workerId, sig) {
+Scheduler.prototype.rejectTask = function(response, workerId, sig) {
     if (workerId in this.waitingActivation) {
         var t = this.waitingActivation[workerId];
         if (t.sig === sig) {
@@ -323,3 +323,4 @@ Scheduler.prototype.restartTasks = function(response, tasks) {
 
 // All exports are in one place.
 exports.Scheduler = Scheduler;
+exports.taskTypes = taskType;
