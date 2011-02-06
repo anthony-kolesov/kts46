@@ -10,8 +10,8 @@ var options = {
 };
 
 var existingProject = 'node_test',
-    existingJob = 'node_test_done',
-    existingJobDone = 'node_test_done',
+    existingJob = 'done',
+    existingJobDone = 'done',
     existingJobUndone = 'undone',
     unexistingProject = 'QQQSDFSDFq3498',
     unexistingJob = 'QQQSDFSDFq3498sfsdf';
