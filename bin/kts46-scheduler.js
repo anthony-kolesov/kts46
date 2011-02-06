@@ -1,12 +1,10 @@
 var mongodb = require('../jslib/mongodb'),
     fluentMongodb = require('../jslib/mongodb-fluent'),
-    ProjectStorage = require('../jslib/projectStorage').Storage;
+    ProjectStorage = require('../jslib/projectStorage').Storage,
+    SchedulerLib = require('../jslib/scheduler');
 
 // Scheduler constants
-var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
-  idleTimes: "idleTimes", throughput: "throughput",
-  fullStatistics: "fullStatistics"
-};
+var taskType = SchedulerLib.taskTypes;
 
 
 var getDbServer = function() {
@@ -15,12 +13,8 @@ var getDbServer = function() {
 };
 
 // Module locals
-var waitingQueue = [];
-var waitingActivation = {};
-var runningTasks = {};
-//var projects = {};
 var cfg = {};
-var projectStorage = new ProjectStorage(getDbServer());
+var scheduler = new SchedulerLib.Scheduler();
 
 
 // Util methods.
@@ -72,23 +66,6 @@ var onMongodbError2 = function(rpc, err){
 };
 
 
-var taskExists = function(projectName, jobName, taskType) {
-    var mask = function(task, index) {
-        return task.project === projectName && task.job === jobName
-                && task.type === taskType;
-    };
-    if (waitingQueue.some(mask)) {
-        return true;
-    }
-    for (var key in waitingActivation) {
-        if (waitingActivation.hasOwnProperty(key)
-            && mask(waitingActivation[key]) )
-            return true;
-    }
-    return false;
-};
-
-
 // Types
 var SchedulerContext = function(jsonRpcResponse) {
     this.response = jsonRpcResponse;
@@ -98,244 +75,6 @@ SchedulerContext.prototype.getDbClient = function(projectName) {
     return new mongodb.Db(projectName, this.server, {native_parser: true});
 };
 
-
-// Adds required tasks to queue if required with dependency calculation.
-var addTaskImplementation = function(projectName, jobName, taskTypes) {
-    var handleHasJob = (function(job){
-        if (job === null) {
-            this.response.error({type: 'JobNotFound'});
-            return;
-        }
-
-        var getTask = function(type) {
-            var a = {
-                project: projectName,
-                job: job.id,
-                type: type
-            };
-            if (type === taskType.simulation) {
-                a['startState'] = job.done;
-                a['duration'] = job.duration;
-                a['batchLength'] = job.batchLength;
-                a['stepDuration'] = job.stepDuration;
-            }
-            return a;
-        };
-
-        if (job.done < job.totalSteps) {
-            if (!taskExists(projectName, jobName, taskType.simulation)) {
-                waitingQueue.push(getTask(taskType.simulation));
-            } else {
-                this.response.error({type: 'DuplicateTask',
-                                    taskType:taskType.simulation});
-            }
-        } else if (job.fullStatistics === false) {
-            // Statistics are parallel.
-            if (taskExists(projectName, jobName, taskType.basicStatistics)) {
-                this.response.error({type: 'DuplicateTask',
-                                    taskType:taskType.basicStatistics});
-                return;
-            }
-            if (taskExists(projectName, jobName, taskType.idleTimes) ) {
-                this.response.error({type: 'DuplicateTask',
-                                    taskType:taskType.idleTimes});
-                return;
-            }
-            if (taskExists(projectName, jobName, taskType.throughput) ) {
-                this.response.error({type: 'DuplicateTask',
-                                    taskType:taskType.throughput});
-                return;
-            }
-
-            if (job.basicStatistics === false) {
-                waitingQueue.push(getTask(taskType.basicStatistics));
-            }
-            if (job.idleTimes === false) {
-                waitingQueue.push(getTask(taskType.idleTimes));
-            }
-            if (job.throughtput === false) {
-                waitingQueue.push(getTask(taskType.throughput));
-            }
-        } else {
-            this.response.error({type: 'AlreadyDone'});
-            return;
-        }
-        this.response.response('success');
-    }).bind(this);
-
-    projectStorage.getJob(projectName, jobName, handleHasJob, onMongodbError2.bind(this.response));
-};
-
-
-var abortTaskImplementation = function(projectName, jobName) {
-    var len = 0,
-        queueLen = waitingQueue.length;
-    // Clear waiting tasks.
-    waitingQueue = waitingQueue.filter(function(item){
-        return item.project !== projectName || item.job !== jobName;
-    });
-    len = queueLen - waitingQueue.length;
-
-    // Clear waiting for activation.
-    for(var key in waitingActivation){
-        var val = waitingActivation[key];
-        if (val.project === projectName && val.job === jobName) {
-            delete waitingActivation[key];
-            len += 1;
-        }
-    }
-    this.response.response(len);
-};
-
-
-var getTaskImplementation = function(workerId, taskTypes){
-    if (waitingActivation.hasOwnProperty(workerId) ||
-        runningTasks.hasOwnProperty(workerId)) {
-        this.response.error({type: 'WorkerHasTask'});
-        return;
-    }
-
-    var task = null;
-    for(var i=0, l=waitingQueue.length; i<l; ++i) {
-        var it = waitingQueue[i];
-        if (taskTypes.indexOf(it.type) !== -1) {
-            task = it;
-            waitingQueue.splice(i, 1);
-        }
-    }
-
-    if (task === null){
-        task = {empty: true};
-    } else {
-        task['empty'] = false;
-        task['databases'] = [{host: cfg.mongodbAddress[0],
-                              port: cfg.mongodbAddress[1]}];
-        task['lastUpdate'] = new Date();
-        task['sig'] = task['lastUpdate'].toJSON();
-        waitingActivation[workerId] = task;
-    }
-    this.response.response(task);
-};
-
-
-var acceptTaskImplementation = function(workerId, sig){
-    if (workerId in waitingActivation) {
-        var t = waitingActivation[workerId];
-        if (t.sig === sig) {
-            delete waitingActivation[workerId];
-            runningTasks[workerId] = t;
-            t.lastUpdate = new Date();
-            t.sig = t.lastUpdate.toJSON();
-            this.response.response({sig: t.sig});
-        } else {
-            this.response.error({type:'InvalidSignature'});
-        }
-    } else {
-        this.response.error({type:'InvalidWorkerId'});
-    }
-};
-
-
-var rejectTaskImplementation = function(workerId, sig) {
-    if (workerId in waitingActivation) {
-        var t = waitingActivation[workerId];
-        if (t.sig === sig) {
-            delete waitingActivation[workerId];
-            waitingQueue.push(t);
-            delete t['sig'];
-            delete t['empty'];
-            this.response.response("success");
-        } else {
-            this.response.error({type:'InvalidSignature'});
-        }
-    } else {
-        this.response.error({type:'InvalidWorkerId'});
-    }
-};
-
-
-var taskFinishedImplementation = function(workerId, sig) {
-    // Check task existence.
-    if (!(workerId in runningTasks)) {
-        this.response.error({type:'InvalidWorkerId'});
-        return;
-    }
-
-    var task = runningTasks[workerId];
-    // Check signature
-    if (task.sig !== sig) {
-        this.response.error({type:'InvalidSignature'});
-        return;
-    }
-
-    delete runningTasks[workerId];
-    var startNext = false;
-    if (task.type === taskType.simulation) {
-        startNext = true;
-    }
-
-    if (startNext)
-        process.nextTick(addTaskImplementation.bind(this, task.project, task.job));
-};
-
-
-var taskInProgressImplementation = function(workerId, sig) {
-    // Check task existence.
-    if (!(workerId in runningTasks)) {
-        this.response.error({type:'InvalidWorkerId'});
-        return;
-    }
-
-    var task = runningTasks[workerId];
-    // Check signature
-    if (task.sig !== sig) {
-        this.response.error({type:'InvalidSignature'});
-        return;
-    }
-
-    task.lastUpdate = new Date();
-    task.sig = task.lastUpdate.toJSON();
-    this.response.response({'sig':task.sig});
-};
-
-
-var getCurrentTasksImplementation = function() {
-    var result = [];
-    //for (var i in waitingQueue) {
-    //    result.push(waitingQueue[i]);
-    //}
-    for (var wid in waitingActivation) {
-        if (waitingActivation.hasOwnProperty(wid)) {
-            result.push({'id': wid, 'sig': waitingActivation[wid].sig});
-        }
-    }
-    for (var wid in runningTasks) {
-        if (runningTasks.hasOwnProperty(wid)) {
-            result.push({'id': wid, 'sig': runningTasks[wid].sig});
-        }
-    }
-    this.response.response(result);
-};
-
-
-var restartTasksImplementation = function(tasks) {
-    var restarted = 0;
-    tasks.forEach(function(task){
-        // Try running tasks first, then waiting acception.
-        if (task.id in runningTasks) {
-            var currentTask = runningTasks[task.id];
-            delete runningTasks[task.id];
-            waitingQueue.push(currentTask);
-            restarted += 1;
-        } else if (task.id in waitingActivation) {
-            var currentTask = waitingActivation[task.id];
-            delete waitingActivation[task.id];
-            waitingQueue.push(currentTask);
-            restarted += 1;
-        }
-    });
-    this.response.response({'restarted': restarted});
-};
 
 // RPC methods.
 var hello = function(rpc){
@@ -355,9 +94,10 @@ var addTask = function(rpc) {
 
     var taskTypes = parseTaskTypes(arguments[3], rpc);
     if (taskTypes == null) return;
-
-    var context = new SchedulerContext(rpc);
-    addTaskImplementation.bind(context)(projectName, jobName, taskTypes);
+    
+    scheduler.addTask(rpc, projectName, jobName, taskTypes);
+    // var context = new SchedulerContext(rpc);
+    // addTaskImplementation.bind(context)(projectName, jobName, taskTypes);
 };
 
 
@@ -367,7 +107,7 @@ var abortTask = function(rpc, projectName, jobName) {
         return;
     }
 
-    abortTaskImplementation.bind(new SchedulerContext(rpc))(projectName, jobName);
+    scheduler.abortTask(rpc, projectName, jobName);
 };
 
 
@@ -377,7 +117,7 @@ var getTask = function(rpc, workerId){
     }
     var taskTypes = parseTaskTypes(arguments[2], rpc);
     if (taskTypes === null) return;
-    getTaskImplementation.call(new SchedulerContext(rpc), workerId, taskTypes);
+    scheduler.getTask(rpc, workerId, taskTypes);
 };
 
 
@@ -386,7 +126,7 @@ var acceptTask = function(rpc, workerId, sig){
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    acceptTaskImplementation.call(new SchedulerContext(rpc), workerId, sig);
+    scheduler.acceptTask(rpc, workerId, sig);
 };
 
 
@@ -395,7 +135,7 @@ var rejectTask = function(rpc, workerId, sig) {
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    rejectTaskImplementation.call(new SchedulerContext(rpc), workerId, sig);
+    scheduler.rejectTask(rpc, workerId, sig);
 };
 
 
@@ -404,7 +144,7 @@ var taskFinished = function(rpc, workerId, sig){
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    taskFinishedImplementation.call(new SchedulerContext(rpc), workerId, sig);
+    scheduler.taskFinished(rpc, workerId, sig);
 };
 
 
@@ -413,12 +153,12 @@ var taskInProgress = function(rpc, workerId, sig){
         checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    taskInProgressImplementation.call(new SchedulerContext(rpc), workerId, sig);
+    scheduler.taskInProgress(rpc, workerId, sig);
 };
 
 
 var getCurrentTasks = function(rpc) {
-    getCurrentTasksImplementation.call(new SchedulerContext(rpc));
+    scheduler.getCurrentTasks(rpc);
 };
 
 var restartTasks = function(rpc, tasks) {
@@ -434,10 +174,8 @@ var restartTasks = function(rpc, tasks) {
         }
     });
 
-    restartTasksImplementation.call(new SchedulerContext(rpc), tasks);
+    scheduler.restartTasks(rpc, tasks);
 };
-
-
 
 
 exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
