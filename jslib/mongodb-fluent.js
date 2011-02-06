@@ -29,8 +29,6 @@ var getDbClient = function(server, dbName) {
 // onFinished: function(cursor)
 // onError: function(errorObject)
 var find = function(client, collectionName, spec, fields, onFinished, onError) {
-    //var client = this.getDbClient(db);
-    
     var onHasConnection = function() {
         client.collection(collectionName, function(err, collection) {
             if (err) { onMongodbError(err, client, onError); return; }
