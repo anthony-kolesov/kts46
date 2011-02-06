@@ -155,6 +155,7 @@ class SimulationProject(object):
             self.db.info.insert({'_id':'project', 'name': name, 'v': 2})
             self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
             self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
+            self.db.states.create_index([('job',pymongo.ASCENDING),('time',pymongo.ASCENDING)])
 
 
     def addJob(self, jobName, definition):
@@ -425,12 +426,28 @@ class StateStorage(object):
         self.db = job.db
         self.job = job
         self.buffer = []
-        self.lastTime = None
         if batchLength is None:
             self.bufferSize = job.simulationParameters['batchLength']
         else:
             self.bufferSize = batchLength
-
+        
+    def repair(self, currentTime):
+        """If simulation was aborted in the process some states and cars will be
+        left in database. This method will remove them. It is recommended to
+        call it each time simulation is started.
+        
+        :param currentTime:
+            Current simulation time. All states and cars of this job with time
+            that is greater or equal will be removed.
+        :type currentTime: float
+        """
+        if self.db.states.find_one({'job': self.job.id, 'time': {'$gte': currentTime}},{'_id':1}) is not None:
+            logging.getLogger('kts46.stateStorage').info('Reparing till time: %g', currentTime)
+            self.db.states.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
+            self.db.cars.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
+            self.job.db.progresses.update({'_id': self.job.id}, {'$set': {'done': 0}}, safe=True)
+        else:
+            logging.getLogger('kts46.stateStorage').info('Nothing to repair.')
 
     def add(self, time, data):
         """Adds state to the storage.
@@ -457,7 +474,7 @@ class StateStorage(object):
         
         self.db.states.insert(d, safe=True)
         self.db.cars.insert(cars, safe=True)
-        self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': 1}}, safe=True)
+        # self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': 1}}, safe=True)
 
 
     def dump(self):
@@ -483,8 +500,7 @@ class StateStorage(object):
                 self.db.states.insert(states, safe=True)
                 self.db.cars.insert(cars, safe=True)
                 self.buffer = self.buffer[self.bufferSize:]
-            self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': statesAdded}}, safe=True)
-
+            
 
     def close(self):
         "Save all unsaved data to server."

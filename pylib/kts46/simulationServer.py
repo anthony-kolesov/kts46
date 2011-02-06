@@ -55,8 +55,9 @@ class SimulationServer(object):
         batchLength = job.definition['simulationParameters']['batchLength']
 
         # Prepare infrastructure.
-        saver = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'))
-
+        saver = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'));
+        saver.repair(t)
+        
         # Reset job progress step counter.
         if t == 0.0:
             # Document will be saved to database with state data.
@@ -79,5 +80,6 @@ class SimulationServer(object):
 
         # Finalize.
         job.currentFullState = model.getStateData()
+        job.db.progresses.update({'_id': job.id}, {'$inc': {'done': stepsCount}}, safe=True)
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
