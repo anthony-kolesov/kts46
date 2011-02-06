@@ -457,11 +457,12 @@ class StateStorage(object):
         ``add`` when length of buffer is more than batchLength and by
         ``close`` method."""
         if len(self.buffer) > 0:
-            if self.lastTime is None:
-                self.job.progress['done'] += len(self.buffer)
-            else:
-                stepDuration = self.job.definition['simulationParameters']['stepDuration']
-                self.job.progress['done'] = math.floor(self.lastTime / stepDuration)
+            bufferLength = len(self.buffer)
+            #if self.lastTime is None:
+            #    self.job.progress['done'] += len(self.buffer)
+            #else:
+            #    stepDuration = self.job.definition['simulationParameters']['stepDuration']
+            #    self.job.progress['done'] = math.ceil(self.lastTime / stepDuration) + 1
 
             while len(self.buffer) > 0:
                 cars = []
@@ -479,7 +480,8 @@ class StateStorage(object):
                 self.db.states.insert(states)
                 self.db.cars.insert(cars)
                 self.buffer = self.buffer[self.bufferSize:]
-            self.job.save()
+            #self.job.save()
+            self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': bufferLength}})
 
 
     def close(self):
