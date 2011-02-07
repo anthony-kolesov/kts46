@@ -1,16 +1,8 @@
-var mongodb = require('../jslib/mongodb'),
-    fluentMongodb = require('../jslib/mongodb-fluent'),
-    ProjectStorage = require('../jslib/projectStorage').Storage,
-    SchedulerLib = require('../jslib/scheduler');
+var SchedulerLib = require('../jslib/scheduler');
 
 // Scheduler constants
 var taskType = SchedulerLib.taskTypes;
 
-
-var getDbServer = function() {
-    var mongodbAddress = ['192.168.1.5', 27017];
-    return new mongodb.Server(mongodbAddress[0], mongodbAddress[1], {});
-};
 
 // Module locals
 var cfg = {};
@@ -55,24 +47,10 @@ var parseTaskTypes = function(taskTypes, rpc) {
     return effTaskTypes;
 };
 
-var onMongodbError = function(err, client){
-    this.response.error({type: 'MongoDBError', msg: err.message});
-    console.log(err);
-    client.close();
-};
-var onMongodbError2 = function(rpc, err){
-    rpc.error({type: 'MongoDBError', msg: err.message});
-    console.log(err);
-};
-
 
 // Types
 var SchedulerContext = function(jsonRpcResponse) {
     this.response = jsonRpcResponse;
-    this.server = getDbServer();
-};
-SchedulerContext.prototype.getDbClient = function(projectName) {
-    return new mongodb.Db(projectName, this.server, {native_parser: true});
 };
 
 
