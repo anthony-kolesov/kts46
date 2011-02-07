@@ -132,7 +132,7 @@ Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes
         response.response('success');
     };
     
-    this.projectStorage.getJob(projectName, jobName, handleHasJob, onMongodbError.bind(response));
+    this.projectStorage.getJob(projectName, jobName, handleHasJob.bind(this), onMongodbError.bind(response));
 };
 
 
@@ -192,7 +192,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
                               port: this.mongodbAddress[1]}];
         task['lastUpdate'] = new Date();
         task['sig'] = task['lastUpdate'].toJSON();
-        waitingActivation[workerId] = task;
+        this.waitingActivation[workerId] = task;
     }
     response.response(task);
 };
@@ -255,7 +255,7 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig) {
     }
 
     if (startNext)
-        process.nextTick(this.addTask(task.project, task.job));
+        process.nextTick(this.addTask.bind(this, response, task.project, task.job));
 };
 
 
