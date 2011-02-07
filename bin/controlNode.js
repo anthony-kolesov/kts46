@@ -2,7 +2,7 @@
 var http = require('http'),
     urllib = require('url'),
     RPCHandler = require('jsonrpc').RPCHandler,
-    scheduler = require('./kts46-scheduler');
+    scheduler = require('../jslib/schedulerRpcWrapper');
 
 
 // Configuration
