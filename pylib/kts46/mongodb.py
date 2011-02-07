@@ -445,9 +445,8 @@ class StateStorage(object):
             logging.getLogger('kts46.stateStorage').info('Reparing till time: %g', currentTime)
             self.db.states.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
             self.db.cars.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
-            self.job.db.progresses.update({'_id': self.job.id}, {'$set': {'done': 0}}, safe=True)
         else:
-            logging.getLogger('kts46.stateStorage').info('Nothing to repair.')
+            logging.getLogger('kts46.stateStorage').debug('Nothing to repair.')
 
     def add(self, time, data):
         """Adds state to the storage.
