@@ -23,6 +23,9 @@ values:
 * ``taskType[1]`` - if argument is array and contains object of invalid type
 * ``taskType.field`` - same as array but for dictionary.
 
+To run nodejs requires followinf modules: ``mongodb-native``, ``jsonrpc`` and
+``config``.
+
 
 Methods
 =======
