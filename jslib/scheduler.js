@@ -18,6 +18,12 @@ var mongodb = require('../jslib/mongodb'),
     fluentMongodb = require('../jslib/mongodb-fluent'),
     ProjectStorage = require('../jslib/projectStorage').Storage;
 
+// Configuration parameters and default values
+var config = require('config')('Scheduler', {
+  dbHost: '192.168.1.5',
+  dbPort: 27017
+});
+
 
 var onMongodbError = function(response, err){
     response.error({type: 'MongoDBError', msg: err.message});
@@ -32,7 +38,7 @@ var taskType = { simulation: "simulation", basicStatistics: "basicStatistics",
 
 
 var Scheduler = function(){
-    this.mongodbAddress = ['192.168.1.5', 27017];
+    this.mongodbAddress = [config.dbHost, config.dbPort];
     this.projectStorage = new ProjectStorage(getDbServer(this));
     this.waitingQueue = [];
     this.waitingActivation = {};

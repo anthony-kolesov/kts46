@@ -4,23 +4,19 @@ var http = require('http'),
     RPCHandler = require('jsonrpc').RPCHandler,
     scheduler = require('../jslib/schedulerRpcWrapper');
 
-
 // Configuration
-var cfg = {
+var cfg = require('config')('ControlNode', {
   port: 46212,
   address: "",
   jsonRpcPath: "/jsonrpc",
-  debugRpc: true,
-  mongodbAddress: ['192.168.1.5', 27017]
-};
-// Configure scheduler module.
-// scheduler.cfg.mongodbAddress = cfg.mongodbAddress;
+  debugRpc: true
+});
 
 // Local variables
 var version = "0.1.4"
     versionString = "ControlNode " + version + " on node.js";
 
-var schedulerWrapper = new scheduler.Wrapper();
+var schedulerWrapper = new scheduler.Wrapper(cfg.mongodbAddress);
     
 var handleHttpRequest = function(req, res) {
   if(req.method == "POST"){
