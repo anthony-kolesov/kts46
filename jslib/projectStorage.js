@@ -28,7 +28,7 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
             name: jobDocument.name,
             id: jobDocument._id
         };
-        fluentMongodb.findOne(client, 'progresses', {}, {},
+        fluentMongodb.findOne(client, 'progresses', {'_id': j.id}, {},
             onProgressLoaded.bind({}, j), onError );
     };
     
