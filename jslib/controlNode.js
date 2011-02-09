@@ -2,7 +2,7 @@
 var http = require('http'),
     urllib = require('url'),
     RPCHandler = require('jsonrpc').RPCHandler,
-    scheduler = require('../jslib/schedulerRpcWrapper');
+    scheduler = require('./schedulerRpcWrapper');
 
 // Configuration
 var cfg = require('config')('ControlNode', {
