@@ -1,0 +1,112 @@
+body {
+    font:13px/1.231 sans-serif;
+    /*font:13px/1.231 Georgia serif;*/
+    *font-size:small;
+    color: #444;
+    margin: 0;
+}
+
+ul {
+    padding-left: 0; /* Override default webkit settings. */
+}
+
+
+/* ****** Layout ****** */
+.layout-column-1 {
+    width: 149px; /*-1px for border */
+    height: 100%;
+    margin: 0;
+    position: absolute;
+    border-right: 1px solid #444;
+}
+
+.layout-column-2 {
+    position: absolute;
+    left: 150px;
+    right: 0px;
+    bottom: 0px;
+    top: 0px;
+}
+
+.layout-column-2.toolbar {
+    height: 48px;
+}
+
+.layout-column-2.content {
+    top: 48px;
+}
+
+.layout-row {
+    overflow: auto;
+    /*overflow-x: hidden;*/
+}
+
+.layout-row-1 {
+    height: 50%;
+}
+
+.layout-row-2 {
+    height: 50%;
+    border-top: 1px solid #444;
+}
+
+
+.border-sizing, .layout-row-2, .layout-column-2 {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+/* ****** Project list ****** */
+#projects-list {
+    list-style-type: none;
+}
+
+#projects-list li {
+    padding: 3px 3px 3px 10px;
+}
+
+#projects-list .ui-selecting { background: #e9e9e9; }
+#projects-list .ui-selected { background: #ccc;}
+
+
+/* ****** Toolbar ****** */
+
+.toolbar {
+    padding: 3px;
+}
+
+.toolbar > div {
+    display: inline-block;
+    border: 1px dotted #aaa;
+    padding: 0px 2px;
+}
+
+
+#progress-table-2 {
+    top: 0px;
+    bottom: 0px;
+    position: relative;
+    /*height: 50%;*/
+    overflow-y: scroll;
+}
+
+
+/* ****** Details ****** */
+#details-view {
+    padding: 0.3em 1em;
+}
+
+
+/* ****** Dialogs ****** */
+#add-project-confirm span.ui-icon-alert,
+#delete-project-confirm span.ui-icon-alert,
+#delete-job-confirm span.ui-icon-alert {
+    float:left;
+    margin:0 7px 20px 0;
+}
+
+/* ****** Google table ****** */
+.job-control .ui-icon {
+    margin: 0 4px;
+}

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+configFile="../etc/controlNode.conf.js"
+command="node ./controlNode.js"
+
+if [ -f $configFile ]; then
+    command="$command -config $configFile"
+fi
+
+$command

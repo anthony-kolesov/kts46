@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd ../rpc_server
+./server.py rpc-server http supervisor
+
