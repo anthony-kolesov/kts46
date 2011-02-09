@@ -38,7 +38,11 @@ class MethodCall(object):
 
     def __call__(self, *args):
         data = {'method': self.name, 'id': self.id, 'params': args}
-        responseStr = urllib2.urlopen(self.address, json.dumps(data)).read()
+        try:
+            f = urllib2.urlopen(self.address, json.dumps(data))
+        except urllib2.HTTPError as ex:
+            f = ex
+        responseStr = f.read()
         response = json.loads(responseStr)
         if response['error'] is not None:
             raise RPCException(response['error'])
