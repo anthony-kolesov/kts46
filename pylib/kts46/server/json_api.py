@@ -31,12 +31,14 @@ class JSONApiServer:
 
     def __init__(self, cfg):
         self.server = kts46.utils.getRPCServerProxy(cfg)
+        self.jsonrpc = kts46.utils.getJsonRpcClient(cfg)
         self.cfg = cfg
 
     def serve_forever(self):
         server_address = ('', self.cfg.getint('http-api', 'port'))
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
+        httpd.jsonrpc = self.jsonrpc
         httpd.logger = logging.getLogger('kts46.server.HTTPServer')
         httpd.filesDir = self.cfg.get('http-api', 'filesDir')
         httpd.serve_forever()
@@ -246,7 +248,8 @@ It must be an empty array if method has no params.""", id)
                 xmlrpc.deleteJob(params[0], params[1])
             elif methodName == 'runJob':
                 if not self.checkJSONArgsNumber(params, 2): return
-                xmlrpc.runJob(params[0], params[1])
+                self.server.jsonrpc.addTask(params[0], params[1])
+                # xmlrpc.runJob(params[0], params[1])
             else:
                 self.sendRPCResponse(None, id, "Unknown method: " + methodName)
                 return
