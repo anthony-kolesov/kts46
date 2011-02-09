@@ -96,7 +96,6 @@ Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes
             }
             return a;
         };
-
         if (job.done < job.totalSteps) {
             if (!this.taskExists(projectName, jobName, taskType.simulation)) {
                 this.waitingQueue.push(getTask(taskType.simulation));
