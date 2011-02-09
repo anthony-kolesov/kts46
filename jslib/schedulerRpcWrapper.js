@@ -147,6 +147,10 @@ Wrapper.prototype.restartTasks = function(rpc, tasks) {
     this.scheduler.restartTasks(rpc, tasks);
 };
 
+Wrapper.prototype.getStatus = function(){
+    return this.scheduler.getStatus();
+};
+
 exports.Wrapper = Wrapper;
 /*exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
     'getTask': getTask, 'acceptTask': acceptTask, 'rejectTask': rejectTask,
