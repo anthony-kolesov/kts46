@@ -22,7 +22,7 @@ import urllib
 from socket import error as SocketException
 import gviz_api
 import kts46.utils
-
+import jsonRpcClient
 
 JSON_CONTENT_TYPE = 'application/json'
 
@@ -248,8 +248,12 @@ It must be an empty array if method has no params.""", id)
                 xmlrpc.deleteJob(params[0], params[1])
             elif methodName == 'runJob':
                 if not self.checkJSONArgsNumber(params, 2): return
-                self.server.jsonrpc.addTask(params[0], params[1])
-                # xmlrpc.runJob(params[0], params[1])
+                try:
+                    self.server.jsonrpc.addTask(params[0], params[1])
+                except jsonRpcClient.RPCException as ex:
+                    self.server.logger.warning("Scheduler returned error: %s.", ex.error['type']);
+                    self.sendRPCResponse(None, id, ex.error)
+                    return
             else:
                 self.sendRPCResponse(None, id, "Unknown method: " + methodName)
                 return
