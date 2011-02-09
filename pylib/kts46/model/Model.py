@@ -80,7 +80,7 @@ class Model(object):
                 distanceToMove += car.desiredSpeed * timeStep.days * 86400 # 3600 * 24
 
                 # Check for red traffic light.
-                nearestTL = self.get_nearest_traffic_light(car.position)
+                nearestTL = self.getNearestTrafficLight(car.position)
                 if nearestTL is not None and not nearestTL.isGreen:
                     if nearestTL.position - car.position - stopDistance < distanceToMove:
                         distanceToMove = nearestTL.position - car.position - stopDistance
@@ -88,7 +88,7 @@ class Model(object):
                             distanceToMove = 0.0
 
                 # Check for leading car.
-                nearestCar = self.get_nearest_car(car.position, car.line)
+                nearestCar = self.getNearestCar(car.position, car.line)
                 if nearestCar is not None:
                     nearestCarBack = nearestCar.position - nearestCar.length
                     possiblePosition = nearestCarBack - stopDistance
@@ -152,7 +152,7 @@ class Model(object):
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             self._lastCarId += 1
             line = math.floor(random.random() * self._road.lines)
-            newCar = Car(id=self._lastCarId, speed=speed, line=line)
+            newCar = Car(model=self, id=self._lastCarId, speed=speed, line=line)
             self._logger.debug('Created car: [speed: %f].', speed)
             self._enterQueue.append(newCar)
 
@@ -168,15 +168,16 @@ class Model(object):
         return (carsToGenerate, lastCarTime)
 
 
-    def get_nearest_traffic_light(self, position):
+    def getNearestTrafficLight(self, position):
         "Get nearest traffic light to specified position in forward destination."
-        return self.get_nearest_object_in_array(self._lights, position)
+        return self.getNearestObjectInArray(self._lights, position)
 
-    def get_nearest_car(self, position, line=0):
-        "Get nearest car to specified position in forward destination."
-        return self.get_nearest_object_in_array(self._cars, position, line)
+    def getNearestCar(self, position, line=0):
+        """Get nearest car to specified position in forward destination.
+        If there is no leading car, then ``None`` will be returned."""
+        return self.getNearestObjectInArray(self._cars, position, line)
 
-    def get_nearest_object_in_array(self, array, position, line=0):
+    def getNearestObjectInArray(self, array, position, line=0):
         "Get nearest object in arrayto specified position in forward destination."
         current = None
         current_pos = -1.0 # just to make sure :)
@@ -202,7 +203,7 @@ class Model(object):
 
     def canAddCar(self, line=0):
         "Defines whether car can be added to specified line."
-        lastCar = self.get_nearest_car(-100.0, line) # Detect cars which are comming on the road.
+        lastCar = self.getNearestCar(-100.0, line) # Detect cars which are comming on the road.
         return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
 
     def _addCar(self, car):
@@ -271,12 +272,12 @@ class Model(object):
 
         if state is not None:
             for carData in state['cars'].itervalues():
-                c = Car()
+                c = Car(model=self)
                 c.load(carData, carData)
                 self._cars.append(c)
 
             for carData in state['enterQueue']:
-                c = Car()
+                c = Car(model=self)
                 c.load(carData, carData)
                 self._enterQueue.append(c)
 

@@ -25,7 +25,7 @@ class Car(object):
     DELETED = 'del'
 
 
-    def __init__(self, id=None, speed=15, length=4.5, width=1.5, position=0,
+    def __init__(self, model, id=None, speed=15, length=4.5, width=1.5, position=0,
                 line=0):
         """Initializes a new car object.
 
@@ -36,6 +36,7 @@ class Car(object):
             self.id = str(uuid4())
         else:
             self.id = str(id)
+        self.model = model
         self.desiredSpeed = speed
         self.length = length
         self.width = width
@@ -79,7 +80,7 @@ class Car(object):
         if self.state != Car.DEFAULT:
             d['state'] = self.state
         return d
-    
+
     def load(self, description, state={}):
         self.id = description['id']
         self.length = description['length']
@@ -87,4 +88,12 @@ class Car(object):
         self.desiredSpeed = description['desiredSpeed']
         if 'pos' in state: self.position = state['pos']
         if 'line' in state: self.line = state['line']
-    
+
+    def getDistanceToLeadingCar(self):
+        """Get distance (in meters) to the leading car. If there is not leading
+        car then negative value will be returned."""
+        leadingCar = self.model.getNearestCar(self.position, self.line)
+        if leadingCar is not None:
+            return leadingCar.position - self.position
+        else:
+            return -1
