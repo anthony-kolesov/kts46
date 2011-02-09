@@ -75,7 +75,7 @@ Scheduler.prototype.taskExists = function(projectName, jobName, taskType) {
 
 
 // Adds required tasks to queue if required.
-Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes) {
+Scheduler.prototype.addTask = function(response, projectName, jobName) {
     var handleHasJob = function(job){
         if (job === null) {
             response.error({type: 'JobNotFound'});
