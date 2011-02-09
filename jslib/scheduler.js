@@ -327,6 +327,15 @@ Scheduler.prototype.restartTasks = function(response, tasks) {
 };
 
 
+Scheduler.prototype.getStatus = function() {
+    return {
+        "mongodbAddress": this.mongodbAddress,
+        "waitingQueue": this.waitingQueue,
+        "waitingActivation": this.waitingActivation,
+        "runningsTasks": this.runningTasks,
+    };
+}
+
 // All exports are in one place.
 exports.Scheduler = Scheduler;
 exports.taskTypes = taskType;
