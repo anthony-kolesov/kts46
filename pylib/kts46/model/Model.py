@@ -194,9 +194,38 @@ class Model(object):
                 continue
 
             pos = i.position
-            if hasattr(i, "get_length"):
+            if hasattr(i, "length"):
                 pos -= i.length
             if pos > position and ((current is None) or current_pos > pos):
+                current = i
+                current_pos = pos
+        return current
+    
+
+    def getFollowingCar(self, position, line=0):
+        """Get nearest following car to specified position in backward destination.
+        If there is no following car, then ``None`` will be returned."""
+        return self.getFollowingObjectInArray(self._cars, position, line)
+
+    
+    def getFollowingObjectInArray(self, array, position, line=0):
+        "Get nearest object in array to specified position in backward destination."
+        current = None
+        current_pos = -1.0 # just to make sure :)
+        for i in array:
+
+            # Check if it is in our line and skip it if not.
+            # Objects that has not line attribute affect all lines,
+            # like traffic lights.
+            if hasattr(i, "line") and i.line != line:
+                continue
+
+            # Deleted cars already doesn't exists.
+            if hasattr(i, "state") and i.state == Car.DELETED:
+                continue
+
+            pos = i.position
+            if pos <= position and ((current is None) or current_pos < pos):
                 current = i
                 current_pos = pos
         return current

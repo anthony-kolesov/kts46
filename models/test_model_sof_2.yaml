@@ -7,6 +7,7 @@ simulationParameters:
 modelParameters: 
     inputRate: 1800
     safeDistance: 20
+    safeDistanceRear: 10
     maxSpeed: 22
     minSpeed: 14
 

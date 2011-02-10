@@ -25,7 +25,7 @@ class Car(object):
     DELETED = 'del'
 
 
-    def __init__(self, model, id=None, speed=15, length=4.5, width=1.5, position=0,
+    def __init__(self, model, road, id=None, speed=15, length=4.5, width=1.5, position=0,
                 line=0):
         """Initializes a new car object.
 
@@ -37,6 +37,7 @@ class Car(object):
         else:
             self.id = str(id)
         self.model = model
+        self.road = road
         self.desiredSpeed = speed
         self.length = length
         self.width = width
@@ -89,11 +90,58 @@ class Car(object):
         if 'pos' in state: self.position = state['pos']
         if 'line' in state: self.line = state['line']
 
-    def getDistanceToLeadingCar(self):
+    def getDistanceToLeadingCar(self, line=None):
         """Get distance (in meters) to the leading car. If there is not leading
         car then negative value will be returned."""
-        leadingCar = self.model.getNearestCar(self.position, self.line)
+        if line is None:
+            line = self.line
+        leadingCar = self.model.getNearestCar(self.position, line)
         if leadingCar is not None:
             return leadingCar.position - self.position
         else:
             return -1
+    
+    def getDistanceToFollowingCar(self, line=None):
+        """Get distance (in meters) to the following car. If there is not following
+        car then negative value will be returned."""
+        if line is None:
+            line = self.line
+        followingCar = self.model.getFollowingCar(self.position, line)
+        if followingCar is not None:
+            return self.position - self.length - followingCar.position
+        else:
+            return -1
+
+    def chooseBestLine(self):
+        """Chooses best line for current car on the basis of distance to leading
+        car. Algorithm choses only between neighbor lines."""
+        
+        # Can't change line.
+        if self.road.lines == 1:
+            return self.line
+        
+        currentDistance = self.getDistanceToLeadingCar()
+        rightDistance = self.canChangeLine(self.line - 1) if self.line > 0 else -1
+        leftDistance = self.canChangeLine(self.line + 1) if self.line + 1 < self.road.lines else -1
+        
+        maxLine = self.line
+        maxDistance = currentDistance
+        # First try right.
+        if rightDistance > 0 and rightDistance > maxDistance:
+            maxLine = self.line - 1
+            maxDistance = rightDistance
+        if leftDistance > 0 and leftDistance > maxDistance:
+            maxLine = self.line + 1
+            #maxDistance = leftDistance
+        
+        return maxLine
+        
+    def canChangeLine(self, targetLine):
+        "Returns distance to leading car if possible or negative value if isn't possible."
+        leading = self.getDistanceToLeadingCar(targetLine)
+        if leading > 0 and leading < self.model.params.safeDistance:
+            return -1
+        following = self.getDistanceToFollowingCar(targetLine)
+        if following > 0 and following < self.model.params.safeDistanceRear:
+            return -1
+        return leading
