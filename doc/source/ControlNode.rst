@@ -168,8 +168,8 @@ Methods
 
     :returns:
         An array of objects with two fields: ``id`` is a worker id, and ``sig``
-        is a signature of task state. Both accepted and waiting for acception
-        tasks are in this array.
+        is a signature of task state that is its last update time represented as
+        a string. Both accepted and waiting for acception tasks are in this array.
 
 
 .. js:function:: restartTasks(tasks)
