@@ -19,6 +19,7 @@ import uuid
 from socket import error as SocketException
 
 import kts46.utils
+import jsonRpcClient
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
 from kts46.mongodb import Storage
@@ -34,12 +35,13 @@ def _notificationThreadImplementation(worker):
         if worker.enableNotificationEvent.is_set():
             worker.log.debug('[%s] Sending notification to server...', threading.currentThread().name)
             try:
-                lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
+                #lu = worker.server.reportStatus(worker.workerId, 'working', worker.lastUpdate)
+                sig = worker.server.taskInProgress(worker.workerId, worker.sig)['sig']
             except SocketException, msg:
                 # Continue to work even if connection failed. Hope that next
                 # time will be successful.
                 worker.log.warning("Connection to RPC server failed. Couldn't notify server about task status. Continue to work.")
-            worker.lastUpdate = lu
+            worker.sig = sig
         worker.lastUpdateLock.release()
 
 
@@ -65,7 +67,8 @@ class Worker:
         self.notificationSleepTimeout = cfg.getint('scheduler', 'notifyInterval')
 
         # Create server proxy.
-        self.server = kts46.utils.getRPCServerProxy(cfg)
+        # self.server = kts46.utils.getRPCServerProxy(cfg)
+        self.server = kts46.utils.getJsonRpcClient(cfg)
         self.startNotificationThread()
 
         # Create db storage.
@@ -79,39 +82,54 @@ class Worker:
         while True:
             # Try to get a task.
             try:
-                task = self.server.getJob(self.workerId)
+                taskTypes = ['simulation', 'idleTimes', 'throughput', 'basicStatistics']
+                task = self.server.getTask(self.workerId, taskTypes)
             except SocketException, msg:
                 self.log.error("Couldn't connect to RPC server. Message: %s", msg)
-                task = None
+                task = {'empty': True}
 
             # Sleep if there is nothing to do.
-            # task is a AutoProxy, not None. So we coudn't check for `is None`. May be there
-            # is a better way than comparing strings but that works.
-            if str(task) == "None":
+            if task['empty']:
                 sleepTime = self.cfg.getfloat('worker', 'checkInterval')
                 self.log.debug('Worker has nothing to do. Sleeping for %f s.', sleepTime)
                 time.sleep(sleepTime) # Wait some time for new job.
                 continue
 
             # There is a task.
-            projectName = task.get('project')
-            jobName = task.get('job')
+            projectName = task['project']
+            jobName = task['job']
             # Report status isn't enabled at this time, so no need to lock.
-            self.lastUpdate = task.get('lastUpdate')
+            self.sig = task['sig']
+            
+            try:
+                self.log.info("Accepting task")
+                self.sig = self.server.acceptTask(self.workerId, self.sig)['sig']
+            except jsonRpcClient.RPCException as ex:
+                self.log.error("Couldn't accept task from server: %s", str(ex))
+                time.sleep(sleepTime) # Wait some time for new job.
+                continue
 
-            self.notificationSleepTimeout = task.get('timeout')
+            self.notificationSleepTimeout = self.cfg.getfloat('worker', 'notificationInterval') # task.get('timeout')
             self.enableNotificationEvent.set() # Start notifying scheduler about our state.
             job = self.getJob(projectName, jobName)
 
-            if task.get('type') == 'simulation':
+            if task['type'] == 'simulation':
                 self.log.info('Starting simulation task: {0}.{1} [{2}/{3}].'.format(
                     projectName, jobName, job.progress['done'], job.progress['totalSteps']))
                 simServer = SimulationServer(self.cfg)
                 simServer.runSimulationJob(job)
-            elif task.get('type') == 'statistics':
-                self.log.info('Starting statistics task: {0}.{1}.'.format(projectName, jobName))
+            elif task['type'] == 'basicStatistics':
+                self.log.info('Starting basicStatistics task: {0}.{1}.'.format(projectName, jobName))
                 stServer = StatisticsServer(self.cfg)
-                stServer.calculate(job)
+                stServer.calculateBasicStats(job)
+            elif task['type'] == 'idleTimes':
+                self.log.info('Starting idleTimes statistics task: {0}.{1}.'.format(projectName, jobName))
+                stServer = StatisticsServer(self.cfg)
+                stServer.calculateIdleTimes(job)
+            elif task['type'] == 'throughput':
+                self.log.info('Starting tgroughput statistics task: {0}.{1}.'.format(projectName, jobName))
+                stServer = StatisticsServer(self.cfg)
+                stServer.calculateThroughput(job)
 
             # Notify server.
             # Lock here so if condition in sync thread will be correct.
@@ -120,11 +138,15 @@ class Worker:
             finishedSent = False
             while not finishedSent:
                 try:
-                    self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
+                    #self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
+                    self.server.taskFinished(self.workerId, self.sig)
                     finishedSent = True
                 except SocketException, msg:
                     self.log.error("Connection to RPC server failed. Waiting for it.")
                     time.sleep(self.cfg.getfloat('worker', 'checkInterval'))
+                except jsonRpcClient.RPCException as ex:
+                    self.log.error("Error negotiating with RPC server: %s.", str(ex))
+                    finishedSent = True # Couldn't recover from this error.
             self.lastUpdateLock.release()
 
 
