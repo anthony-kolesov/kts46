@@ -18,6 +18,8 @@ import urllib2
 class RPCException(Exception):
     def __init__(self, errorObj):
         self.error = errorObj
+    def __str__(self):
+        return "jsonRpcClient.RPCException: " + json.dumps(self.error)
 
 class Client(object):
 

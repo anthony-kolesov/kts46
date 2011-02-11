@@ -25,7 +25,7 @@ class StatisticsServer:
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
 
-    def calculate(self, job):
+    def calculateBasicStats(self, job):
         addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
         delCarData = job.db.cars.find({'job':job.name, 'state': 'del'},['carid','time'])
 
@@ -54,10 +54,10 @@ class StatisticsServer:
         job.statistics['finished'] = True
         job.progress['basicStatistics'] = True
 
-        if self.cfg.getboolean("worker", "calculateIdleTimes"):
-            self.calculateIdleTimes(job)
-        if self.cfg.getboolean('worker', "calculateThroughput"):
-            self.calculateThroughput(job)
+        #if self.cfg.getboolean("worker", "calculateIdleTimes"):
+        #    self.calculateIdleTimes(job)
+        #if self.cfg.getboolean('worker', "calculateThroughput"):
+        #    self.calculateThroughput(job)
 
         job.progress['fullStatistics']= (job.progress['basicStatistics'] and
                                          job.progress['idleTimes'] and
@@ -106,6 +106,11 @@ class StatisticsServer:
         job.statistics['idleTimes'] = d
         job.progress['idleTimes'] = True
 
+        job.progress['fullStatistics']= (job.progress['basicStatistics'] and
+                                         job.progress['idleTimes'] and
+                                         job.progress['throughput'])
+        job.save()
+
 
     def calculateThroughput(self, job):
         self.log.info("Calculating throughput.")
@@ -135,6 +140,11 @@ class StatisticsServer:
         job.statistics['throughput'] = result
         self.log.info("Throughput calculated for %i points.", len(points))
         job.progress['throughput'] = True
+        
+        job.progress['fullStatistics']= (job.progress['basicStatistics'] and
+                                         job.progress['idleTimes'] and
+                                         job.progress['throughput'])
+        job.save()
 
 
     def calculateEndpointsThroughput(self, job, point):

@@ -27,7 +27,7 @@ class Supervisor:
     def __init__(self, cfg):
         # self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'Supervisor'))
-        self.server = kts46.utils.getRPCServerProxy(cfg)
+        #self.server = kts46.utils.getRPCServerProxy(cfg)
         self.jsonrpc = kts46.utils.getJsonRpcClient(cfg)
         self.checkTimeout = cfg.getint('supervisor', 'checkInterval')
         restartTaskTimeout = cfg.getint('supervisor', 'restartTaskInterval')

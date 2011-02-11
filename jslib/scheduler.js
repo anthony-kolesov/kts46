@@ -120,14 +120,14 @@ Scheduler.prototype.addTask = function(response, projectName, jobName) {
                                     taskType:taskType.throughput});
                 return;
             }
-
+            
             if (job.basicStatistics === false) {
                 this.waitingQueue.push(getTask(taskType.basicStatistics));
             }
             if (job.idleTimes === false) {
                 this.waitingQueue.push(getTask(taskType.idleTimes));
             }
-            if (job.throughtput === false) {
+            if (job.throughput === false) {
                 this.waitingQueue.push(getTask(taskType.throughput));
             }
         } else {
@@ -186,6 +186,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         if (taskTypes.indexOf(it.type) !== -1) {
             task = it;
             this.waitingQueue.splice(i, 1);
+            break;
         }
     }
     
@@ -240,6 +241,7 @@ Scheduler.prototype.rejectTask = function(response, workerId, sig) {
 
 
 Scheduler.prototype.taskFinished = function(response, workerId, sig) {
+    
     // Check task existence.
     if (!(workerId in this.runningTasks)) {
         response.error({type:'InvalidWorkerId'});
@@ -259,8 +261,10 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig) {
         startNext = true;
     }
 
-    if (startNext)
+    if (startNext) {
         process.nextTick(this.addTask.bind(this, response, task.project, task.job));
+    }
+    response.response("success");
 };
 
 
