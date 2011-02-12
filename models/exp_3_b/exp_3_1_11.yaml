@@ -1,7 +1,7 @@
 simulationParameters:
     duration: 7200
     stepDuration: 0.2
-    batchLength: 500
+    batchLength: 1000
 
 
 modelParameters: 
