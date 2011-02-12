@@ -347,6 +347,10 @@ var kts46 = (function($){
         var table = $(document).data('google-table');
         table.draw(view, {showRowNumber: true, allowHtml: true, sortColumn: 1});
     };
+    
+    var showLiveView = function() {
+    
+    };
 
 
     // google table
@@ -379,6 +383,7 @@ var kts46 = (function($){
             .button({text: false,icons: {primary:"ui-icon-trash"}})
             .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
         $('#show-statistics').button().click(showStatistics);
+        $('#show-live-view').button().click(showLiveView);
 
         /* Project list effects. */
         $('#projects-list').selectable({
