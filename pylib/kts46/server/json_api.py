@@ -95,6 +95,13 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
                     data = rpc.getModelDescription(p,j)
+            elif functionName == 'modelState':
+                paramsMatch = re.match(r"/api/modelState/([-\w]+)/([-\w]+)/(\d+(\.\d+)?)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    t = float(paramsMatch.group(3))
+                    data = rpc.getModelState(p, j, t)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',

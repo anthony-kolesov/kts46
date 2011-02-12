@@ -82,11 +82,13 @@ class StatusServer:
         if not includeIdleTimes:
             d['idleTimes']['values'] = None
         return d
-        
+
     def getModelDescription(self, projectName, jobName):
         project = self.storage[projectName]
         job = project[jobName]
         return job.definition
 
-        
-        
+    def getModelState(self, projectName, jobName, time):
+        project = self.storage[projectName]
+        job = project[jobName]
+        return job[time]
