@@ -247,6 +247,15 @@ class SimulationProject(object):
 
 class SimulationJob(object):
     "Job to simulate."
+    
+    AVERAGE_FIELD_NAME = 'average'
+    STDEVIATION_FIELD_NAME = 'stdeviation'
+    AVERAGE_SPEED_FIELD_NAME = 'averageSpeed'
+    BASIC_STATISTICS_FIELD_NAME = 'basicStatistics'
+    IDLE_TIMES_FIELD_NAME = 'idleTimes'
+    THROUGHPUT_FIELD_NAME = 'throughput'
+    FULL_STATISTICS_FIELD_NAME= 'fullStatistics'
+    
 
     def __init__(self, project, name, definition=None):
         """Create new :class:`SimulationJob` instance .
@@ -285,17 +294,19 @@ class SimulationJob(object):
             'totalSteps': math.ceil(simulationTime / simulationStep),
             'batches': math.ceil(simulationTime / simulationStep / simulationBatchLength),
             'done': 0,
-            'basicStatistics': False, 'idleTimes': False, 'throughput': False,
-            'fullStatistics': False,
+            SimulationJob.BASIC_STATISTICS_FIELD_NAME: False,
+            SimulationJob.IDLE_TIMES_FIELD_NAME: False,
+            SimulationJob.THROUGHPUT_FIELD_NAME: False,
+            SimulationJob.FULL_STATISTICS_FIELD_NAME: False,
             'jobname': self.name
         })
 
         self.statistics = {'_id': self.id,
-            'average': None, 'stdeviation': None,
-            'averageSpeed': None,
-            'idleTimes': {},
-            'thoughput': [ ],
-            'finished': False }
+            SimulationJob.AVERAGE_FIELD_NAME: None,
+            SimulationJob.STDEVIATION_FIELD_NAME: None,
+            SimulationJob.AVERAGE_SPEED_FIELD_NAME: None,
+            SimulationJob.IDLE_TIMES_FIELD_NAME: {},
+            SimulationJob.THROUGHPUT_FIELD_NAME: []}
         self.db.statistics.insert(self.statistics)
 
 
@@ -305,41 +316,9 @@ class SimulationJob(object):
 
         self.definition = doc['definition']
 
-        p = self.db.progresses.find_one(self.id)
-        self.progress = p
+        self.progress = self.db.progresses.find_one(self.id)
         self.statistics = self.db.statistics.find_one(self.id)
 
-        # Update old documents
-        # updated = False
-        # if 'throughput' not in self.statistics:
-            # self.statistics['throughput'] = []
-            # updated = True
-
-        # if 'basicStatistics' not in p:
-            # if 'finished' in self.statistics:
-                # p['basicStatistics'] = self.statistics['finished']
-            # else:
-                # p['basicStatistics'] = False
-            # updated = True
-        # if 'idleTiems' not in p:
-            # p['idleTimes'] = len(self.statistics['idleTimes']) > 0
-            # updated = True
-        # if 'throughput' not in p:
-            # if 'throughput' in self.statistics:
-                # p['throughput'] = len(self.statistics['throughput']) > 0
-            # else:
-                # p['throughput'] = False
-            # updated = True
-        # if 'fullStatistics' not in p:
-            # p['fullStatistics'] = (p['basicStatistics'] and
-                                   # p['idleTimes'] and
-                                   # p['throughput'])
-            # updated = True
-        # if 'jobname' not in p:
-            # p['jobname'] = self.name
-            # updated = True
-
-        # if updated: self.save()
 
 
     def getStateDocumentId(self, time):
@@ -383,10 +362,66 @@ class SimulationJob(object):
     def save(self):
         "Saves progress and statistics to server."
         if self.progress is not None:
-             self.db.progresses.save(self.progress)
+            self.db.progresses.save(self.progress)
         if self.statistics is not None:
-             self.db.statistics.save(self.statistics)
+            self.db.statistics.save(self.statistics)
+            
+            
+    def saveBasicStats(self, average, stdeviation, averageSpeed):
+        # Save stats.
+        spec = {'_id': self.id}
+        sdoc = {'$set': {
+            SimulationJob.AVERAGE_FIELD_NAME:
+                self.round(average if not math.isnan(average) else -1),
+            SimulationJob.STDEVIATION_FIELD_NAME:
+                self.round(stdeviation if not math.isnan(stdeviation) else -1),
+            SimulationJob.AVERAGE_SPEED_FIELD_NAME:
+                self.round(averageSpeed if not math.isnan(averageSpeed) else -1)
+        }}
+        self.db.statistics.update(spec, sdoc)
+        # Save progress. 
+        pdoc = {'$set': {SimulationJob.BASIC_STATISTICS_FIELD_NAME: True}}
+        self.db.progresses.update(spec, pdoc)
+        self.progress[SimulationJob.BASIC_STATISTICS_FIELD_NAME] = True
+        self._updateFullStats()
+        
+        
+    def saveIdleTimes(self, data):
+        # Save stats.
+        spec = {'_id': self.id}
+        sdoc = {'$set': { SimulationJob.IDLE_TIMES_FIELD_NAME: data } }
+        self.db.statistics.update(spec, sdoc)
+        # Save progress. 
+        pdoc = {'$set': {SimulationJob.IDLE_TIMES_FIELD_NAME: True}}
+        self.db.progresses.update(spec, pdoc)
+        self.progress['idleTimes'] = True
+        self._updateFullStats()
+    
+    
+    def saveThroughput(self, data):
+        # Save stats.
+        spec = {'_id': self.id}
+        sdoc = {'$set': { SimulationJob.THROUGHPUT_FIELD_NAME: data } }
+        self.db.statistics.update(spec, sdoc)
+        # Save progress. 
+        pdoc = {'$set': {SimulationJob.THROUGHPUT_FIELD_NAME: True}}
+        self.db.progresses.update(spec, pdoc)
+        self.progress['idleTimes'] = True
+        self._updateFullStats()
+        
+        
+    def _updateFullStats(self):
+        # self.progress my be out of date, so get new.
+        spec = {'_id': self.id}
+        self.progress = self.db.progresses.find_one(spec)
+        if (self.progress[SimulationJob.BASIC_STATISTICS_FIELD_NAME] and
+            self.progress[SimulationJob.IDLE_TIMES_FIELD_NAME] and
+            self.progress[SimulationJob.THROUGHPUT_FIELD_NAME]):
+            
+            pdoc = {'$set': {SimulationJob.FULL_STATISTICS_FIELD_NAME: True}}
+            self.db.progresses.update(spec, pdoc)
 
+            
     def round(self, value):
         """Provides centralised way to round values for required precision.
 
