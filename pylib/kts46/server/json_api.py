@@ -89,6 +89,12 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
                     data = rpc.getJobStatistics(p,j, False)
+            elif functionName == 'modelDescription':
+                paramsMatch = re.match(r"/api/modelDescription/([-\w]+)/([-\w]+)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    data = rpc.getModelDescription(p,j)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',
