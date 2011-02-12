@@ -350,7 +350,7 @@ class SimulationJob(object):
         :returns: document id of state for specified time.
         :rtype: str
         """
-        return ",".join((self.name, time))
+        return ",".join((self.name, str(time)))
 
 
     def __contains__(self, key):

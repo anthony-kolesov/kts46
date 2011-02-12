@@ -122,3 +122,5 @@ class RPCServer:
     def getModelDescription(self, project, job):
         return self._status.getModelDescription(project, job)
         
+    def getModelState(self, project, job, time):
+        return self._status.getModelState(project, job, time)
