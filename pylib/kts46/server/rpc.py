@@ -19,7 +19,6 @@ import sys # for sys.exc_info()
 import logging
 import traceback
 from kts46.server.database import DatabaseServer
-from kts46.server.scheduler import SchedulerServer
 from kts46.server.status import StatusServer
 
 
@@ -27,7 +26,6 @@ class RPCServer:
     # Currently all subservers are used by delegating calls to them.
 
     def __init__(self, cfg):
-        self._scheduler = SchedulerServer(cfg)
         self._db = DatabaseServer(cfg)
         self._status = StatusServer(cfg)
         self._log = logging.getLogger(cfg.get('loggers', 'RPCServer'))
@@ -37,27 +35,6 @@ class RPCServer:
         self._log.info('Method: hello')
         msg = "Hello you too! This is XML-RPC server for kts46."
         return msg
-
-    # Scheduler functions.
-    def runJob(self, projectName, jobName):
-        self._log.info('Method: runJob %s %s', projectName, jobName)
-        self._scheduler.runJob(projectName, jobName)
-
-    def getJob(self, workerId):
-        self._log.info('Method: getJob %s', workerId)
-        return self._scheduler.getJob(workerId)
-
-    def reportStatus(self, workerId, state, lastUpdate):
-        self._log.info('Method: reportStatus %s %s %s', workerId, state, lastUpdate)
-        return self._scheduler.reportStatus(workerId, state, lastUpdate)
-
-    def getCurrentTasks(self):
-        self._log.info('Method: getCurrentTasks')
-        return self._scheduler.getCurrentTasks()
-
-    def restartTask(self, workerId, lastUpdate):
-        self._log.info('Method: restartTask %s %s', workerId, lastUpdate)
-        return self._scheduler.restartTask(workerId, lastUpdate)
 
     # Database functions.
     def getNewJobId(self, projectName):
