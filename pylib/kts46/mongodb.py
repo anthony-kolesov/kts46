@@ -155,8 +155,8 @@ class SimulationProject(object):
             self.db.info.insert({'_id':'project', 'name': name, 'v': 2})
             self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
             self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
+            self.db.cars.create_index([('job',pymongo.ASCENDING),('time',pymongo.ASCENDING)])
             self.db.states.create_index([('job',pymongo.ASCENDING),('time',pymongo.ASCENDING)])
-
 
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
