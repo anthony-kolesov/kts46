@@ -59,7 +59,9 @@ class SimpleSemaphore(object):
 
     def getDescriptionData(self):
         return {#'id': self.id,
-                'position': self.position
+                'position': self.position,
+                'green': self.greenDuration,
+                'red': self.redDuration
         }
 
     def getStateData(self):
@@ -80,6 +82,8 @@ class SimpleSemaphore(object):
         
     def load(self, description, state={}):
         self.position = description['position']
+        self.greenDuration = description['green']
+        self.redDuration = description['red']
         if 'id' in description: self.id = description['id']
         if 'state' in state: self.state = state['state']
         if 'lastSwitchTime' in state:
