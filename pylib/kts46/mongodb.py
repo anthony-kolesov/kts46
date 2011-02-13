@@ -377,6 +377,10 @@ class SimulationJob(object):
         s = self.db.states.find_one(id)
         if s is None:
             raise KeyError("There is no state with specified time: {0}.".format(key))
+        
+        carSpec = {'job': self.id, 'time': key}
+        carFields = ['pos', 'width', 'length', 'line']
+        s['cars'] = [x for x in self.db.cars.find(carSpec, carFields) ]
         return s
 
 

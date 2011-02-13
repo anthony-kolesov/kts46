@@ -373,22 +373,28 @@ var kts46 = (function($){
         
             var length = data.road.length,
                 width = data.road.width,
-                ratio = width / length,
-                efLength = c.attr('height') - margin*2,
-                efWidth = efLength * ratio;
+                efLength = c.attr('width') - margin*2,
+                ratio = efLength / length,
+                efWidth = width * ratio,
+                lineWidth = efWidth / data.road.lines;
             
             var drawModel = function(model, state) {
-                dc.clearRect(0, 0, efWidth + margin*2, efLength + margin*2);
+                dc.clearRect(0, 0, efLength + margin*2, efWidth + margin*2);
                 
                 dc.fillStyle = "rgb(200, 200, 200)";
-                dc.fillRect(margin, margin, efWidth, efLength);
+                dc.fillRect(margin, margin, efLength, efWidth);
             
-                drawTrafficLights(model.trafficLights, state ? state.trafficLights : undefined);
+                if (state) {
+                    drawTrafficLights(model.trafficLights, state.trafficLights);
+                    drawCars(state.cars);
+                } else {
+                    drawTrafficLights(model.trafficLights);
+                }
             };
             
             var drawTrafficLights = function(descr, state) {
                 $.each(descr, function(id, light){
-                    var position = (light.position / length) * efLength,
+                    var position = light.position * ratio,
                         color = "rgba(255, 255, 0, 0.8)";
                     if (state && state[id]) {
                         if (state[id].state === "r") {
@@ -398,7 +404,19 @@ var kts46 = (function($){
                         }
                     }
                     dc.fillStyle = color;
-                    dc.fillRect(margin - 1, margin + position, efWidth + 2, 3);
+                    dc.fillRect(margin + position, margin - 1, 2, efWidth + 2);
+                });
+            };
+            
+            var drawCars = function(cars) {
+                $.each(cars, function(index, car){
+                    var position = Math.floor(car.pos * ratio),
+                        color = "rgb(0, 0, 255)",
+                        carEfWidth = Math.ceil(car.width * ratio) + 1,
+                        carEfLength = Math.ceil(car.length * ratio) + 1,
+                        carMargin = Math.ceil(lineWidth * car.line);
+                    dc.fillStyle = color;
+                    dc.fillRect(margin + position, margin + carMargin, carEfLength, carEfWidth);
                 });
             };
             
@@ -408,9 +426,12 @@ var kts46 = (function($){
             var updateState = function(time){
                 $.getJSON( ['/api', 'modelState', proj, job, time +'/'].join("/") , function(stateData){
                     drawModel(data, stateData);
+                    $('#live-view .time').text(time);
                     time += data.simulationParameters.stepDuration;
+                    time = Math.round(time*10) / 10;
                     if (time <= data.simulationParameters.duration) {
-                        setTimeout(updateState.bind({},time), data.simulationParameters.stepDuration * 1000);
+                        var tid = setTimeout(updateState.bind({},time), data.simulationParameters.stepDuration * 1000);
+                        c.data('timer', tid);
                     }
                 });
             };
@@ -468,13 +489,16 @@ var kts46 = (function($){
         $("#live-view").dialog({
             resizable: false,
             height: 450,
-            width: 650,
+            width: 800,
             autoOpen: false,
             modal: true,
             buttons: {
-                Cancel: function() {
+                Close: function() {
                     $(this).dialog("close");
                 }
+            },
+            close: function() {
+                clearTimeout( $('#live-view canvas').data('timer') );
             }
         });
         
