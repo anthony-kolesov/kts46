@@ -54,34 +54,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         fileMatch = re.match(r"/(web/[^\?]*)(\?v=([0-9]\.?)+)?$", self.path)
         if fileMatch is not None:
             path = fileMatch.group(1)
-            if path.find("..") != -1:
-                self.send_response(400)
-                self.end_headers()
-                return
-
-            # Convert path to actual path on the disk.
-            path = os.path.join(self.server.filesDir, path)
-
-            if not os.path.exists(path):
-                self.send_response(404)
-                self.end_headers()
-                return
-            self.send_response(200)
-
-            # Specific check for cache manifests.
-            if path.find("cache-manifest") != -1:
-                self.send_header('Content-Type', "text/cache-manifest")
-            ext = os.path.splitext(path)[1]
-            if ext == '.js':
-                self.send_header('Content-Type', "text/javascript")
-            elif ext == '.css':
-                self.send_header('Content-Type', "text/css")
-            self.end_headers()
-
-            f = open(path)
-            lines = f.readlines()
-            f.close()
-            self.wfile.writelines(lines)
+            self.getStaticFile(path)
             return
 
         match = re.match(r"/api/(\w+)/", self.path)
@@ -118,6 +91,19 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
                     data = rpc.getJobStatistics(p,j, False)
+            elif functionName == 'modelDescription':
+                paramsMatch = re.match(r"/api/modelDescription/([-\w]+)/([-\w]+)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    data = rpc.getModelDescription(p,j)
+            elif functionName == 'modelState':
+                paramsMatch = re.match(r"/api/modelState/([-\w]+)/([-\w]+)/(\d+(\.\d+)?)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    t = float(paramsMatch.group(3))
+                    data = rpc.getModelState(p, j, t)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',
@@ -131,6 +117,36 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(data))
 
+    
+    def getStaticFile(self, path):
+        if path.find("..") != -1:
+            self.send_response(400)
+            self.end_headers()
+            return
+
+        # Convert path to actual path on the disk.
+        path = os.path.join(self.server.filesDir, path)
+
+        if not os.path.exists(path):
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+
+        # Specific check for cache manifests.
+        if path.find("cache-manifest") != -1:
+            self.send_header('Content-Type', "text/cache-manifest")
+        ext = os.path.splitext(path)[1]
+        if ext == '.js':
+            self.send_header('Content-Type', "text/javascript")
+        elif ext == '.css':
+            self.send_header('Content-Type', "text/css")
+        self.end_headers()
+
+        f = open(path)
+        lines = f.readlines()
+        f.close()
+        self.wfile.writelines(lines)
 
     def getServerStatus2(self, rpc, tqx):
         #{"project": "new_project_1", "total": 36000.0, "done": 36000, "name": "exp1-s1"}

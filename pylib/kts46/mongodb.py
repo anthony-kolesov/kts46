@@ -155,8 +155,8 @@ class SimulationProject(object):
             self.db.info.insert({'_id':'project', 'name': name, 'v': 2})
             self.db.cars.create_index([('job',pymongo.ASCENDING),('state',pymongo.ASCENDING)])
             self.db.cars.create_index([('job',pymongo.ASCENDING),('carid',pymongo.ASCENDING)])
+            self.db.cars.create_index([('job',pymongo.ASCENDING),('time',pymongo.ASCENDING)])
             self.db.states.create_index([('job',pymongo.ASCENDING),('time',pymongo.ASCENDING)])
-
 
     def addJob(self, jobName, definition):
         """Adds job with specified YAML definition to project.
@@ -329,7 +329,7 @@ class SimulationJob(object):
         :returns: document id of state for specified time.
         :rtype: str
         """
-        return ",".join((self.name, time))
+        return ",".join((self.name, str(time)))
 
 
     def __contains__(self, key):
@@ -356,6 +356,10 @@ class SimulationJob(object):
         s = self.db.states.find_one(id)
         if s is None:
             raise KeyError("There is no state with specified time: {0}.".format(key))
+        
+        carSpec = {'job': self.id, 'time': key}
+        carFields = ['pos', 'width', 'length', 'line']
+        s['cars'] = [x for x in self.db.cars.find(carSpec, carFields) ]
         return s
 
 

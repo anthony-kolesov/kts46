@@ -254,7 +254,7 @@ var kts46 = (function($){
     };
 
 
-    /* Runs specified action on all selected projects.
+    /* Runs specified action on all selected jobs.
      * :param action: function(projectName, jobName)
      */
     var forSelectedJobs = function(action) {
@@ -267,6 +267,20 @@ var kts46 = (function($){
                 j = table.getValue(jobs[i], jobColumnId);
             action(p, j);
         }
+    };
+    
+    
+    /* Runs specified action for first selected job.
+     * :param action: function(projectName, jobName)
+     */
+    var forFirstSelectedJob = function(action) {
+        var jobs = getSelectedJobs(),
+            table = $(document).data('google-table-view'),
+            i, l;
+        if (typeof table === "undefined") return;
+        var p = table.getValue(jobs[0], projectColumnId),
+            j = table.getValue(jobs[0], jobColumnId);
+        action(p, j);
     };
 
 
@@ -347,6 +361,89 @@ var kts46 = (function($){
         var table = $(document).data('google-table');
         table.draw(view, {showRowNumber: true, allowHtml: true, sortColumn: 1});
     };
+    
+    var showLiveView = function() {
+        $('#live-view').dialog('open');
+        var c = $('#live-view canvas');
+        var dc = c[0].getContext("2d");
+        
+        var margin = 10;
+        
+        var drawModel = function(proj, job, data) {
+        
+            var length = data.road.length,
+                width = data.road.width,
+                efLength = c.attr('width') - margin*2,
+                ratio = efLength / length,
+                efWidth = width * ratio,
+                lineWidth = efWidth / data.road.lines;
+            
+            var drawModel = function(model, state) {
+                dc.clearRect(0, 0, efLength + margin*2, efWidth + margin*2);
+                
+                dc.fillStyle = "rgb(200, 200, 200)";
+                dc.fillRect(margin, margin, efLength, efWidth);
+            
+                if (state) {
+                    drawTrafficLights(model.trafficLights, state.trafficLights);
+                    drawCars(state.cars);
+                } else {
+                    drawTrafficLights(model.trafficLights);
+                }
+            };
+            
+            var drawTrafficLights = function(descr, state) {
+                $.each(descr, function(id, light){
+                    var position = light.position * ratio,
+                        color = "rgba(255, 255, 0, 0.8)";
+                    if (state && state[id]) {
+                        if (state[id].state === "r") {
+                            color = "rgba(255, 0, 0, 0.8)";
+                        } else if (state[id].state === "g") {
+                            color = "rgba(0, 230, 0, 0.8)";
+                        }
+                    }
+                    dc.fillStyle = color;
+                    dc.fillRect(margin + position, margin - 1, 2, efWidth + 2);
+                });
+            };
+            
+            var drawCars = function(cars) {
+                $.each(cars, function(index, car){
+                    var position = Math.floor(car.pos * ratio),
+                        color = "rgb(0, 0, 255)",
+                        carEfWidth = Math.ceil(car.width * ratio) + 1,
+                        carEfLength = Math.ceil(car.length * ratio) + 1,
+                        carMargin = Math.ceil(lineWidth * car.line);
+                    dc.fillStyle = color;
+                    dc.fillRect(margin + position, margin + carMargin, carEfLength, carEfWidth);
+                });
+            };
+            
+            // Lights.
+            drawModel(data);
+            
+            var updateState = function(time){
+                $.getJSON( ['/api', 'modelState', proj, job, time +'/'].join("/") , function(stateData){
+                    drawModel(data, stateData);
+                    $('#live-view .time').text(time);
+                    time += data.simulationParameters.stepDuration;
+                    time = Math.round(time*10) / 10;
+                    if (time <= data.simulationParameters.duration) {
+                        var tid = setTimeout(updateState.bind({},time), data.simulationParameters.stepDuration * 1000);
+                        c.data('timer', tid);
+                    }
+                });
+            };
+            updateState(0.0);
+        };
+        
+        forFirstSelectedJob(function(p, j){
+            $.getJSON( ['/api', 'modelDescription', p, j +'/'].join("/") ,
+                drawModel.bind({}, p, j) );
+        });
+        
+    };
 
 
     // google table
@@ -379,12 +476,33 @@ var kts46 = (function($){
             .button({text: false,icons: {primary:"ui-icon-trash"}})
             .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
         $('#show-statistics').button().click(showStatistics);
+        $('#show-live-view').button().click(showLiveView);
 
         /* Project list effects. */
         $('#projects-list').selectable({
             selected: handleProjectSelected,
             unselected: handleProjectUnselected
         });
+        
+        
+        // Create live view dialog.
+        $("#live-view").dialog({
+            resizable: false,
+            height: 450,
+            width: 800,
+            autoOpen: false,
+            modal: true,
+            buttons: {
+                Close: function() {
+                    $(this).dialog("close");
+                }
+            },
+            close: function() {
+                clearTimeout( $('#live-view canvas').data('timer') );
+            }
+        });
+        
+        
     });
 
     return {
