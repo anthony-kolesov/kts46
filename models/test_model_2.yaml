@@ -1,7 +1,7 @@
 simulationParameters:
-    duration: 90
+    duration: 900
     stepDuration: 0.2
-    batchLength: 50
+    batchLength: 100
 
 
 modelParameters: 
@@ -13,7 +13,7 @@ modelParameters:
 road:
     length: 1677
     width: 25
-    lines: 3
+    lines: 2
 
 trafficLights:
     "1":
