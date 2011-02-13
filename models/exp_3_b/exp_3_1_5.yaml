@@ -18,10 +18,10 @@ road:
 trafficLights:
     "1":
         position: 518
-        greenDuration: 60
-        redDuration: 34
+        green: 60
+        red: 34
     "2":
         position: 1004
-        greenDuration: 60
-        redDuration: 34
+        green: 60
+        red: 34
 
