@@ -102,7 +102,7 @@ class Worker:
             self.sig = task['sig']
             
             try:
-                self.log.info("Accepting task")
+                self.log.debug("Accepting task")
                 self.sig = self.server.acceptTask(self.workerId, self.sig)['sig']
             except jsonRpcClient.RPCException as ex:
                 self.log.error("Couldn't accept task from server: %s", str(ex))
