@@ -1,7 +1,7 @@
 simulationParameters:
     duration: 7200
     stepDuration: 0.2
-    batchLength: 200
+    batchLength: 1000
 
 
 modelParameters: 
@@ -18,10 +18,10 @@ road:
 trafficLights:
     "1":
         position: 518
-        greenDuration: 60
-        redDuration: 1
+        green: 60
+        red: 1
     "2":
         position: 1004
-        greenDuration: 60
-        redDuration: 1
+        green: 60
+        red: 1
 
