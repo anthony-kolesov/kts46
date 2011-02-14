@@ -60,7 +60,7 @@ var kts46 = (function($){
 
         $("#delete-project-confirm").dialog({
             resizable: false,
-            height: 200,
+            height: 250,
             modal: true,
             buttons: {
                 "Delete project": function() {
