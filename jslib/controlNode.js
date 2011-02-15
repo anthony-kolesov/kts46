@@ -9,7 +9,7 @@ var cfg = require('config')('ControlNode', {
   port: 46212,
   address: "",
   jsonRpcPath: "/jsonrpc",
-  debugRpc: true
+  debugRpc: false
 });
 
 // Local variables
