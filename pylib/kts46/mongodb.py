@@ -464,11 +464,11 @@ class StateStorage(object):
         """
         self.db = job.db
         self.job = job
-        self.buffer = []
-        if batchLength is None:
-            self.bufferSize = job.simulationParameters['batchLength']
-        else:
-            self.bufferSize = batchLength
+        #self.buffer = []
+        #if batchLength is None:
+        #    self.bufferSize = job.simulationParameters['batchLength']
+        #else:
+        #    self.bufferSize = batchLength
         
     def repair(self, currentTime):
         """If simulation was aborted in the process some states and cars will be
@@ -495,53 +495,33 @@ class StateStorage(object):
         :param data: model state that will be saved.
         :type data: dic
         """
-        d = dict(data)
+        d = dict()
         d['time'] = time
-        d['job'] = self.job.name
+        d['job'] = self.job.id
         d['_id'] = self.job.getStateDocumentId(str(time))
+        d['data'] = data
 
         cars = []
-        for carId, car in d['cars'].items():
+        for carId, car in data['cars'].items():
             car['_id'] = "{0};{1}".format(d['_id'], carId)
-            car['job'] = d['job']
-            car['time'] = d['time']
+            car['job'] = self.job.id
+            car['time'] = time
             car['carid'] = carId
             cars.append(car)
-        del d['cars']
-        del d['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
+        del data['cars']
+        del data['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
         
         self.db.states.insert(d, safe=True)
         self.db.cars.insert(cars, safe=True)
-        # self.job.db.progresses.update({'_id': self.job.id}, {'$inc': {'done': 1}}, safe=True)
 
 
     def dump(self):
         """Dump states saved in a buffers to server. This method is called by
         ``add`` when length of buffer is more than batchLength and by
-        ``close`` method."""
-        if len(self.buffer) > 0:
-            statesAdded = len(self.buffer)
-            while len(self.buffer) > 0:
-                cars = []
-                states = []
-                for state in self.buffer[:self.bufferSize]:
-                    for carId, car in state['cars'].items():
-                        car['_id'] = "{0};{1}".format(state['_id'], carId)
-                        car['job'] = state['job']
-                        car['time'] = state['time']
-                        car['carid'] = carId
-                        cars.append(car)
-                    del state['cars']
-                    del state['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
-                    states.append(state)
+        ``close`` method. Currently unused and unimplemented."""
+        pass
 
-                self.db.states.insert(states, safe=True)
-                self.db.cars.insert(cars, safe=True)
-                self.buffer = self.buffer[self.bufferSize:]
-            
 
     def close(self):
-        "Save all unsaved data to server."
+        "Save all unsaved data to server. Currently unused."
         pass
-        #self.dump()
-        #self.job.save()

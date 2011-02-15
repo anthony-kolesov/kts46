@@ -67,15 +67,19 @@ class SimulationServer(object):
         stepsN = duration / step
         stepsCount = 0
 
+        # if is start then save it as initial state.
+        if t == 0.0:
+            saver.add(round(t, 3), data = model.getStateData())
+        
         # Run.
         while t <= duration and stepsCount < batchLength:
             model.run_step(stepAsMs)
             stepsCount += 1
             data = model.getStateData()
-            data['job'] = jobId
+            #data['job'] = jobId
             # Round time to milliseconds
-            saver.add(round(t, 3), data)
             t += step
+            saver.add(round(t, 3), data)
 
         # Finalize.
         job.currentFullState = model.getStateData()
