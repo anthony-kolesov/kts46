@@ -82,6 +82,9 @@ ul {
     padding: 0px 2px;
 }
 
+#last-update-time {
+    float: right;
+}
 
 #progress-table-2 {
     top: 0px;
