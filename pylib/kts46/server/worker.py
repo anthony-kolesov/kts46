@@ -72,8 +72,8 @@ class Worker:
         self.startNotificationThread()
 
         # Create db storage.
-        #self.storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'))
-        self.storage = Storage(self.cfg.get('mongodb', 'host'))
+        self.storage = None
+        #self.storage = Storage(self.cfg.get('mongodb', 'host'))
 
     def run(self):
         "Runs a worker loop."
@@ -100,6 +100,13 @@ class Worker:
             jobName = task['job']
             # Report status isn't enabled at this time, so no need to lock.
             self.sig = task['sig']
+            
+            # Create storage
+            dbHost = task['databases'][0]['host']
+            dbPort = task['databases'][0]['port']
+            if (self.storage is None or self.storage.host != dbHost or
+                    self.storage.port != dbPort):
+                self.storage = Storage(dbHost, dbPort)
             
             try:
                 self.log.debug("Accepting task")

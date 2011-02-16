@@ -51,6 +51,8 @@ class Storage(object):
         self.log.debug("Creating connection to Mongodb server: %s:%i.", host, port)
         self.server = pymongo.Connection(host, port)
         self.log.info("Connection created: %s:%i.", host, port)
+        self.host = host
+        self.port = port
 
 
     def createProject(self, projectName):
