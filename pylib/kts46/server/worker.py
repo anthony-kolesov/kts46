@@ -134,7 +134,7 @@ class Worker:
                 stServer = StatisticsServer(self.cfg)
                 stServer.calculateIdleTimes(job)
             elif task['type'] == 'throughput':
-                self.log.info('Starting tgroughput statistics task: {0}.{1}.'.format(projectName, jobName))
+                self.log.info('Starting throughput statistics task: {0}.{1}.'.format(projectName, jobName))
                 stServer = StatisticsServer(self.cfg)
                 stServer.calculateThroughput(job)
 
