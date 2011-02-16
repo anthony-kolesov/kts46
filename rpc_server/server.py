@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-    Description:
-    Runs all kts46 server processes.
-"""
+"""Runs all kts46 server processes."""
 
 import logging
 import signal
@@ -80,6 +77,8 @@ def configureCmdOptions():
                        help='Worker id. Must be unique in a network of workers.')
     cmdOpts.add_option('--cfg', action='store', dest='cfg', default='',
                        help="Configuration file that will override default.ini and local.ini." )
+    cmdOpts.add_option('-q', '--quite', action='store', dest='quite', default=None,
+                       help='Suppress all output to console.')
     
     return cmdOpts.parse_args(sys.argv[1:])
 
@@ -91,6 +90,8 @@ if __name__ == '__main__':
     configFiles = []
     if len(options.cfg) != 0: configFiles.append(options.cfg) 
     cfg = kts46.utils.getConfiguration(configFiles)
+    if options.quite is not None:
+        cfg.set('log', 'quite', options.quite)
     
     # Logging
     kts46.utils.configureLogging(cfg)
