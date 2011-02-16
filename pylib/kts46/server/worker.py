@@ -67,7 +67,6 @@ class Worker:
         self.notificationSleepTimeout = cfg.getint('scheduler', 'notifyInterval')
 
         # Create server proxy.
-        # self.server = kts46.utils.getRPCServerProxy(cfg)
         self.server = kts46.utils.getJsonRpcClient(cfg)
         self.startNotificationThread()
 
@@ -100,14 +99,14 @@ class Worker:
             jobName = task['job']
             # Report status isn't enabled at this time, so no need to lock.
             self.sig = task['sig']
-            
+
             # Create storage
             dbHost = task['databases'][0]['host']
             dbPort = task['databases'][0]['port']
             if (self.storage is None or self.storage.host != dbHost or
                     self.storage.port != dbPort):
                 self.storage = Storage(dbHost, dbPort)
-            
+
             try:
                 self.log.debug("Accepting task")
                 self.sig = self.server.acceptTask(self.workerId, self.sig)['sig']
@@ -116,7 +115,8 @@ class Worker:
                 time.sleep(sleepTime) # Wait some time for new job.
                 continue
 
-            self.notificationSleepTimeout = self.cfg.getfloat('worker', 'notificationInterval') # task.get('timeout')
+            # interval is provided in milliseconds
+            self.notificationSleepTimeout = task['notificationInterval'] / 1000
             self.enableNotificationEvent.set() # Start notifying scheduler about our state.
             job = self.getJob(projectName, jobName)
 
