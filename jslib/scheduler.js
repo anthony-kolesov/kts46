@@ -21,7 +21,8 @@ var mongodb = require('../jslib/mongodb'),
 // Configuration parameters and default values
 var config = require('config')('Scheduler', {
   dbHost: '192.168.1.5',
-  dbPort: 27017
+  dbPort: 27017,
+  notificationInterval: 5000
 });
 
 
@@ -199,6 +200,12 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         task['lastUpdate'] = new Date();
         task['startTime'] = task['lastUpdate'];
         task['sig'] = task['lastUpdate'].toJSON();
+        
+        // Set notification interval only if nothing has set it already.
+        if (!task.hasOwnProperty("notificationInterval")) {
+            task.notificationInterval = config.notificationInterval;
+        }
+        
         this.waitingActivation[workerId] = task;
     }
     response.response(task);

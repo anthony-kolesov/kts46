@@ -232,6 +232,11 @@ Task
 
     Integer number to specify starting state for simulation. This attribure
     makes sense only for simulation tasks and doesn't provided for other tasks.
+    
+.. js:attribute:: task.notificationInterval
+    
+    Integer value that specifies number of millisecond that is the timer
+    interval of how often worker must notify scheduler that it is alive.
 
 
 Constants
