@@ -197,6 +197,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         task['databases'] = [{host: this.mongodbAddress[0],
                               port: this.mongodbAddress[1]}];
         task['lastUpdate'] = new Date();
+        task['startTime'] = task['lastUpdate'];
         task['sig'] = task['lastUpdate'].toJSON();
         this.waitingActivation[workerId] = task;
     }
