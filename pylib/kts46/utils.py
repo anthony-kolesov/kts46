@@ -21,7 +21,6 @@ from datetime import timedelta
 import jsonRpcClient
 
 
-
 def getConfiguration(customConfigFiles=[]):
     """Returns ``SafeConfigParser`` for application. Loads configuration from
     default files and custom application files if they are provided.
@@ -46,11 +45,12 @@ def configureLogging(cfg):
     """
     logging.getLogger('').setLevel(logging.INFO)
 
-    # Define a log handler for console.
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setLevel(logging.INFO)
-    consoleHandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
-    logging.getLogger('kts46').addHandler(consoleHandler)
+    if not cfg.getboolean('log', 'quite'):
+        # Define a log handler for console.
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setLevel(logging.INFO)
+        consoleHandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
+        logging.getLogger('kts46').addHandler(consoleHandler)
 
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
