@@ -111,3 +111,26 @@ def str2timedelta(value):
     days, rest = value.split('d')
     seconds, mcs = rest.split('s')
     return timedelta(days=int(days), seconds=int(seconds), microseconds=int(mcs))
+
+    
+def getMemoryUsage():
+    sizes = {
+        'kB': 1024, 'KB': 1024,
+        'mB': 1024*1024, 'MB': 1024*1024,
+        'gB': 1024*1024*1024, 'GB': 1024*1024*1024
+    }
+
+    result = {}
+    path = '/proc/{0}/status'.format(os.getpid())
+    with open(path, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        vmpeakMatch = re.match(r'VmPeak:[\s]+([\d]+ [kKmM]B)', line)
+        if vmpeakMatch is not None:
+            result['vmPeak'] = int(vmpeakMatch.group(1)) * sizes[ vmpeakMatch.group(2) ]
+            
+        vmRssMatch = re.match(r'VmRSS:[\s]+([\d]+ [kKmM]B)', line)
+        if vmRssMatch is not None:
+            result['vmRSS'] = int(vmRssMatch.group(1)) * sizes[ vmRssMatch.group(2) ]
+            
+    return result

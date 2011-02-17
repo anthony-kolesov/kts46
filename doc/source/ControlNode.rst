@@ -131,13 +131,14 @@ Methods
         with task. Worker should call :js:func:`getTask` again for a new job.
 
 
-.. js:function:: taskFinished(workerId, sig)
+.. js:function:: taskFinished(workerId, sig[, statistics])
 
     Notifies scheduler that worker has finished task. Scheduler may start
     following tasks if there are any.
 
     :param string workerId: Worker unique identifier.
     :param string sig: Unique signature of task state.
+    :param statistics: Statistics of execution. Type: :ref:`kts46-cn-workerStatisticsType`.
     :returns: "success" string. May become a dictionary in future.
     :throws InvalidWorkerId:
         There is no running task for this worker.
@@ -239,6 +240,8 @@ task
     interval of how often worker must notify scheduler that it is alive.
 
 
+.. _kts46-cn-workerStatisticsType:
+
 workerStatistics
 ----------------
 
@@ -263,13 +266,9 @@ workerStatistics
 
     ``[number]`` Peak value of virtual memory usage.
 
-.. js:attribute:: workerStatistics.averageVmRSS
+.. js:attribute:: workerStatistics.vmRSS
 
-    ``[number]`` Average value of used resident memory.
-
-.. js:attribute:: workerStatistics.maxVmRss
-
-    ``[number]`` Peak value of used resident memory.
+    ``[number]`` Used resident memory at end of task.
 
 
 
