@@ -88,26 +88,6 @@ RPCServer
     :members:
 
 
-scheduler
----------
-.. automodule:: kts46.server.scheduler
-
-SchedulerServer
-~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerServer
-    :members:
-
-SchedulerException
-~~~~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerException
-    :members:
-
-SchedulerManager
-~~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerManager
-    :members:
-
-
 status
 ------
 .. automodule:: kts46.server.status
