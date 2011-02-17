@@ -194,7 +194,7 @@ Types
 
 .. _kts46-cn-taskType:
 
-Task
+task
 ----
 
 .. js:attribute:: task.empty
@@ -232,11 +232,45 @@ Task
 
     Integer number to specify starting state for simulation. This attribure
     makes sense only for simulation tasks and doesn't provided for other tasks.
-    
+
 .. js:attribute:: task.notificationInterval
-    
+
     Integer value that specifies number of millisecond that is the timer
     interval of how often worker must notify scheduler that it is alive.
+
+
+workerStatistics
+----------------
+
+.. js:attribute:: workerStatistics.project
+
+    ``[string]`` Name of task project.
+
+.. js:attribute:: workerStatistics.job
+
+    ``[string]`` Name of task job.
+
+.. js:attribute:: workerStatistics.taskType
+
+    ``[string]`` Type of task.
+
+.. js:attribute:: workerStatistics.executionTime
+
+    ``[number]`` Number of seconds between start of task execution and its end. This value is
+    calculated by scheduler, not worker.
+
+.. js:attribute:: workerStatistics.vmPeak
+
+    ``[number]`` Peak value of virtual memory usage.
+
+.. js:attribute:: workerStatistics.averageVmRSS
+
+    ``[number]`` Average value of used resident memory.
+
+.. js:attribute:: workerStatistics.maxVmRss
+
+    ``[number]`` Peak value of used resident memory.
+
 
 
 Constants
