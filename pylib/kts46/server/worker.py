@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import os
 import threading
 import time
 import uuid
@@ -138,6 +139,8 @@ class Worker:
                 stServer = StatisticsServer(self.cfg)
                 stServer.calculateThroughput(job)
 
+            statistics = kts46.utils.getMemoryUsage()
+                
             # Notify server.
             # Lock here so if condition in sync thread will be correct.
             self.lastUpdateLock.acquire()
@@ -146,7 +149,7 @@ class Worker:
             while not finishedSent:
                 try:
                     #self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
-                    self.server.taskFinished(self.workerId, self.sig)
+                    self.server.taskFinished(self.workerId, self.sig, statistics)
                     finishedSent = True
                 except SocketException, msg:
                     self.log.error("Connection to RPC server failed. Waiting for it.")
