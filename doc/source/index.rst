@@ -15,6 +15,7 @@ Contents:
     ControlNode.rst
     kts46.rst
     jsonRpcClient.rst
+    model.rst
 
 Indices and tables
 ==================
