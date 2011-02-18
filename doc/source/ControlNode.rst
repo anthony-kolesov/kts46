@@ -138,7 +138,8 @@ Methods
 
     :param string workerId: Worker unique identifier.
     :param string sig: Unique signature of task state.
-    :param statistics: Statistics of execution. Type: :ref:`kts46-cn-workerStatisticsType`.
+    :param statistics:
+        Statistics of execution. Type: :ref:`kts46-cn-workerStatisticsType`.
     :returns: "success" string. May become a dictionary in future.
     :throws InvalidWorkerId:
         There is no running task for this worker.
@@ -247,29 +248,36 @@ workerStatistics
 
 .. js:attribute:: workerStatistics.project
 
-    ``[string]`` Name of task project.
+    ``[string]`` Name of task project. This property is set by scheduler.
 
 .. js:attribute:: workerStatistics.job
 
-    ``[string]`` Name of task job.
-
+    ``[string]`` Name of task job. This property is set by scheduler.
+    
 .. js:attribute:: workerStatistics.taskType
 
-    ``[string]`` Type of task.
-
+    ``[string]`` Name of task type. This proeprty is set by scheduler.
+    
 .. js:attribute:: workerStatistics.executionTime
 
     ``[number]`` Number of seconds between start of task execution and its end. This value is
     calculated by scheduler, not worker.
+    
+.. js:attribute:: workerStatistics.hostName
+
+    ``[string]`` Name of host on which worker is started.
 
 .. js:attribute:: workerStatistics.vmPeak
 
-    ``[number]`` Peak value of virtual memory usage.
+    ``[number]`` Peak value of virtual memory usage in MiB.
 
 .. js:attribute:: workerStatistics.vmRSS
 
-    ``[number]`` Used resident memory at end of task.
+    ``[number]`` Used resident memory at end of task in MiB.
+    
+.. js:attribute:: workerStatistics.version
 
+    Version of worker.
 
 
 Constants
