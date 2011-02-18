@@ -92,25 +92,31 @@ class Car(object):
 
     def getDistanceToLeadingCar(self, line=None):
         """Get distance (in meters) to the leading car. If there is not leading
-        car then negative value will be returned."""
+        car then None value will be returned."""
         if line is None:
             line = self.line
         leadingCar = self.model.getNearestCar(self.position, line)
         if leadingCar is not None:
             return leadingCar.position - self.position
         else:
-            return -1
+            return None
     
     def getDistanceToFollowingCar(self, line=None):
-        """Get distance (in meters) to the following car. If there is not following
-        car then negative value will be returned."""
+        """Get distance (in meters) to the following car. If there is not
+        following car then None value will be returned. Note that car which
+        front is between current car front and rear is considered following. So
+        this function will return distance between cars fronts. To check for
+        safeDistanceRear one must negate self.length from the result.
+        """
         if line is None:
             line = self.line
+        # Get distances between cars fronts, so car that is a the same level
+        # will be like following.
         followingCar = self.model.getFollowingCar(self.position, line)
         if followingCar is not None:
-            return self.position - self.length - followingCar.position
+            return self.position - followingCar.position
         else:
-            return -1
+            return None
 
     def chooseBestLine(self):
         """Chooses best line for current car on the basis of distance to leading
@@ -121,27 +127,34 @@ class Car(object):
             return self.line
         
         currentDistance = self.getDistanceToLeadingCar()
-        rightDistance = self.canChangeLine(self.line - 1) if self.line > 0 else -1
-        leftDistance = self.canChangeLine(self.line + 1) if self.line + 1 < self.road.lines else -1
+        rightDistance = self.canChangeLine(self.line - 1) if self.line > 0 else None
+        leftDistance = self.canChangeLine(self.line + 1) if self.line + 1 < self.road.lines else None
         
         maxLine = self.line
         maxDistance = currentDistance
-        # First try right.
-        if rightDistance > 0 and rightDistance > maxDistance:
+        # First try left.
+        if leftDistance is not None and leftDistance > maxDistance:
+            maxLine = self.line + 1
+            maxDistance = leftDistance
+        if rightDistance is not None and rightDistance > maxDistance:
             maxLine = self.line - 1
             maxDistance = rightDistance
-        if leftDistance > 0 and leftDistance > maxDistance:
-            maxLine = self.line + 1
-            #maxDistance = leftDistance
         
         return maxLine
         
     def canChangeLine(self, targetLine):
-        "Returns distance to leading car if possible or negative value if isn't possible."
+        """Determines whether car can move to specified line with regard to
+        safe distances.
+        
+        :param int targetLine: Line for which to perform check.
+        :returns:
+            distance to leading car if possible or None value if isn't possible.
+        :rtype: float
+        """
         leading = self.getDistanceToLeadingCar(targetLine)
-        if leading > 0 and leading < self.model.params.safeDistance:
-            return -1
+        if leading is None or leading < self.model.params.safeDistance:
+            return None
         following = self.getDistanceToFollowingCar(targetLine)
-        if following > 0 and following < self.model.params.safeDistanceRear:
-            return -1
+        if following is None or following - self.length < self.model.params.safeDistanceRear:
+            return None
         return leading

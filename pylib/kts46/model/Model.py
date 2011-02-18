@@ -196,7 +196,8 @@ class Model(object):
             pos = i.position
             if hasattr(i, "length"):
                 pos -= i.length
-            if pos > position and ((current is None) or current_pos > pos):
+            # >= is very important so car won't try to go through another car.
+            if pos >= position and ((current is None) or current_pos > pos):
                 current = i
                 current_pos = pos
         return current
