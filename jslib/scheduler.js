@@ -75,7 +75,7 @@ Scheduler.prototype.taskExists = function(projectName, jobName, taskType) {
 
 
 // Adds required tasks to queue if required.
-Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes) {
+Scheduler.prototype.addTask = function(response, projectName, jobName) {
     var handleHasJob = function(job){
         if (job === null) {
             response.error({type: 'JobNotFound'});
@@ -96,7 +96,6 @@ Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes
             }
             return a;
         };
-
         if (job.done < job.totalSteps) {
             if (!this.taskExists(projectName, jobName, taskType.simulation)) {
                 this.waitingQueue.push(getTask(taskType.simulation));
@@ -121,14 +120,14 @@ Scheduler.prototype.addTask = function(response, projectName, jobName, taskTypes
                                     taskType:taskType.throughput});
                 return;
             }
-
+            
             if (job.basicStatistics === false) {
                 this.waitingQueue.push(getTask(taskType.basicStatistics));
             }
             if (job.idleTimes === false) {
                 this.waitingQueue.push(getTask(taskType.idleTimes));
             }
-            if (job.throughtput === false) {
+            if (job.throughput === false) {
                 this.waitingQueue.push(getTask(taskType.throughput));
             }
         } else {
@@ -187,6 +186,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         if (taskTypes.indexOf(it.type) !== -1) {
             task = it;
             this.waitingQueue.splice(i, 1);
+            break;
         }
     }
     
@@ -241,6 +241,7 @@ Scheduler.prototype.rejectTask = function(response, workerId, sig) {
 
 
 Scheduler.prototype.taskFinished = function(response, workerId, sig) {
+    
     // Check task existence.
     if (!(workerId in this.runningTasks)) {
         response.error({type:'InvalidWorkerId'});
@@ -260,8 +261,10 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig) {
         startNext = true;
     }
 
-    if (startNext)
+    if (startNext) {
         process.nextTick(this.addTask.bind(this, response, task.project, task.job));
+    }
+    response.response("success");
 };
 
 
@@ -326,6 +329,15 @@ Scheduler.prototype.restartTasks = function(response, tasks) {
     response.response({'restarted': restarted});
 };
 
+
+Scheduler.prototype.getStatus = function() {
+    return {
+        "mongodbAddress": this.mongodbAddress,
+        "waitingQueue": this.waitingQueue,
+        "waitingActivation": this.waitingActivation,
+        "runningsTasks": this.runningTasks,
+    };
+}
 
 // All exports are in one place.
 exports.Scheduler = Scheduler;

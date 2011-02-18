@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+from random import random
 from datetime import timedelta
 from uuid import uuid4
 import kts46.utils
@@ -34,7 +34,8 @@ class SimpleSemaphore(object):
         self.id = str(id if (id is not None) else uuid4())
         self.position = position
         self.lastSwitchTime = timedelta()
-        self.state = SimpleSemaphore.__red_state
+        # Original state is random.
+        self.state = SimpleSemaphore.__red_state if random() > 0.5 else SimpleSemaphore.__red_state
         self.greenDuration = 5
         self.redDuration = 5
 
@@ -59,7 +60,9 @@ class SimpleSemaphore(object):
 
     def getDescriptionData(self):
         return {#'id': self.id,
-                'position': self.position
+                'position': self.position,
+                'green': self.greenDuration,
+                'red': self.redDuration
         }
 
     def getStateData(self):
@@ -77,11 +80,16 @@ class SimpleSemaphore(object):
             effValue = timedelta(seconds=value)
         object.__setattr__(self, name, effValue)
 
-        
+
     def load(self, description, state={}):
         self.position = description['position']
+        self.greenDuration = description['green']
+        self.redDuration = description['red']
+        # Load color from description if available.
+        if 'state' in description: self.state = description['state']
         if 'id' in description: self.id = description['id']
+
+        # Load current state of light.
         if 'state' in state: self.state = state['state']
         if 'lastSwitchTime' in state:
             self.lastSwitchTime = kts46.utils.str2timedelta(state['lastSwitchTime'])
-    

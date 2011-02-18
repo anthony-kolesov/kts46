@@ -22,7 +22,7 @@ import urllib
 from socket import error as SocketException
 import gviz_api
 import kts46.utils
-
+import jsonRpcClient
 
 JSON_CONTENT_TYPE = 'application/json'
 
@@ -31,12 +31,14 @@ class JSONApiServer:
 
     def __init__(self, cfg):
         self.server = kts46.utils.getRPCServerProxy(cfg)
+        self.jsonrpc = kts46.utils.getJsonRpcClient(cfg)
         self.cfg = cfg
 
     def serve_forever(self):
         server_address = ('', self.cfg.getint('http-api', 'port'))
         httpd = BaseHTTPServer.HTTPServer(server_address, JSONApiRequestHandler)
         httpd.rpc_server = self.server
+        httpd.jsonrpc = self.jsonrpc
         httpd.logger = logging.getLogger('kts46.server.HTTPServer')
         httpd.filesDir = self.cfg.get('http-api', 'filesDir')
         httpd.serve_forever()
@@ -52,34 +54,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         fileMatch = re.match(r"/(web/[^\?]*)(\?v=([0-9]\.?)+)?$", self.path)
         if fileMatch is not None:
             path = fileMatch.group(1)
-            if path.find("..") != -1:
-                self.send_response(400)
-                self.end_headers()
-                return
-
-            # Convert path to actual path on the disk.
-            path = os.path.join(self.server.filesDir, path)
-
-            if not os.path.exists(path):
-                self.send_response(404)
-                self.end_headers()
-                return
-            self.send_response(200)
-
-            # Specific check for cache manifests.
-            if path.find("cache-manifest") != -1:
-                self.send_header('Content-Type', "text/cache-manifest")
-            ext = os.path.splitext(path)[1]
-            if ext == '.js':
-                self.send_header('Content-Type', "text/javascript")
-            elif ext == '.css':
-                self.send_header('Content-Type', "text/css")
-            self.end_headers()
-
-            f = open(path)
-            lines = f.readlines()
-            f.close()
-            self.wfile.writelines(lines)
+            self.getStaticFile(path)
             return
 
         match = re.match(r"/api/(\w+)/", self.path)
@@ -116,6 +91,19 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                     p = paramsMatch.group(1)
                     j = paramsMatch.group(2)
                     data = rpc.getJobStatistics(p,j, False)
+            elif functionName == 'modelDescription':
+                paramsMatch = re.match(r"/api/modelDescription/([-\w]+)/([-\w]+)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    data = rpc.getModelDescription(p,j)
+            elif functionName == 'modelState':
+                paramsMatch = re.match(r"/api/modelState/([-\w]+)/([-\w]+)/(\d+(\.\d+)?)/", self.path)
+                if paramsMatch is not None:
+                    p = paramsMatch.group(1)
+                    j = paramsMatch.group(2)
+                    t = float(paramsMatch.group(3))
+                    data = rpc.getModelState(p, j, t)
         except SocketException, msg:
             self.log_error('Error connecting with RPC-server: %s', msg)
             data = {'result': 'fail',
@@ -129,6 +117,36 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(data))
 
+    
+    def getStaticFile(self, path):
+        if path.find("..") != -1:
+            self.send_response(400)
+            self.end_headers()
+            return
+
+        # Convert path to actual path on the disk.
+        path = os.path.join(self.server.filesDir, path)
+
+        if not os.path.exists(path):
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+
+        # Specific check for cache manifests.
+        if path.find("cache-manifest") != -1:
+            self.send_header('Content-Type', "text/cache-manifest")
+        ext = os.path.splitext(path)[1]
+        if ext == '.js':
+            self.send_header('Content-Type', "text/javascript")
+        elif ext == '.css':
+            self.send_header('Content-Type', "text/css")
+        self.end_headers()
+
+        f = open(path)
+        lines = f.readlines()
+        f.close()
+        self.wfile.writelines(lines)
 
     def getServerStatus2(self, rpc, tqx):
         #{"project": "new_project_1", "total": 36000.0, "done": 36000, "name": "exp1-s1"}
@@ -246,7 +264,12 @@ It must be an empty array if method has no params.""", id)
                 xmlrpc.deleteJob(params[0], params[1])
             elif methodName == 'runJob':
                 if not self.checkJSONArgsNumber(params, 2): return
-                xmlrpc.runJob(params[0], params[1])
+                try:
+                    self.server.jsonrpc.addTask(params[0], params[1])
+                except jsonRpcClient.RPCException as ex:
+                    self.server.logger.warning("Scheduler returned error: %s.", ex.error['type']);
+                    self.sendRPCResponse(None, id, ex.error)
+                    return
             else:
                 self.sendRPCResponse(None, id, "Unknown method: " + methodName)
                 return

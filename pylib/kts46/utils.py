@@ -18,6 +18,9 @@ import logging, logging.handlers
 import xmlrpclib
 from ConfigParser import SafeConfigParser
 from datetime import timedelta
+import jsonRpcClient
+
+
 
 def getConfiguration(customConfigFiles=[]):
     """Returns ``SafeConfigParser`` for application. Loads configuration from
@@ -84,7 +87,22 @@ def getRPCServerProxy(cfg):
     proxy = xmlrpclib.ServerProxy(connString)
     return proxy
 
-    
+
+def getJsonRpcClient(cfg):
+    """Create a JSON-RPC client.
+
+    :param cfg: Application configuration.
+    :type cfg: ConfigParser
+    :returns: Proxy to a JSON-RPC server.
+    :rtype: jsonRpcClient.Client
+    """
+    host = cfg.get('JSON-RPC Server', 'host')
+    port = cfg.getint('JSON-RPC Server', 'port')
+    path = cfg.get('JSON-RPC Server', 'path')
+    connString = 'http://{host}:{port}{path}'.format(host=host, port=port, path=path)
+    return jsonRpcClient.Client(connString)
+
+
 def timedelta2str(data):
     # Only days, seconds and microseconds are stored internally.
     return u'{0}d{1}s{2}'.format(data.days, data.seconds, data.microseconds)
@@ -93,4 +111,3 @@ def str2timedelta(value):
     days, rest = value.split('d')
     seconds, mcs = rest.split('s')
     return timedelta(days=int(days), seconds=int(seconds), microseconds=int(mcs))
-    

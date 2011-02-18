@@ -18,15 +18,18 @@ import urllib2
 class RPCException(Exception):
     def __init__(self, errorObj):
         self.error = errorObj
+    def __str__(self):
+        return "jsonRpcClient.RPCException: " + json.dumps(self.error)
 
 class Client(object):
 
-    def __init__(self, address, id=1):
+    def __init__(self, address, id=0):
         self.address = address
         self.id = id
 
     def __getattr__(self, name):
-        return MethodCall(self.address, name, self.id++)
+        self.id += 1
+        return MethodCall(self.address, name, self.id)
 
 class MethodCall(object):
 
@@ -37,7 +40,11 @@ class MethodCall(object):
 
     def __call__(self, *args):
         data = {'method': self.name, 'id': self.id, 'params': args}
-        responseStr = urllib2.open(self.address, json.dumps(data)).read()
+        try:
+            f = urllib2.urlopen(self.address, json.dumps(data))
+        except urllib2.HTTPError as ex:
+            f = ex
+        responseStr = f.read()
         response = json.loads(responseStr)
         if response['error'] is not None:
             raise RPCException(response['error'])
