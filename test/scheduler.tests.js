@@ -213,7 +213,7 @@ var onGetCurrentTasksNothing = function(data) {
     assert.isNull(data.error);
     assert.ok(Array.isArray(data.result));
     assert.strictEqual(data.result.length, 0);
-    regetTask2();
+    setTimeout(regetTask2, 100); // Give scheduler some time to insert next task.
 };
 
 var regetTask2 = function() {
