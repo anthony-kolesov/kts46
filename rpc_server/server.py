@@ -77,7 +77,7 @@ def configureCmdOptions():
                        help='Worker id. Must be unique in a network of workers.')
     cmdOpts.add_option('--cfg', action='store', dest='cfg', default='',
                        help="Configuration file that will override default.ini and local.ini." )
-    cmdOpts.add_option('-q', '--quite', action='store', dest='quite', default=None,
+    cmdOpts.add_option('-q', '--quite', action='store_true', dest='quite',
                        help='Suppress all output to console.')
     
     return cmdOpts.parse_args(sys.argv[1:])
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     if len(options.cfg) != 0: configFiles.append(options.cfg) 
     cfg = kts46.utils.getConfiguration(configFiles)
     if options.quite is not None:
-        cfg.set('log', 'quite', options.quite)
+        cfg.set('log', 'quite', str(options.quite))
     
     # Logging
     kts46.utils.configureLogging(cfg)
