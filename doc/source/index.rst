@@ -9,7 +9,7 @@ Welcome to kts46's documentation!
 Contents:
 
 .. toctree::
-    :maxdepth: 9
+    :maxdepth: 2
     :numbered:
 
     ControlNode.rst
