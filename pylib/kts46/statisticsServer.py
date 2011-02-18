@@ -25,7 +25,7 @@ class StatisticsServer:
         self.log = logging.getLogger(cfg.get('loggers', 'StatisticsServer'))
 
 
-    def calculate(self, job):
+    def calculateBasicStats(self, job):
         addCarData = job.db.cars.find({'job':job.name, 'state': 'add'},['carid','time'])
         delCarData = job.db.cars.find({'job':job.name, 'state': 'del'},['carid','time'])
 
@@ -48,23 +48,9 @@ class StatisticsServer:
 
         self.log.info("Average: {0}".format(av))
         self.log.info("Standard deviation: {0}".format(stdd))
-        job.statistics['average'] = job.round(av if not math.isnan(av) else - 1)
-        job.statistics['stdeviation'] = job.round(stdd)
-        job.statistics['averageSpeed'] = job.round(avgSpeed)
-        job.statistics['finished'] = True
-        job.progress['basicStatistics'] = True
+        job.saveBasicStats(av, stdd, avgSpeed)
 
-        if self.cfg.getboolean("worker", "calculateIdleTimes"):
-            self.calculateIdleTimes(job)
-        if self.cfg.getboolean('worker', "calculateThroughput"):
-            self.calculateThroughput(job)
-
-        job.progress['fullStatistics']= (job.progress['basicStatistics'] and
-                                         job.progress['idleTimes'] and
-                                         job.progress['throughput'])
-        job.save()
-
-
+        
     def calculateIdleTimes(self, job):
         # Get cars ids. We need no repeatings.
         carsSpec = {'job': job.name, 'state': 'del'}
@@ -103,9 +89,8 @@ class StatisticsServer:
 
         # Store results
         d = {'values': results, 'average': round(mean, 4)}
-        job.statistics['idleTimes'] = d
-        job.progress['idleTimes'] = True
-
+        job.saveIdleTimes(d)
+        
 
     def calculateThroughput(self, job):
         self.log.info("Calculating throughput.")
@@ -132,9 +117,9 @@ class StatisticsServer:
             throughput = float(carsAmount) / job.definition['simulationParameters']['duration'] * 3600
             result.append({'cars': carsAmount, 'rate': job.round(throughput),
                            'pos': point})
-        job.statistics['throughput'] = result
+        job.saveThroughput(result)
         self.log.info("Throughput calculated for %i points.", len(points))
-        job.progress['throughput'] = True
+        
 
 
     def calculateEndpointsThroughput(self, job, point):

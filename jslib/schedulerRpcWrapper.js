@@ -63,11 +63,7 @@ Wrapper.prototype.addTask = function(rpc) {
         this._checkType(rpc, jobName, "jobName", "string") ) {
       return;
     }
-
-    var taskTypes = this._parseTaskTypes(arguments[3], rpc);
-    if (taskTypes == null) return;
-    
-    this.scheduler.addTask(rpc, projectName, jobName, taskTypes);
+    this.scheduler.addTask(rpc, projectName, jobName);
 };
 
 
@@ -147,10 +143,8 @@ Wrapper.prototype.restartTasks = function(rpc, tasks) {
     this.scheduler.restartTasks(rpc, tasks);
 };
 
-exports.Wrapper = Wrapper;
-/*exports.rpcMethods = {'hello':hello, 'addTask':addTask, 'abortTask':abortTask,
-    'getTask': getTask, 'acceptTask': acceptTask, 'rejectTask': rejectTask,
-    'taskFinished': taskFinished, 'taskInProgress': taskInProgress,
-    'getCurrentTasks': getCurrentTasks, 'restartTasks': restartTasks
+Wrapper.prototype.getStatus = function(){
+    return this.scheduler.getStatus();
 };
-exports.cfg = cfg;*/
+
+exports.Wrapper = Wrapper;
