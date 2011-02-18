@@ -105,12 +105,12 @@ Wrapper.prototype.rejectTask = function(rpc, workerId, sig) {
 };
 
 
-Wrapper.prototype.taskFinished = function(rpc, workerId, sig){
+Wrapper.prototype.taskFinished = function(rpc, workerId, sig, statistics){
     if (this._checkType(rpc, workerId, "workerId", "string") ||
         this._checkType(rpc, sig, "sig", "string") ) {
         return;
     }
-    this.scheduler.taskFinished(rpc, workerId, sig);
+    this.scheduler.taskFinished(rpc, workerId, sig, statistics);
 };
 
 
