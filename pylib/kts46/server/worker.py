@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import logging
-import os
 import threading
 import time
 import uuid
+import socket
 from socket import error as SocketException
 
+import kts46
 import kts46.utils
 import jsonRpcClient
 from kts46.simulationServer import SimulationServer
@@ -140,6 +141,8 @@ class Worker:
                 stServer.calculateThroughput(job)
 
             statistics = kts46.utils.getMemoryUsage()
+            statistics['hostName'] = socket.gethostname()
+            statistics['version'] = kts46.__version__
                 
             # Notify server.
             # Lock here so if condition in sync thread will be correct.

@@ -514,7 +514,9 @@ class StateStorage(object):
         del data['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
         
         self.db.states.insert(d, safe=True)
-        self.db.cars.insert(cars, safe=True)
+        # Mongodb raises error on attempt to insert empty list of docs.
+        if len(cars) > 0:
+            self.db.cars.insert(cars, safe=True)
 
 
     def dump(self):
