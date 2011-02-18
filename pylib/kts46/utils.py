@@ -15,6 +15,8 @@
 "Some useful functions."
 
 import logging, logging.handlers
+import os
+import re
 import xmlrpclib
 from ConfigParser import SafeConfigParser
 from datetime import timedelta
@@ -114,10 +116,11 @@ def str2timedelta(value):
 
     
 def getMemoryUsage():
+    # Convert to MiB!
     sizes = {
-        'kB': 1024, 'KB': 1024,
-        'mB': 1024*1024, 'MB': 1024*1024,
-        'gB': 1024*1024*1024, 'GB': 1024*1024*1024
+        'kB': 1.0/1024, 'KB': 1.0/1024,
+        'mB': 1, 'MB': 1,
+        'gB': 1024, 'GB': 1024
     }
 
     result = {}
@@ -125,11 +128,11 @@ def getMemoryUsage():
     with open(path, 'r') as f:
         lines = f.readlines()
     for line in lines:
-        vmpeakMatch = re.match(r'VmPeak:[\s]+([\d]+ [kKmM]B)', line)
+        vmpeakMatch = re.match(r'VmPeak:[\s]+([\d]+) ([kKmM]B)', line)
         if vmpeakMatch is not None:
             result['vmPeak'] = int(vmpeakMatch.group(1)) * sizes[ vmpeakMatch.group(2) ]
             
-        vmRssMatch = re.match(r'VmRSS:[\s]+([\d]+ [kKmM]B)', line)
+        vmRssMatch = re.match(r'VmRSS:[\s]+([\d]+) ([kKmM]B)', line)
         if vmRssMatch is not None:
             result['vmRSS'] = int(vmRssMatch.group(1)) * sizes[ vmRssMatch.group(2) ]
             
