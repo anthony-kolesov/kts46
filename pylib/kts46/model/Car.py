@@ -14,6 +14,7 @@
 
 import logging
 from uuid import uuid4
+import kts46.utils
 
 class Car(object):
     "Represent a car in the model."
@@ -39,6 +40,7 @@ class Car(object):
         self.model = model
         self.road = road
         self.desiredSpeed = speed
+        self.currentSpeed = speed
         self.length = length
         self.width = width
         self.position = position
@@ -90,16 +92,16 @@ class Car(object):
         if 'pos' in state: self.position = state['pos']
         if 'line' in state: self.line = state['line']
 
-    def getDistanceToLeadingCar(self, line=None):
-        """Get distance (in meters) to the leading car. If there is not leading
-        car then None value will be returned."""
-        if line is None:
-            line = self.line
-        leadingCar = self.model.getNearestCar(self.position, line)
-        if leadingCar is not None:
-            return leadingCar.position - self.position
-        else:
-            return None
+    #def getDistanceToLeadingCar(self, line=None):
+    #    """Get distance (in meters) to the leading car. If there is not leading
+    #    car then None value will be returned."""
+    #    if line is None:
+    #        line = self.line
+    #    leadingCar = self.model.getNearestCar(self.position, line)
+    #    if leadingCar is not None:
+    #        return leadingCar.position - self.position
+    #    else:
+    #        return None
     
     def getDistanceToFollowingCar(self, line=None):
         """Get distance (in meters) to the following car. If there is not
@@ -117,32 +119,8 @@ class Car(object):
             return self.position - followingCar.position
         else:
             return None
-
-    def chooseBestLine(self):
-        """Chooses best line for current car on the basis of distance to leading
-        car. Algorithm choses only between neighbor lines."""
         
-        # Can't change line.
-        if self.road.lines == 1:
-            return self.line
-        
-        currentDistance = self.getDistanceToLeadingCar()
-        rightDistance = self.canChangeLine(self.line - 1) if self.line > 0 else None
-        leftDistance = self.canChangeLine(self.line + 1) if self.line + 1 < self.road.lines else None
-        
-        maxLine = self.line
-        maxDistance = currentDistance
-        # First try left.
-        if leftDistance is not None and leftDistance > maxDistance:
-            maxLine = self.line + 1
-            maxDistance = leftDistance
-        if rightDistance is not None and rightDistance > maxDistance:
-            maxLine = self.line - 1
-            maxDistance = rightDistance
-        
-        return maxLine
-        
-    def canChangeLine(self, targetLine):
+    def canChangeLine(self, targetLine, time):
         """Determines whether car can move to specified line with regard to
         safe distances.
         
@@ -151,10 +129,93 @@ class Car(object):
             distance to leading car if possible or None value if isn't possible.
         :rtype: float
         """
-        leading = self.getDistanceToLeadingCar(targetLine)
-        if leading is None or leading < self.model.params.safeDistance:
-            return None
         following = self.getDistanceToFollowingCar(targetLine)
-        if following is None or following - self.length < self.model.params.safeDistanceRear:
+        if following is not None and following - self.length < self.model.params.safeDistanceRear:
             return None
-        return leading
+        
+        #leading = self.getDistanceToLeadingCar(targetLine)
+        #if leading is None or leading < self.model.params.safeDistance:
+        #    return None
+        leadingDistance = getOwnDistance(time, targetLine)
+        if leadingDistance < 0:
+            return None
+        
+        return max(leadingDistance, self.getDesiredDistance(time))
+
+    def getDesiredDistance(self, time):
+        """Returns desired moving distance for car for given time interval.
+        
+        :param timedelta time: Time for which to calculate moving distance."
+        :rtype: float"""
+        distance = self.desiredSpeed * kts46.utils.timeDeltaToSeconds(time)
+        return distance
+        
+    def getPredictedDistance(self, time):
+        """Returns predicted moving distance for car for given time interval on 
+        the base of current car speed.
+        
+        :param timedelta time: Time for which to calculate moving distance."
+        :rtype: float"""
+        distance = self.currentSpeed * kts46.utils.timeDeltaToSeconds(time)
+        return distance
+        
+    def getOwnDistance(self, time, line=None):
+        """Calculates possible ditance that can be passed on the specified line
+        for the specified interval of time. If returned value is negative, than
+        you couldn't move to that line because of safe distance limit."""
+        if line is None: line = self.line
+        
+        leader = self.model.getNearestCar(self.position, line)
+        distanceToLeader = leader.position - leader.length - self.position
+        leaderMove = leader.getPredictedDistance(time)
+        safeDistance = self.model.modelParameters.safeDistance
+        possibleDistance = distanceToLeader + leaderMove - safeDistance
+        
+        return possibleDistance
+        
+    def move(self, time):
+        # Get own speed using :eq:`getOwnSpeed`.
+        currentLineDistance = self.getOwnDistance(time, self.line)
+        # If own speed is lesser then desired speed try neighbor lines.
+        desiredDistance = self.getDesiredDistance(time)
+        if self.model.road.lines == 1:
+            finalDistance = currentLineDistance
+            finalLine = self.line
+        elif currentLineDistance >= desiredDistance:
+            finalDistance = desiredDistance
+            finalLine = self.line
+        else:
+            #  * Check that distance to following car is greater than or equal to safeDistanceRear.
+            #  * Get possible own speeds on available lines using :eq:`getOwnSpeed`.
+            if self.line > 0:
+                rightDistance = self.canChangeLine(self.line - 1, time)
+            else:
+                rightDistance = None
+            if self.line + 1 < self.road.lines:
+                leftDistance = self.canChangeLine(self.line + 1, time)
+            else:
+                leftDistance = None
+        
+            # Choose line with maximum distance.
+            # If speeds are equal, than lines are choosen according to priority:
+            #   current, left, right. Thus overtaking will be done on left line.
+            finalLine = self.line
+            finalDistance = currentLineDistance
+            # First try left.
+            if leftDistance is not None and leftDistance > finalDistance:
+                finalLine = self.line + 1
+                finalDistance = leftDistance
+            if rightDistance is not None and rightDistance > finalDistance:
+                finalLine = self.line - 1
+                finalDistance = rightDistance
+        
+        self.newState = {
+            'line': finalLine,
+            'position': self.position + finalDistance,
+            'speed': (self.position + finalDistance) / kts46.utils.timeDeltaToSeconds(time)
+        }
+        
+    def finishMove(self):
+        self.line = self.newState['line']
+        self.position = self.newState['position']
+        self.speed = self.newState['speed']

@@ -111,3 +111,8 @@ def str2timedelta(value):
     days, rest = value.split('d')
     seconds, mcs = rest.split('s')
     return timedelta(days=int(days), seconds=int(seconds), microseconds=int(mcs))
+
+def timedeltaToSeconds(td):
+    "Converts timedelta to seconds."
+    return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1e6
+    
