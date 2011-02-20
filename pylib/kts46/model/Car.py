@@ -130,7 +130,7 @@ class Car(object):
         :rtype: float
         """
         following = self.getDistanceToFollowingCar(targetLine)
-        if following is not None and following - self.length < self.model.params.safeDistanceRear:
+        if following is not None and following - self.length < self.model.params['safeDistanceRear']:
             return None
         
         #leading = self.getDistanceToLeadingCar(targetLine)
@@ -173,11 +173,11 @@ class Car(object):
         
         return possibleDistance
         
-    def move(self, time):
+    def prepareMove(self, time):
         # Get own speed using :eq:`getOwnSpeed`.
         currentLineDistance = self.getOwnDistance(time, self.line)
         # If own speed is lesser then desired speed try neighbor lines.
-        desiredDistance = self.getDesiredDistance(time)
+        desiredDistance = self.getDistanceAllowedByTL(time)
         if self.model.road.lines == 1:
             finalDistance = currentLineDistance
             finalLine = self.line
@@ -219,3 +219,13 @@ class Car(object):
         self.line = self.newState['line']
         self.position = self.newState['position']
         self.speed = self.newState['speed']
+
+    def getDistanceAllowedByTL(self, time):
+        nearestTL = self.model.getNearestTrafficLight(self.position)
+        desiredDistance = self.getDesiredDistance(time)
+        if nearestTL is not None and not nearestTL.isGreen:
+            stopDistance = self.model.params['trafficLightStopDistance']
+            distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
+            desiredDistance = min(distanceToTL, desiredDistance)
+        return desiredDistance
+        

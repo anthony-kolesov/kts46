@@ -37,8 +37,7 @@ class SimulationServer(object):
 
         jobId = job.name
 
-        model = Model({'inputRate': 1200, 'safeDistance': 20, 'minSpeed': 10,
-            'maxSpeed': 20})
+        model = Model(Model.defaultParams)
        
         # Load current state: load state and set time
         curState = job.currentFullState

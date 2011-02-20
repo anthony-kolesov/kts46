@@ -38,6 +38,9 @@ class ModelParams:
 class Model(object):
     "Defines a model that can simulate road traffic."
 
+    defaultParams = {'inputRate': 1200, 'safeDistance': 20, 'safeDistanceRear': 10,
+        'minSpeed': 10, 'maxSpeed': 20, 'trafficLightStopDistance': 5 }
+    
     def __init__(self, params):
         """Initializes new model with provided set of parameters.
 

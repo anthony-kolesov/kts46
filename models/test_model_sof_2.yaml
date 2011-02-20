@@ -10,6 +10,7 @@ modelParameters:
     safeDistanceRear: 10
     maxSpeed: 22
     minSpeed: 14
+    trafficLightStopDistance: 5
 
 road:
     length: 1677
