@@ -5,17 +5,20 @@ Model description
 Algorithms that are used in model are described in this document.
 
 
-Moving
-======
+Moving equation
+===============
 
-#. Get own desired speed.
 #. Get current speed of leading car.
 #. Get predicted distance to leading car.
 #. Get own new current speed on the base of predicted distance and safe distance.
 
-Since Pythagoras, we know that :math:`a^2 + b^2 = c^2`.
-So equation of vehicle own speed on next time interval is:
-:math:`V_own`
+So equation of vehicle own speed on time interval is:
+
+..math::
+    :label: getOwnSpeed
+    
+    V_{own}=\frac{S_{cur} + V_{leading} * t_{step} - S_{safe}}{t_{step}}
+    0 \le x \le V_{desired}
 
 
 
@@ -24,6 +27,18 @@ Overtaking
 
 Algorithm
 ---------
+#. Get own speed using :eq:`getOwnSpeed`.
+#. If own speed is lesser then desired speed try neighbor lines:
+  * Check that distance to following car is greater than or equal to
+    ``safeDistanceRear``.
+  * Get possible own speeds on available lines using :eq:`getOwnSpeed`.
+  * Choose line with maximum speed.
+  * If speeds are equal, than lines are choosen according to priority:
+    current, left, right. Thus overtaking will be done on left line.
+
+
+First version of algorithm
+--------------------------
 
 #. Compare current speed with desired. If current speed is greater then or equal
    to desired then car doesn't need to change line.
@@ -33,7 +48,7 @@ Algorithm
   * If this is other line than distance to following car must be greater than
     or equal to backward safe distance.
   * Distance to leading car must be biggest.
-  * If distances are equal, than lines are choosen accoring to priority:
+  * If distances are equal, than lines are choosen according to priority:
     current, left, right. Thus overtaking will be done on left line.
 
 To do
@@ -47,7 +62,8 @@ To do
 
 
 Model parameters
-----------------
+================
+
 inputRate
     Amount of cars comming to the road in an hour.
 
