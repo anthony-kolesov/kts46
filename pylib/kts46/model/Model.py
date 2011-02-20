@@ -73,11 +73,10 @@ class Model(object):
         for car in self._cars:
             if car.state != Car.DELETED:
                 # Update state.
-                if car.state == Car.ADDED: car.state = Car.ACTIVE
+                if car.state == Car.ADDED:
+                    car.state = Car.ACTIVE
 
-                distanceToMove  = car.desiredSpeed * timeStep.seconds
-                distanceToMove += car.desiredSpeed * timeStep.microseconds * 1e-6
-                distanceToMove += car.desiredSpeed * timeStep.days * 86400 # 3600 * 24
+                distanceToMove = car.getDesiredDistance(timeStep)
 
                 # Check for red traffic light.
                 nearestTL = self.getNearestTrafficLight(car.position)
@@ -88,14 +87,15 @@ class Model(object):
                             distanceToMove = 0.0
 
                 # Check for leading car.
-                nearestCar = self.getNearestCar(car.position, car.line)
-                if nearestCar is not None:
-                    nearestCarBack = nearestCar.position - nearestCar.length
-                    possiblePosition = nearestCarBack - stopDistance
-                    if possiblePosition - car.position < distanceToMove:
-                        distanceToMove = possiblePosition - car.position
-                        if distanceToMove < 0:
-                            distanceToMove = 0.0
+                if distanceToMove > 0:
+                    nearestCar = self.getNearestCar(car.position, car.line)
+                    if nearestCar is not None:
+                        nearestCarBack = nearestCar.position - nearestCar.length
+                        possiblePosition = nearestCarBack - stopDistance
+                        if possiblePosition - car.position < distanceToMove:
+                            distanceToMove = possiblePosition - car.position
+                            if distanceToMove < 0:
+                                distanceToMove = 0.0
 
                 car.move(distanceToMove)
                 if self._road.length < car.position:
