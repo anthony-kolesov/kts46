@@ -75,38 +75,12 @@ class Model(object):
         toRemove = [ ]
         for car in self._cars:
             if car.state != Car.DELETED:
-                # Update state.
-                if car.state == Car.ADDED:
-                    car.state = Car.ACTIVE
-
-                distanceToMove = car.getDesiredDistance(timeStep)
-
-                # Check for red traffic light.
-                nearestTL = self.getNearestTrafficLight(car.position)
-                if nearestTL is not None and not nearestTL.isGreen:
-                    if nearestTL.position - car.position - stopDistance < distanceToMove:
-                        distanceToMove = nearestTL.position - car.position - stopDistance
-                        if distanceToMove < 0:
-                            distanceToMove = 0.0
-
-                # Check for leading car.
-                if distanceToMove > 0:
-                    nearestCar = self.getNearestCar(car.position, car.line)
-                    if nearestCar is not None:
-                        nearestCarBack = nearestCar.position - nearestCar.length
-                        possiblePosition = nearestCarBack - stopDistance
-                        if possiblePosition - car.position < distanceToMove:
-                            distanceToMove = possiblePosition - car.position
-                            if distanceToMove < 0:
-                                distanceToMove = 0.0
-
-                car.move(distanceToMove)
-                if self._road.length < car.position:
-                    car.state = Car.DELETED
+                car.prepareMove(timeStep)
             else:
                 toRemove.append(car)
 
         for car in toRemove: self._cars.remove(car)
+        for car in self._cars: car.finishMove()
 
         # Generate new car.
         # It is always added to the queue and if there is enough place then
@@ -155,7 +129,7 @@ class Model(object):
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             self._lastCarId += 1
             line = math.floor(random.random() * self._road.lines)
-            newCar = Car(model=self, id=self._lastCarId, speed=speed, line=line)
+            newCar = Car(model=self, road=self._road, id=self._lastCarId, speed=speed, line=line)
             self._logger.debug('Created car: [speed: %f].', speed)
             self._enterQueue.append(newCar)
 
@@ -305,12 +279,12 @@ class Model(object):
 
         if state is not None:
             for carData in state['cars'].itervalues():
-                c = Car(model=self)
+                c = Car(model=self, road=self._road)
                 c.load(carData, carData)
                 self._cars.append(c)
 
             for carData in state['enterQueue']:
-                c = Car(model=self)
+                c = Car(model=self, road=self._road)
                 c.load(carData, carData)
                 self._enterQueue.append(c)
 

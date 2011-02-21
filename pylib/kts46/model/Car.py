@@ -174,6 +174,10 @@ class Car(object):
         return possibleDistance
         
     def prepareMove(self, time):
+        # Change state
+        if self.state == Car.ADDED:
+            self.state = Car.ACTIVE
+    
         # Get own speed using :eq:`getOwnSpeed`.
         currentLineDistance = self.getOwnDistance(time, self.line)
         # If own speed is lesser then desired speed try neighbor lines.
@@ -214,6 +218,10 @@ class Car(object):
             'position': self.position + finalDistance,
             'speed': (self.position + finalDistance) / kts46.utils.timeDeltaToSeconds(time)
         }
+        
+        if self.road.length < self.position:
+            self.state = Car.DELETED
+        
         
     def finishMove(self):
         self.line = self.newState['line']
