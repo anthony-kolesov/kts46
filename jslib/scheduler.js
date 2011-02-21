@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var mongodb = require('../jslib/mongodb'),
-    ProjectStorage = require('../jslib/projectStorage').Storage;
+var mongodb = require('./mongodb'),
+    ProjectStorage = require('./projectStorage').Storage;
 
 // Configuration parameters and default values
 var config = require('config')('Scheduler', {
