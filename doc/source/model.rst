@@ -10,30 +10,33 @@ Moving equation
 
 #. Get current speed of leading car.
 #. Get predicted distance to leading car.
-#. Get own new current speed on the base of predicted distance and safe distance.
+#. Get own new possible distance on the base of predicted distance and safe distance.
 
 So equation of vehicle own speed on time interval is:
 
 ..math::
-    :label: getOwnSpeed
+    :label: getOwnDistance
     
-    V_{own}=\frac{S_{cur} + V_{leading} * t_{step} - S_{safe}}{t_{step}}
-    0 \le x \le V_{desired}
+    S_{own}=S_{cur} + V_{leading} * t_{step} - S_{safe}
+    0 \le S_{own} \le S_{desired}
 
 
 
-Overtaking
-==========
+Moving
+======
 
 Algorithm
 ---------
-#. Get own speed using :eq:`getOwnSpeed`.
-#. If own speed is lesser then desired speed try neighbor lines:
+To take into account traffic lights one must limit desiredDistance by
+distance allowed by traffic light.
+
+#. Get own distance using :eq:`getOwnDistance` for current line.
+#. If own distance is lesser then desired distance try neighbor lines:
   * Check that distance to following car is greater than or equal to
     ``safeDistanceRear``.
-  * Get possible own speeds on available lines using :eq:`getOwnSpeed`.
-  * Choose line with maximum speed.
-  * If speeds are equal, than lines are choosen according to priority:
+  * Get possible own distances on available lines using :eq:`getOwnDistance`.
+  * Choose line with maximum distance.
+  * If distances are equal, than lines are choosen according to priority:
     current, left, right. Thus overtaking will be done on left line.
 
 
