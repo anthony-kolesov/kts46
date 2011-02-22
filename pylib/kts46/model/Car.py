@@ -194,7 +194,7 @@ class Car(object):
         # currentLineDistance still could be greater because desired is limited
         # by TL. So if only TL limits our movement we will stay at a line.
         if self.road.lines == 1 or currentLineDistance >= desiredDistance:
-            finalDistance = desiredDistance
+            finalDistance = min(desiredDistance, currentLineDistance)
             finalLine = self.line
         else:
            #  * Check that distance to following car is greater than or equal to safeDistanceRear.
