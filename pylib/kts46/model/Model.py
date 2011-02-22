@@ -155,7 +155,7 @@ class Model(object):
         return self.getNearestObjectInArray(self._cars, position, line)
 
     def getNearestObjectInArray(self, array, position, line=0):
-        "Get nearest object in arrayto specified position in forward destination."
+        "Get nearest object in array to specified position in forward destination."
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
@@ -171,8 +171,8 @@ class Model(object):
                 continue
 
             pos = i.position
-            if hasattr(i, "length"):
-                pos -= i.length
+            #if hasattr(i, "length"):
+            #    pos -= i.length
             # >= is very important so car won't try to go through another car.
             if pos >= position and ((current is None) or current_pos > pos):
                 current = i
