@@ -1,6 +1,6 @@
-**************************
-kts46 Python API Reference
-**************************
+******************************
+Python API Reference for kts46
+******************************
 
 .. automodule:: kts46
 
@@ -85,26 +85,6 @@ rpc
 RPCServer
 ~~~~~~~~~
 .. autoclass:: kts46.server.rpc.RPCServer
-    :members:
-
-
-scheduler
----------
-.. automodule:: kts46.server.scheduler
-
-SchedulerServer
-~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerServer
-    :members:
-
-SchedulerException
-~~~~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerException
-    :members:
-
-SchedulerManager
-~~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.scheduler.SchedulerManager
     :members:
 
 

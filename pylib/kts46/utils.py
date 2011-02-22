@@ -15,11 +15,12 @@
 "Some useful functions."
 
 import logging, logging.handlers
+import os
+import re
 import xmlrpclib
 from ConfigParser import SafeConfigParser
 from datetime import timedelta
 import jsonRpcClient
-
 
 
 def getConfiguration(customConfigFiles=[]):
@@ -46,11 +47,12 @@ def configureLogging(cfg):
     """
     logging.getLogger('').setLevel(logging.INFO)
 
-    # Define a log handler for console.
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setLevel(logging.INFO)
-    consoleHandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
-    logging.getLogger('kts46').addHandler(consoleHandler)
+    if not cfg.getboolean('log', 'quite'):
+        # Define a log handler for console.
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setLevel(logging.INFO)
+        consoleHandler.setFormatter(logging.Formatter(cfg.get('log', 'format')))
+        logging.getLogger('kts46').addHandler(consoleHandler)
 
     # Define a log handler for rotating files.
     rfhandler = logging.handlers.RotatingFileHandler(cfg.get('log', 'filename'),
@@ -116,3 +118,26 @@ def timedeltaToSeconds(td):
     "Converts timedelta to seconds."
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1e6
     
+    
+def getMemoryUsage():
+    # Convert to MiB!
+    sizes = {
+        'kB': 1.0/1024, 'KB': 1.0/1024,
+        'mB': 1, 'MB': 1,
+        'gB': 1024, 'GB': 1024
+    }
+
+    result = {}
+    path = '/proc/{0}/status'.format(os.getpid())
+    with open(path, 'r') as f:
+        lines = f.readlines()
+    for line in lines:
+        vmpeakMatch = re.match(r'VmPeak:[\s]+([\d]+) ([kKmM]B)', line)
+        if vmpeakMatch is not None:
+            result['vmPeak'] = int(vmpeakMatch.group(1)) * sizes[ vmpeakMatch.group(2) ]
+            
+        vmRssMatch = re.match(r'VmRSS:[\s]+([\d]+) ([kKmM]B)', line)
+        if vmRssMatch is not None:
+            result['vmRSS'] = int(vmRssMatch.group(1)) * sizes[ vmRssMatch.group(2) ]
+            
+    return result

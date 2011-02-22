@@ -51,6 +51,8 @@ class Storage(object):
         self.log.debug("Creating connection to Mongodb server: %s:%i.", host, port)
         self.server = pymongo.Connection(host, port)
         self.log.info("Connection created: %s:%i.", host, port)
+        self.host = host
+        self.port = port
 
 
     def createProject(self, projectName):
@@ -218,6 +220,7 @@ class SimulationProject(object):
 
         self.db.progresses.remove(key)
         self.db.statistics.remove(key)
+        self.db.fullStates.remove(key)
         self.db.jobs.remove(key)
         self.db.states.remove({'job': key})
         self.db.cars.remove({'job': key})
@@ -513,6 +516,7 @@ class StateStorage(object):
         del data['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
         
         self.db.states.insert(d, safe=True)
+        # Mongodb raises error on attempt to insert empty list of docs.
         if len(cars) > 0:
             self.db.cars.insert(cars, safe=True)
 

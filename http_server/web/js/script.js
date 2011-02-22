@@ -222,14 +222,14 @@ var kts46 = (function($){
             view.setColumns([projectColumnId, jobColumnId, progressColumnId,
                              basicStatsFinishedColumnId, idleTimesFinishedColumnId,
                              throughputFinishedColumnId, statsFinishedColumnId]);
-            //$(document).data('google-table-view', view);
-
-            //var table = $(document).data('google-table');
-            //table.draw(view, {showRowNumber: true, allowHtml: true});
             renderFilteredRows(view);
 
             // Show projects in their view.
             updateProjectsList(dataTable.getDistinctValues(projectColumnId));
+            
+            // Update time
+            var lastUpd = $('#last-update-time .content');
+            lastUpd.text((new Date()).toLocaleTimeString());
         } );
     };
 

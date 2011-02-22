@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var mongodb = require('../jslib/mongodb'),
-    fluentMongodb = require('../jslib/mongodb-fluent'),
-    ProjectStorage = require('../jslib/projectStorage').Storage;
+var mongodb = require('./mongodb'),
+    ProjectStorage = require('./projectStorage').Storage;
 
 // Configuration parameters and default values
 var config = require('config')('Scheduler', {
   dbHost: '192.168.1.5',
-  dbPort: 27017
+  dbPort: 27017,
+  notificationInterval: 5000
 });
 
 
@@ -199,7 +199,14 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         task['databases'] = [{host: this.mongodbAddress[0],
                               port: this.mongodbAddress[1]}];
         task['lastUpdate'] = new Date();
+        task['startTime'] = task['lastUpdate'];
         task['sig'] = task['lastUpdate'].toJSON();
+        
+        // Set notification interval only if nothing has set it already.
+        if (!task.hasOwnProperty("notificationInterval")) {
+            task.notificationInterval = config.notificationInterval;
+        }
+        
         this.waitingActivation[workerId] = task;
     }
     response.response(task);
@@ -213,6 +220,7 @@ Scheduler.prototype.acceptTask = function(response, workerId, sig){
             delete this.waitingActivation[workerId];
             this.runningTasks[workerId] = t;
             t.lastUpdate = new Date();
+            t.startTime = t.lastUpdate;
             t.sig = t.lastUpdate.toJSON();
             response.response({sig: t.sig});
         } else {
@@ -242,7 +250,7 @@ Scheduler.prototype.rejectTask = function(response, workerId, sig) {
 };
 
 
-Scheduler.prototype.taskFinished = function(response, workerId, sig) {
+Scheduler.prototype.taskFinished = function(response, workerId, sig, statistics) {
     
     // Check task existence.
     if (!(workerId in this.runningTasks)) {
@@ -266,7 +274,22 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig) {
     if (startNext) {
         process.nextTick(this.addTask.bind(this, response, task.project, task.job));
     }
-    response.response("success");
+    
+    // Write statistics
+    var onStatisticsSaved = function() {
+        response.response("success");
+    };
+    
+    if (statistics) {
+        statistics.execTime = (Date.now() - task.startTime.getTime()) / 1000;
+        statistics.project = task.project;
+        statistics.job = task.job;
+        statistics.taskType = task.type;
+        this.projectStorage.saveStatistics(statistics,
+            onStatisticsSaved, onMongodbError.bind(response));
+    } else {
+        process.nextTick(onStatisticsSaved);
+    }
 };
 
 

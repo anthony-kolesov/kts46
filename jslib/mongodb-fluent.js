@@ -107,6 +107,31 @@ var update = function(client, collectionName, spec, changes, options, onFinished
     });
 };
 
+// Update documents in database.
+// onFinished: function()
+// onError: function(errorObject)
+var insert = function(client, collectionName, docs, options, onFinished, onError) {
+    var onHasConnection = function() {
+        client.collection(collectionName, function(err, collection) {
+            if (err) { onMongodbError(err, client, onError); return; }
+            collection.insert(docs, options, function(err, cursor){
+                if (err) {  onMongodbError(err, client, onError); return; }
+                if (onFinished) process.nextTick(onFinished);
+            });
+        } );
+    };
+    
+    if (client.state == "connected") {
+        onHasConnection();
+    } else {
+        client.open(function(err, pClient) {
+            if (err) { onMongodbError(err, client, onError); return; }
+            onHasConnection();
+        });
+    }
+};
+
 exports.find = find;
 exports.findOne = findOne;
 exports.update = update;
+exports.insert = insert;
