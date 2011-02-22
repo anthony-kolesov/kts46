@@ -359,7 +359,7 @@ class SimulationJob(object):
         
         carSpec = {'job': self.id, 'time': key}
         carFields = ['pos', 'width', 'length', 'line']
-        s['cars'] = [x for x in self.db.cars.find(carSpec, carFields) ]
+        s['data']['cars'] = [x for x in self.db.cars.find(carSpec, carFields) ]
         return s
 
 
@@ -480,10 +480,11 @@ class StateStorage(object):
             that is greater or equal will be removed.
         :type currentTime: float
         """
-        if self.db.states.find_one({'job': self.job.id, 'time': {'$gte': currentTime}},{'_id':1}) is not None:
-            logging.getLogger('kts46.stateStorage').info('Reparing till time: %g', currentTime)
-            self.db.states.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
-            self.db.cars.remove({'job': self.job.id, 'time': {'$gte': currentTime}}, safe=True)
+        cmp = '$gt' if currentTime > 0.0 else '$gte'
+        if self.db.states.find_one({'job': self.job.id, 'time': {cmp: currentTime}},{'_id':1}) is not None:
+            logging.getLogger('kts46.stateStorage').info('Reparing from time: %g', currentTime)
+            self.db.states.remove({'job': self.job.id, 'time': {cmp: currentTime}}, safe=True)
+            self.db.cars.remove({'job': self.job.id, 'time': {cmp: currentTime}}, safe=True)
         else:
             logging.getLogger('kts46.stateStorage').debug('Nothing to repair.')
 
@@ -512,7 +513,8 @@ class StateStorage(object):
         del data['enterQueue'] # Isn't used now but generates a lot of traffic. Must be stored in separate collection, as `cars`.
         
         self.db.states.insert(d, safe=True)
-        self.db.cars.insert(cars, safe=True)
+        if len(cars) > 0:
+            self.db.cars.insert(cars, safe=True)
 
 
     def dump(self):
