@@ -4,11 +4,6 @@ var mongodb = require('./mongodb');
 
 var ErrorType = 'MongoDBError';
 
-/*var Client = function(server) {
-    this.server = server;
-    this.nativeParser = true;
-}*/
-
 
 var onMongodbError = function(err, client, onError, description){
     if (onError) {
@@ -113,9 +108,15 @@ var update = function(client, collectionName, spec, changes, options, onFinished
 var insert = function(client, collectionName, docs, options, onFinished, onError) {
     var onHasConnection = function() {
         client.collection(collectionName, function(err, collection) {
-            if (err) { onMongodbError(err, client, onError); return; }
+            if (err) {
+                onMongodbError(err, client, onError, "insert.getCollection [#8]");
+                return;
+            }
             collection.insert(docs, options, function(err, cursor){
-                if (err) {  onMongodbError(err, client, onError); return; }
+                if (err) {
+                    onMongodbError(err, client, onError, "insert.insert [#9]");
+                    return;
+                }
                 if (onFinished) process.nextTick(onFinished);
             });
         } );
@@ -125,7 +126,10 @@ var insert = function(client, collectionName, docs, options, onFinished, onError
         onHasConnection();
     } else {
         client.open(function(err, pClient) {
-            if (err) { onMongodbError(err, client, onError); return; }
+            if (err) {
+                onMongodbError(err, client, onError, "insert.openClient [#10]");
+                return;
+            }
             onHasConnection();
         });
     }
