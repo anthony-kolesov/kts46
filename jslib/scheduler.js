@@ -26,6 +26,8 @@ var config = require('config')('Scheduler', {
 
 
 var onMongodbError = function(response, err){
+    var msg = err;
+    if ( err && err.message ) msg = err.message;
     response.error({type: 'MongoDBError', msg: err.message});
 };
 
