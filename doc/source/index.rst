@@ -9,12 +9,13 @@ Welcome to kts46's documentation!
 Contents:
 
 .. toctree::
-    :maxdepth: 9
+    :maxdepth: 2
     :numbered:
 
     ControlNode.rst
     kts46.rst
     jsonRpcClient.rst
+    model.rst
 
 Indices and tables
 ==================

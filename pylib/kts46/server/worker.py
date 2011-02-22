@@ -16,8 +16,10 @@ import logging
 import threading
 import time
 import uuid
+import socket
 from socket import error as SocketException
 
+import kts46
 import kts46.utils
 import jsonRpcClient
 from kts46.simulationServer import SimulationServer
@@ -67,13 +69,12 @@ class Worker:
         self.notificationSleepTimeout = cfg.getint('scheduler', 'notifyInterval')
 
         # Create server proxy.
-        # self.server = kts46.utils.getRPCServerProxy(cfg)
         self.server = kts46.utils.getJsonRpcClient(cfg)
         self.startNotificationThread()
 
         # Create db storage.
-        #self.storage = CouchDBStorage(self.cfg.get('couchdb', 'dbaddress'))
-        self.storage = Storage(self.cfg.get('mongodb', 'host'))
+        self.storage = None
+        #self.storage = Storage(self.cfg.get('mongodb', 'host'))
 
     def run(self):
         "Runs a worker loop."
@@ -100,7 +101,14 @@ class Worker:
             jobName = task['job']
             # Report status isn't enabled at this time, so no need to lock.
             self.sig = task['sig']
-            
+
+            # Create storage
+            dbHost = task['databases'][0]['host']
+            dbPort = task['databases'][0]['port']
+            if (self.storage is None or self.storage.host != dbHost or
+                    self.storage.port != dbPort):
+                self.storage = Storage(dbHost, dbPort)
+
             try:
                 self.log.debug("Accepting task")
                 self.sig = self.server.acceptTask(self.workerId, self.sig)['sig']
@@ -109,7 +117,8 @@ class Worker:
                 time.sleep(sleepTime) # Wait some time for new job.
                 continue
 
-            self.notificationSleepTimeout = self.cfg.getfloat('worker', 'notificationInterval') # task.get('timeout')
+            # interval is provided in milliseconds
+            self.notificationSleepTimeout = task['notificationInterval'] / 1000
             self.enableNotificationEvent.set() # Start notifying scheduler about our state.
             job = self.getJob(projectName, jobName)
 
@@ -127,10 +136,14 @@ class Worker:
                 stServer = StatisticsServer(self.cfg)
                 stServer.calculateIdleTimes(job)
             elif task['type'] == 'throughput':
-                self.log.info('Starting tgroughput statistics task: {0}.{1}.'.format(projectName, jobName))
+                self.log.info('Starting throughput statistics task: {0}.{1}.'.format(projectName, jobName))
                 stServer = StatisticsServer(self.cfg)
                 stServer.calculateThroughput(job)
 
+            statistics = kts46.utils.getMemoryUsage()
+            statistics['hostName'] = socket.gethostname()
+            statistics['version'] = kts46.__version__
+                
             # Notify server.
             # Lock here so if condition in sync thread will be correct.
             self.lastUpdateLock.acquire()
@@ -139,7 +152,7 @@ class Worker:
             while not finishedSent:
                 try:
                     #self.server.reportStatus(self.workerId, 'finished', self.lastUpdate)
-                    self.server.taskFinished(self.workerId, self.sig)
+                    self.server.taskFinished(self.workerId, self.sig, statistics)
                     finishedSent = True
                 except SocketException, msg:
                     self.log.error("Connection to RPC server failed. Waiting for it.")

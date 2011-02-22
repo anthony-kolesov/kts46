@@ -52,4 +52,14 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
     fluentMongodb.findOne(client, 'jobs', spec, fields, onJobLoaded, onError);
 };
 
+Storage.prototype.saveStatistics = function(statistics, onFinished, onError) {
+    var client = this._getDbClient("kts46_info");
+    var onDone = function() {
+        client.close();
+        if (onFinished)
+            process.nextTick( onFinished );
+    };
+    fluentMongodb.insert(client, "workerStatistics", statistics, {}, onDone, onError);
+};
+
 exports.Storage = Storage;

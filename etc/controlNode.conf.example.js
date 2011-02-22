@@ -8,5 +8,6 @@ module.exports = {
   Scheduler: {
     // dbHost: '192.168.1.5'
     // dbPort: 27017
+    // notificationInterval: 5000
   }
 };

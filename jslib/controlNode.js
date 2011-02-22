@@ -13,8 +13,8 @@ var cfg = require('config')('ControlNode', {
 });
 
 // Local variables
-var version = "0.1.4"
-    versionString = "ControlNode " + version + " on node.js";
+var version = "0.1.5",
+    versionString = ["ControlNode;v", version, ";node.js ", process.version].join("");
 
 var schedulerWrapper = new scheduler.Wrapper(cfg.mongodbAddress);
     
@@ -37,5 +37,4 @@ var handleHttpRequest = function(req, res) {
 
 // Run server.
 http.createServer(handleHttpRequest).listen(cfg.port, cfg.address);
-console.log(['Server running at http://', cfg.address, ':', cfg.port, ' on ',
-             process.version].join(''));
+console.log([versionString, ";at http://", cfg.address, ':', cfg.port].join(''));
