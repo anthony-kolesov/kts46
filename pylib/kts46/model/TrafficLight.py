@@ -35,7 +35,7 @@ class SimpleSemaphore(object):
         self.position = position
         self.lastSwitchTime = timedelta()
         # Original state is random.
-        self.state = SimpleSemaphore.__red_state if random() > 0.5 else SimpleSemaphore.__red_state
+        self.state = SimpleSemaphore.__red_state if random() > 0.5 else SimpleSemaphore.__green_state
         self.greenDuration = 5
         self.redDuration = 5
 
