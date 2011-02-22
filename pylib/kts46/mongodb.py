@@ -220,6 +220,7 @@ class SimulationProject(object):
 
         self.db.progresses.remove(key)
         self.db.statistics.remove(key)
+        self.db.fullStates.remove(key)
         self.db.jobs.remove(key)
         self.db.states.remove({'job': key})
         self.db.cars.remove({'job': key})
