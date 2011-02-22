@@ -378,15 +378,15 @@ var kts46 = (function($){
                 efWidth = width * ratio,
                 lineWidth = efWidth / data.road.lines;
             
-            var drawModel = function(model, state) {
+            var draw = function(model, state) {
                 dc.clearRect(0, 0, efLength + margin*2, efWidth + margin*2);
                 
                 dc.fillStyle = "rgb(200, 200, 200)";
                 dc.fillRect(margin, margin, efLength, efWidth);
             
                 if (state) {
-                    drawTrafficLights(model.trafficLights, state.trafficLights);
-                    drawCars(state.cars);
+                    drawTrafficLights(model.trafficLights, state.data.trafficLights);
+                    drawCars(state.data.cars);
                 } else {
                     drawTrafficLights(model.trafficLights);
                 }
@@ -412,20 +412,19 @@ var kts46 = (function($){
                 $.each(cars, function(index, car){
                     var position = Math.floor(car.pos * ratio),
                         color = "rgb(0, 0, 255)",
-                        carEfWidth = Math.ceil(car.width * ratio) + 1,
-                        carEfLength = Math.ceil(car.length * ratio) + 1,
+                        carEfWidth = Math.max(Math.ceil(car.width * ratio), 2),
+                        carEfLength = Math.max(Math.ceil(car.length * ratio), 3),
                         carMargin = Math.ceil(lineWidth * car.line);
                     dc.fillStyle = color;
                     dc.fillRect(margin + position, margin + carMargin, carEfLength, carEfWidth);
                 });
             };
             
-            // Lights.
-            drawModel(data);
+            draw(data);
             
             var updateState = function(time){
                 $.getJSON( ['/api', 'modelState', proj, job, time +'/'].join("/") , function(stateData){
-                    drawModel(data, stateData);
+                    draw(data, stateData);
                     $('#live-view .time').text(time);
                     time += data.simulationParameters.stepDuration;
                     time = Math.round(time*10) / 10;
