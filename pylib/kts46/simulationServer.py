@@ -15,7 +15,6 @@
 
 import logging
 from kts46.model.Model import Model, ModelParams
-from kts46.mongodb import StateStorage
 
 
 def timedeltaToSeconds(td):
@@ -29,7 +28,7 @@ class SimulationServer(object):
         self.cfg = cfg
         self.logger = logging.getLogger('kts46.SimulationServer')
 
-    def runSimulationJob(self, job):
+    def runSimulationJob(self, job, saver):
         """Runs simulation job.
 
         This function does all required stuff: gets initial state and definition,
@@ -53,7 +52,6 @@ class SimulationServer(object):
         batchLength = job.definition['simulationParameters']['batchLength']
 
         # Prepare infrastructure.
-        saver = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'));
         saver.repair(t)
         
         # Reset job progress step counter.
