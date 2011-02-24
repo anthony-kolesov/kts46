@@ -24,7 +24,7 @@ import kts46.utils
 import jsonRpcClient
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
-from kts46.mongodb import Storage
+from kts46.mongodb import Storage, StateStorage
 
 def _notificationThreadImplementation(worker):
     while True:
@@ -126,7 +126,8 @@ class Worker:
                 self.log.info('Starting simulation task: {0}.{1} [{2}/{3}].'.format(
                     projectName, jobName, job.progress['done'], job.progress['totalSteps']))
                 simServer = SimulationServer(self.cfg)
-                simServer.runSimulationJob(job)
+                stateStorage = StateStorage(job, self.cfg.getint('worker', 'dbBatchLength'));
+                simServer.runSimulationJob(job, stateStorage)
             elif task['type'] == 'basicStatistics':
                 self.log.info('Starting basicStatistics task: {0}.{1}.'.format(projectName, jobName))
                 stServer = StatisticsServer(self.cfg)
