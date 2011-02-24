@@ -451,6 +451,11 @@ class SimulationJob(object):
     def currentFullState(self, value):
         doc = {'data': value, '_id': self.id}
         self.db.fullStates.save(doc)
+        
+    def saveSimulationProgress(self, stepsDone):
+        spec = {'_id': job.id}
+        doc = {'$inc': {'done': stepsDone}}
+        self.db.progresses.update(spec, doc, safe=True)
 
 
 class StateStorage(object):

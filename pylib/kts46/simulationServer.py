@@ -75,13 +75,11 @@ class SimulationServer(object):
             model.run_step(stepAsMs)
             stepsCount += 1
             data = model.getStateData()
-            #data['job'] = jobId
-            # Round time to milliseconds
             t += step
             saver.add(round(t, 3), data)
 
         # Finalize.
         job.currentFullState = model.getStateData()
-        job.db.progresses.update({'_id': job.id}, {'$inc': {'done': stepsCount}}, safe=True)
+        job.saveSimulationProgress(stepsCount)
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
