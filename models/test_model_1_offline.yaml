@@ -1,0 +1,28 @@
+simulationParameters:
+    duration: 90
+    stepDuration: 0.2
+    batchLength: 450
+
+
+modelParameters: 
+    inputRate: 1600
+    safeDistance: 20
+    safeDistanceRear: 10
+    maxSpeed: 22
+    minSpeed: 14
+    trafficLightStopDistance: 5
+
+road:
+    length: 500
+    width: 25
+    lines: 1
+
+trafficLights:
+    "1":
+        position: 150
+        green: 60
+        red: 34
+    "2":
+        position: 350
+        green: 60
+        red: 34
