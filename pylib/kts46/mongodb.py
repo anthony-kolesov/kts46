@@ -453,7 +453,7 @@ class SimulationJob(object):
         self.db.fullStates.save(doc)
         
     def saveSimulationProgress(self, stepsDone):
-        spec = {'_id': job.id}
+        spec = {'_id': self.id}
         doc = {'$inc': {'done': stepsDone}}
         self.db.progresses.update(spec, doc, safe=True)
 

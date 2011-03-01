@@ -244,7 +244,7 @@ class Model(object):
         # Fields
         data['time'] = kts46.utils.timedelta2str(self.time)
         data['lastCarGenerationTime'] = kts46.utils.timedelta2str(self._lastCarGenerationTime)
-        data['lastCardId'] = self._lastCarId
+        data['lastCarId'] = self._lastCarId
 
         # Result.
         return data
@@ -291,5 +291,5 @@ class Model(object):
             # Fields
             self.time = kts46.utils.str2timedelta(state['time'])
             self._lastCarGenerationTime = kts46.utils.str2timedelta(state['lastCarGenerationTime'])
-            self._lastCarId = state['lastCardId']
+            self._lastCarId = state['lastCarId']
 

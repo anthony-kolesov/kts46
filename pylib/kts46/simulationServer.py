@@ -34,8 +34,6 @@ class SimulationServer(object):
         This function does all required stuff: gets initial state and definition,
         simulates and stores simulation results to database."""
 
-        jobId = job.name
-
         model = Model(Model.defaultParams)
        
         # Load current state: load state and set time
