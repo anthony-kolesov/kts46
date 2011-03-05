@@ -84,9 +84,9 @@ class CSVStateStorage(object):
                 car['desiredSpeed'],
                 car['curspd'],
                 car['pos'],
-                car['line']#,
-                #car['width'],
-                #car['length']
+                car['line'],
+                car['width'],
+                car['length']
             ]
             self.carsWriter.writerow(row)
 

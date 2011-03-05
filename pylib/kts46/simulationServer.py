@@ -24,8 +24,7 @@ def timedeltaToSeconds(td):
 class SimulationServer(object):
     "A server object that does simulation of model."
 
-    def __init__(self, cfg):
-        self.cfg = cfg
+    def __init__(self, cfg=None):
         self.logger = logging.getLogger('kts46.SimulationServer')
 
     def runSimulationJob(self, job, saver):
