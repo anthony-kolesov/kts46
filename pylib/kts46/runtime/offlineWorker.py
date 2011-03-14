@@ -15,29 +15,36 @@
 # limitations under the License.
 
 import csv
+import glob
+import os
+import os.path
 import sys
 import tarfile
+import tempfile
 import yaml
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 
 # Project imports
-PROJECT_LIB_PATH = '../../'
-if PROJECT_LIB_PATH not in sys.path:
-    sys.path.append(PROJECT_LIB_PATH)
+#PROJECT_LIB_PATH = '../../'
+#if PROJECT_LIB_PATH not in sys.path:
+#    sys.path.append(PROJECT_LIB_PATH)
 from kts46.simulationServer import SimulationServer
 
 
 def configureCmdOptions():
-    usage = "usage: %prog [options] modelFile.yaml"
+    usage = "usage: %prog [options] modelFile.yaml*"
     cmdOpts = OptionParser(usage=usage)
 
-    cmdOpts.add_option('-s', '--states', action='store', dest='statesFile',
+    cmdOpts.add_option('--states-file', action='store', dest='statesFile',
         default='states.csv',
         help="Output file for states." )
-    cmdOpts.add_option('-c', '--cars', action='store', dest='carsFile',
+    cmdOpts.add_option('--cars-file', action='store', dest='carsFile',
         default='cars.csv',
         help="Output file for cars." )
+    cmdOpts.add_option('-o', '--out', action='store', dest='output',
+        default='./',
+        help="Directory to place output files. By default this is current working directory." )
 
     return cmdOpts.parse_args(sys.argv[1:])
 
@@ -101,35 +108,43 @@ class CSVStateStorage(object):
     def repair(self, currentTime):
         pass
 
+
 cfg = SafeConfigParser()
-options, args = configureCmdOptions()
-inputFilePath = args[0]
-statesFilePath = options.statesFile
-carsFilePath = options.carsFile
+options, inputFilePaths = configureCmdOptions()
+tempDir = tempfile.mkdtemp(prefix='kts46-')
+statesFilePath = os.path.join(tempDir, options.statesFile)
+carsFilePath = os.path.join(tempDir, options.carsFile)
 
-with open(inputFilePath) as f:
-    definition = yaml.load(f.read())
+for inputFilePath in inputFilePaths:
+    # Get model definition
+    with open(inputFilePath) as f:
+        definition = yaml.load(f.read())
 
-ss = SimulationServer(cfg)
-statesFile = open(statesFilePath, "wb")
-carsFile = open(carsFilePath, "wb")
+    # Simulate
+    ss = SimulationServer(cfg)
+    statesFile = open(statesFilePath, "wb")
+    carsFile = open(carsFilePath, "wb")
+    storage = CSVStateStorage(statesFile, carsFile, definition['simulationParameters']['batchLength'])
+    job = OfflineJob(definition)
+    ss.runSimulationJob(job, storage)
 
-storage = CSVStateStorage(statesFile, carsFile, definition['simulationParameters']['batchLength'])
-job = OfflineJob(definition)
-ss.runSimulationJob(job, storage)
+    # Close files for writing and reopen for reading.
+    statesFile.close(), carsFile.close()
+    #statesFile = open(statesFilePath, "rb")
+    #carsFile = open(carsFilePath, "rb")
 
-# Close files for writing
-statesFile.close()
-carsFile.close()
+    # Compress
+    tarName = os.path.splitext(os.path.split(inputFilePath)[1])[0]
+    outpath = os.path.join(options.output, tarName + ".tar.bz2")
+    tar = tarfile.open(outpath, "w:bz2")
+    #tar.addfile(tar.gettarinfo(fileobj=statesFile), statesFile)
+    #tar.addfile(tar.gettarinfo(fileobj=carsFile), carsFile)
+    tar.add(statesFilePath, arcname=tarName+'/'+os.path.basename(statesFilePath))
+    tar.add(carsFilePath, arcname=tarName+'/'+os.path.basename(carsFilePath))
 
-# Reopen file for reading
-statesFile = open(statesFilePath, "rb")
-carsFile = open(carsFilePath, "rb")
+    # Cleanup
+    tar.close()
+    #statesFile.close(), carsFile.close()
+    os.remove(statesFilePath), os.remove(carsFilePath)
 
-tar = tarfile.open("data.tar.bz2", "w:bz2")
-tar.addfile(tar.gettarinfo(fileobj=statesFile), statesFile)
-tar.addfile(tar.gettarinfo(fileobj=carsFile), carsFile)
-
-tar.close()
-statesFile.close()
-carsFile.close()
+os.rmdir(tempDir)
