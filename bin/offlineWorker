@@ -1,9 +1,7 @@
 #!/bin/bash
 
-#BASEPATH=`pwd`/..
-#PYTHONPATH=$BASEPATH/pylib/:$PYTHONPATH
-BASEPATH=`pwd`
-PYTHONPATH=$BASEPATH/lib/:$PYTHONPATH
+BASEPATH=`pwd`/..
+PYTHONPATH=$BASEPATH/pylib/:$PYTHONPATH
 export PYTHONPATH
 
 ../pylib/kts46/runtime/offlineWorker.py $@

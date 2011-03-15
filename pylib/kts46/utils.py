@@ -20,7 +20,6 @@ import re
 import xmlrpclib
 from ConfigParser import SafeConfigParser
 from datetime import timedelta
-import jsonRpcClient
 
 
 def getConfiguration(customConfigFiles=[]):
