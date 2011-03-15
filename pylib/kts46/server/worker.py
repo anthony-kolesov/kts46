@@ -21,6 +21,7 @@ from socket import error as SocketException
 
 import kts46
 import kts46.utils
+import kts46.rpcClient
 import jsonRpcClient
 from kts46.simulationServer import SimulationServer
 from kts46.statisticsServer import StatisticsServer
@@ -69,7 +70,7 @@ class Worker:
         self.notificationSleepTimeout = cfg.getint('scheduler', 'notifyInterval')
 
         # Create server proxy.
-        self.server = kts46.utils.getJsonRpcClient(cfg)
+        self.server = kts46.rpcClient.getJsonRpcClient(cfg)
         self.startNotificationThread()
 
         # Create db storage.
@@ -144,7 +145,7 @@ class Worker:
             statistics = kts46.utils.getMemoryUsage()
             statistics['hostName'] = socket.gethostname()
             statistics['version'] = kts46.__version__
-                
+
             # Notify server.
             # Lock here so if condition in sync thread will be correct.
             self.lastUpdateLock.acquire()

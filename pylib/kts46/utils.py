@@ -75,36 +75,6 @@ def getLogger(cfg):
     return logger
 
 
-def getRPCServerProxy(cfg):
-    """Create an RPC proxy to server.
-
-    :param cfg: Application configuration.
-    :type cfg: ConfigParser
-    :returns: Proxy to an XML-RPC server.
-    :rtype: xmlrpclib.ServerProxy
-    """
-    host = cfg.get('rpc-server', 'address')
-    port = cfg.getint('rpc-server', 'port')
-    connString = 'http://{host}:{port}'.format(host=host, port=port)
-    proxy = xmlrpclib.ServerProxy(connString)
-    return proxy
-
-
-def getJsonRpcClient(cfg):
-    """Create a JSON-RPC client.
-
-    :param cfg: Application configuration.
-    :type cfg: ConfigParser
-    :returns: Proxy to a JSON-RPC server.
-    :rtype: jsonRpcClient.Client
-    """
-    host = cfg.get('JSON-RPC Server', 'host')
-    port = cfg.getint('JSON-RPC Server', 'port')
-    path = cfg.get('JSON-RPC Server', 'path')
-    connString = 'http://{host}:{port}{path}'.format(host=host, port=port, path=path)
-    return jsonRpcClient.Client(connString)
-
-
 def timedelta2str(data):
     # Only days, seconds and microseconds are stored internally.
     return u'{0}d{1}s{2}'.format(data.days, data.seconds, data.microseconds)
@@ -117,8 +87,8 @@ def str2timedelta(value):
 def timedeltaToSeconds(td):
     "Converts timedelta to seconds."
     return td.days * 24 * 60 * 60 + td.seconds + td.microseconds / 1e6
-    
-    
+
+
 def getMemoryUsage():
     # Convert to MiB!
     sizes = {
@@ -135,9 +105,9 @@ def getMemoryUsage():
         vmpeakMatch = re.match(r'VmPeak:[\s]+([\d]+) ([kKmM]B)', line)
         if vmpeakMatch is not None:
             result['vmPeak'] = int(vmpeakMatch.group(1)) * sizes[ vmpeakMatch.group(2) ]
-            
+
         vmRssMatch = re.match(r'VmRSS:[\s]+([\d]+) ([kKmM]B)', line)
         if vmRssMatch is not None:
             result['vmRSS'] = int(vmRssMatch.group(1)) * sizes[ vmRssMatch.group(2) ]
-            
+
     return result

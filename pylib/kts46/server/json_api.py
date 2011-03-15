@@ -21,7 +21,7 @@ import re
 import urllib
 from socket import error as SocketException
 import gviz_api
-import kts46.utils
+import kts46.rpcClient
 import jsonRpcClient
 
 JSON_CONTENT_TYPE = 'application/json'
@@ -30,8 +30,8 @@ class JSONApiServer:
     "Provides HTTP server that provides control over simulation with JSON API."
 
     def __init__(self, cfg):
-        self.server = kts46.utils.getRPCServerProxy(cfg)
-        self.jsonrpc = kts46.utils.getJsonRpcClient(cfg)
+        self.server = kts46.rpcCLient.getRPCServerProxy(cfg)
+        self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
         self.cfg = cfg
 
     def serve_forever(self):
@@ -117,7 +117,7 @@ class JSONApiRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps(data))
 
-    
+
     def getStaticFile(self, path):
         if path.find("..") != -1:
             self.send_response(400)
