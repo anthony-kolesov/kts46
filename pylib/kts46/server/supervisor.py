@@ -17,7 +17,7 @@ import logging
 import time
 from datetime import datetime, timedelta
 from socket import error as SocketException
-import kts46.utils
+import kts46.rpcClient
 import jsonRpcClient
 
 class Supervisor:
@@ -25,10 +25,8 @@ class Supervisor:
     workers doesn't respond for required time."""
 
     def __init__(self, cfg):
-        # self.cfg = cfg
         self.log = logging.getLogger(cfg.get('loggers', 'Supervisor'))
-        #self.server = kts46.utils.getRPCServerProxy(cfg)
-        self.jsonrpc = kts46.utils.getJsonRpcClient(cfg)
+        self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
         self.checkTimeout = cfg.getint('supervisor', 'checkInterval')
         restartTaskTimeout = cfg.getint('supervisor', 'restartTaskInterval')
         self.restartTaskTimeout = timedelta(seconds=restartTaskTimeout)
@@ -48,7 +46,7 @@ class Supervisor:
             import json
             msgAdd = json.dumps(error)
         self.log.error(msg, msgAdd)
-            
+
     def checkTasks(self):
         self.log.info('Starting to check scheduler for staled tasks.')
 
