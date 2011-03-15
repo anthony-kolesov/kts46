@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 import csv
 import glob
 import os
@@ -111,9 +112,22 @@ class CSVStateStorage(object):
 
 cfg = SafeConfigParser()
 options, inputFilePaths = configureCmdOptions()
+
+# Configure output directory.
+if os.path.exists(options.output):
+    if not os.path.isdir(options.output):
+        raise Exception("Specified output directory isn't a directory at all.")
+else:
+    # Recursive creation: make all intermediate directories.
+    os.makedirs(options.output)
+
+# Temp data
 tempDir = tempfile.mkdtemp(prefix='kts46-')
 statesFilePath = os.path.join(tempDir, options.statesFile)
 carsFilePath = os.path.join(tempDir, options.carsFile)
+
+# Remove temp directory
+atexit.register(lambda dir: os.rmdir(dir), tempDir)
 
 for inputFilePath in inputFilePaths:
     # Get model definition
@@ -146,5 +160,3 @@ for inputFilePath in inputFilePaths:
     tar.close()
     #statesFile.close(), carsFile.close()
     os.remove(statesFilePath), os.remove(carsFilePath)
-
-os.rmdir(tempDir)
