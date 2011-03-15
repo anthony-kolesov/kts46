@@ -77,6 +77,9 @@ class Worker:
         self.storage = None
         #self.storage = Storage(self.cfg.get('mongodb', 'host'))
 
+        # Get possible task types.
+        self.possibleTypes = map(str.strip, cfg.get("worker", "possibleTasks").split(","))
+
     def run(self):
         "Runs a worker loop."
 
@@ -84,7 +87,7 @@ class Worker:
         while True:
             # Try to get a task.
             try:
-                taskTypes = ['simulation', 'idleTimes', 'throughput', 'basicStatistics']
+                taskTypes = self.possibleTypes
                 task = self.server.getTask(self.workerId, taskTypes)
             except SocketException, msg:
                 self.log.error("Couldn't connect to RPC server. Message: %s", msg)
