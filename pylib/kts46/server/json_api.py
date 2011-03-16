@@ -30,7 +30,7 @@ class JSONApiServer:
     "Provides HTTP server that provides control over simulation with JSON API."
 
     def __init__(self, cfg):
-        self.server = kts46.rpcCLient.getRPCServerProxy(cfg)
+        self.server = kts46.rpcClient.getRPCServerProxy(cfg)
         self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
         self.cfg = cfg
 
