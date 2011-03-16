@@ -1,4 +1,4 @@
-var mongodb = require('./mongodb'),
+var mongodb = require('mongodb'),
     fluentMongodb = require('./mongodb-fluent');
 
 var Storage = function(dbServer) {
@@ -20,7 +20,7 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
             if (onHasJob) onHasJob(null);
             return;
         }
-    
+
         var j = {
             duration: jobDocument.definition.simulationParameters.duration,
             batchLength: jobDocument.definition.simulationParameters.batchLength,
@@ -31,7 +31,7 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
         fluentMongodb.findOne(client, 'progresses', {'_id': j.id}, {},
             onProgressLoaded.bind({}, j), onError );
     };
-    
+
     var onProgressLoaded = function(job, progressDocument) {
         job.fullStatistics = progressDocument.fullStatistics;
         job.done = progressDocument.done;
@@ -41,11 +41,11 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
         job.basicStatistics = progressDocument.basicStatistics;
         job.idleTimes = progressDocument.idleTimes;
         job.throughput = progressDocument.throughput;
-        
+
         client.close();
         process.nextTick( onHasJob.bind({}, job) );
     };
-    
+
     var spec = {'_id': jobName};
     var fields = {'name':1, 'definition': 1};
     var client = this._getDbClient(projectName);
