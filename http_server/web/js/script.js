@@ -226,7 +226,7 @@ var kts46 = (function($){
 
             // Show projects in their view.
             updateProjectsList(dataTable.getDistinctValues(projectColumnId));
-            
+
             // Update time
             var lastUpd = $('#last-update-time .content');
             lastUpd.text((new Date()).toLocaleTimeString());
@@ -268,8 +268,8 @@ var kts46 = (function($){
             action(p, j);
         }
     };
-    
-    
+
+
     /* Runs specified action for first selected job.
      * :param action: function(projectName, jobName)
      */
@@ -283,18 +283,24 @@ var kts46 = (function($){
         action(p, j);
     };
 
+    var getJobNameByRow = function(jobRow) {
+        var doc = $(document),
+            view = doc.data('google-table-view');
+        return {'p':view.getValue(jobRow, projectColumnId),
+                'j': view.getValue(jobRow, jobColumnId)};
+    };
+
+
+    var getStatistics = function(jobRow, cbk) {
+        var pj = getJobNameByRow(jobRow);
+        $.getJSON(['/api/jobStatistics', pj['p'], pj['j'], ''].join('/'), cbk);
+    };
+
 
     var showStatistics = function() {
-        var jobs = getSelectedJobs(),
-            doc = $(document),
-            view = doc.data('google-table-view'),
-            job, project, path;
+        var jobs = getSelectedJobs();
         if (jobs.length === 0) return;
-
-        job = view.getValue(jobs[0], jobColumnId);
-        project = view.getValue(jobs[0], projectColumnId);
-
-        $.getJSON(['/api/jobStatistics', project, job, ''].join('/'), function(data){
+        getStatistics(jobs[0], function(data){
             var text = JSON.stringify(data, null, 4); // 4 is amount of spaces.
             $('#details-content').text( [project,'.',job,'\n',text].join(''));
         } );
@@ -361,29 +367,29 @@ var kts46 = (function($){
         var table = $(document).data('google-table');
         table.draw(view, {showRowNumber: true, allowHtml: true, sortColumn: 1});
     };
-    
+
     var showLiveView = function() {
         $('#live-view').dialog('open');
         var c = $('#live-view canvas');
         var dc = c[0].getContext("2d");
-        
+
         var margin = 10;
-        
+
         var drawModel = function(proj, job, data) {
-        
+
             var length = data.road.length,
                 width = data.road.width,
                 efLength = c.attr('width') - margin*2,
                 ratio = efLength / length,
                 efWidth = width * ratio,
                 lineWidth = efWidth / data.road.lines;
-            
+
             var draw = function(model, state) {
                 dc.clearRect(0, 0, efLength + margin*2, efWidth + margin*2);
-                
+
                 dc.fillStyle = "rgb(200, 200, 200)";
                 dc.fillRect(margin, margin, efLength, efWidth);
-            
+
                 if (state) {
                     drawTrafficLights(model.trafficLights, state.data.trafficLights);
                     drawCars(state.data.cars);
@@ -391,7 +397,7 @@ var kts46 = (function($){
                     drawTrafficLights(model.trafficLights);
                 }
             };
-            
+
             var drawTrafficLights = function(descr, state) {
                 $.each(descr, function(id, light){
                     var position = light.position * ratio,
@@ -407,7 +413,7 @@ var kts46 = (function($){
                     dc.fillRect(margin + position, margin - 1, 2, efWidth + 2);
                 });
             };
-            
+
             var drawCars = function(cars) {
                 $.each(cars, function(index, car){
                     var position = Math.floor(car.pos * ratio),
@@ -419,9 +425,9 @@ var kts46 = (function($){
                     dc.fillRect(margin + position, margin + carMargin, carEfLength, carEfWidth);
                 });
             };
-            
+
             draw(data);
-            
+
             var updateState = function(time){
                 $.getJSON( ['/api', 'modelState', proj, job, time +'/'].join("/") , function(stateData){
                     draw(data, stateData);
@@ -436,12 +442,37 @@ var kts46 = (function($){
             };
             updateState(0.0);
         };
-        
+
         forFirstSelectedJob(function(p, j){
             $.getJSON( ['/api', 'modelDescription', p, j +'/'].join("/") ,
                 drawModel.bind({}, p, j) );
         });
-        
+
+    };
+
+
+    var exportInCSV = function(){
+        var jobs = getSelectedJobs(),
+            pjs = jobs.map(getJobNameByRow);
+        var params = JSON.stringify({
+            method: "listJobStatistics",
+            id: "ljs" + Date(),
+            params: [pjs]
+        }) + "\n";
+        $.post(jsonRpcPath, params, function(data) {
+            var result = data.result,
+                csv = [];
+            csv = result.map(function(n){
+                return [n.project, n.job, n.average, n.stdeviation,
+                        n.averageSpeed, n.idleTimes.average, n.throughput[0].rate,
+                        n.throughput[1].rate]
+                    .join(",");
+            });
+            csv.unshift(["Project", "Job", "Average", "Standard deviation",
+                         "Average speed", "Average idle time",
+                         "Start throughput", "End throughput"].join(","));
+            $("#details-content").text(csv.join("\n"));
+        });
     };
 
 
@@ -476,14 +507,15 @@ var kts46 = (function($){
             .click(forSelectedJobs.bind({}, deleteJob.bind({}) ));
         $('#show-statistics').button().click(showStatistics);
         $('#show-live-view').button().click(showLiveView);
+        $("#export-in-csv").button().click(exportInCSV);
 
         /* Project list effects. */
         $('#projects-list').selectable({
             selected: handleProjectSelected,
             unselected: handleProjectUnselected
         });
-        
-        
+
+
         // Create live view dialog.
         $("#live-view").dialog({
             resizable: false,
@@ -500,8 +532,8 @@ var kts46 = (function($){
                 clearTimeout( $('#live-view canvas').data('timer') );
             }
         });
-        
-        
+
+
     });
 
     return {

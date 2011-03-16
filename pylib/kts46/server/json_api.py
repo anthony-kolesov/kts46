@@ -262,6 +262,13 @@ It must be an empty array if method has no params.""", id)
             elif methodName == 'deleteJob':
                 if not self.checkJSONArgsNumber(params, 2): return
                 xmlrpc.deleteJob(params[0], params[1])
+            elif methodName == 'listJobStatistics':
+                if not self.checkJSONArgsNumber(params, 1): return
+                result = []
+                for a in params[0]:
+                    result.append(xmlrpc.getJobStatistics(a['p'],a['j'], False))
+                    result[-1]['project'] = a['p']
+                    result[-1]['job'] = a['j']
             elif methodName == 'runJob':
                 if not self.checkJSONArgsNumber(params, 2): return
                 try:
