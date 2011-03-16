@@ -5,8 +5,8 @@ BASEPATH=`dirname $(readlink -f $0)`/..
 configFile="${BASEPATH}/etc/controlNode.conf.js"
 command="node ${BASEPATH}/ControlNode/controlNode.js"
 
-NODE_PATH="${BASEPATH}/jslib/:${NODE_PATH}"
-export NODE_PATH
+#NODE_PATH="${BASEPATH}/jslib/:${NODE_PATH}"
+#export NODE_PATH
 
 if [ -f $configFile ]; then
     command="$command -config $configFile"
