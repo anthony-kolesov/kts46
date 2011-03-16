@@ -3,6 +3,6 @@ glob:*.lnk
 glob:*.pyc
 relre:couchdb.(stderr|stdout)
 glob:doc/build
-glob:jslib/mongodb
 glob:etc/local.ini
 glob:etc/controlNode.conf.js
+glob:ControlNode/node_modules/*
