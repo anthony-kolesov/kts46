@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-var mongodb = require('./mongodb'),
+var mongodb = require('mongodb'),
     ProjectStorage = require('./projectStorage').Storage;
 
 // Configuration parameters and default values
@@ -122,7 +122,7 @@ Scheduler.prototype.addTask = function(response, projectName, jobName) {
                                     taskType:taskType.throughput});
                 return;
             }
-            
+
             if (job.basicStatistics === false) {
                 this.waitingQueue.push(getTask(taskType.basicStatistics));
             }
@@ -138,7 +138,7 @@ Scheduler.prototype.addTask = function(response, projectName, jobName) {
         }
         response.response('success');
     };
-    
+
     this.projectStorage.getJob(projectName, jobName, handleHasJob.bind(this), onMongodbError.bind(response));
 };
 
@@ -161,7 +161,7 @@ Scheduler.prototype.abortTask = function(response, projectName, jobName) {
             len += 1;
         }
     }
-    
+
     // Abort already running.
     for(var key in this.runningTasks){
         var val = this.runningTasks[key];
@@ -170,7 +170,7 @@ Scheduler.prototype.abortTask = function(response, projectName, jobName) {
             len += 1;
         }
     }
-    
+
     response.response(len);
 };
 
@@ -191,7 +191,7 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
             break;
         }
     }
-    
+
     if (task === null){
         task = {empty: true};
     } else {
@@ -201,12 +201,12 @@ Scheduler.prototype.getTask = function(response, workerId, taskTypes){
         task['lastUpdate'] = new Date();
         task['startTime'] = task['lastUpdate'];
         task['sig'] = task['lastUpdate'].toJSON();
-        
+
         // Set notification interval only if nothing has set it already.
         if (!task.hasOwnProperty("notificationInterval")) {
             task.notificationInterval = config.notificationInterval;
         }
-        
+
         this.waitingActivation[workerId] = task;
     }
     response.response(task);
@@ -251,7 +251,7 @@ Scheduler.prototype.rejectTask = function(response, workerId, sig) {
 
 
 Scheduler.prototype.taskFinished = function(response, workerId, sig, statistics) {
-    
+
     // Check task existence.
     if (!(workerId in this.runningTasks)) {
         response.error({type:'InvalidWorkerId'});
@@ -274,12 +274,12 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig, statistics)
     if (startNext) {
         process.nextTick(this.addTask.bind(this, response, task.project, task.job));
     }
-    
+
     // Write statistics
     var onStatisticsSaved = function() {
         response.response("success");
     };
-    
+
     if (statistics) {
         statistics.execTime = (Date.now() - task.startTime.getTime()) / 1000;
         statistics.project = task.project;

@@ -1,6 +1,6 @@
 // functions to make work with MongoDB for nodejs easier.
 
-var mongodb = require('./mongodb');
+var mongodb = require('mongodb');
 
 var ErrorType = 'MongoDBError';
 
@@ -44,7 +44,7 @@ var find = function(client, collectionName, spec, fields, onFinished, onError) {
             });
         } );
     };
-    
+
     if (client.state === 'connected') {
         onHasConnection();
     } else {
@@ -121,7 +121,7 @@ var insert = function(client, collectionName, docs, options, onFinished, onError
             });
         } );
     };
-    
+
     if (client.state == "connected") {
         onHasConnection();
     } else {
