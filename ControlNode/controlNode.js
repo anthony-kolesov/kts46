@@ -20,7 +20,7 @@ var cfg = require('config')('ControlNode', {
 // Local variables
 var version = "0.1.6",
     versionString = ["ControlNode=", version, ";NodeJS=", process.version].join(""),
-    logfile = fs.createWriteStream("/var/log/kts46/ControlNode.log", {flags:"w+"});
+    logfile = fs.createWriteStream("/var/log/kts46/ControlNode.log", {flags:"a"});
 
 var log = function(code, path){
     logfile.write([Date(), code, path + "\n"].join("\t"));
@@ -54,5 +54,6 @@ var handleHttpRequest = function(req, res) {
 
 // Run server.
 http.createServer(handleHttpRequest).listen(cfg.port, cfg.address);
-console.log(["Starting ", versionString, " at http://", cfg.address, ':', cfg.port].join(''));
-logfile.write([Date()])
+var startingMsg = ["Starting ", versionString, " at http://", cfg.address, ':', cfg.port].join('');
+console.log(startingMsg);
+logfile.write([Date(), "\t", startingMsg, "\n"].join(""))
