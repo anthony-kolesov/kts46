@@ -13,6 +13,7 @@ Contents:
     :numbered:
 
     ControlNode.rst
+    NodeModules.rst
     kts46.rst
     jsonRpcClient.rst
     model.rst
