@@ -13,14 +13,16 @@
     limitations under the License.
 */
 
-var urlib = require("urllib"),
-    mimeTypes = mimeTypes.ext2Type;
+var url = require("url"),
+    mimeTypes = require("./mimeTypes").ext2type,
+    path = require("path"),
+    fs = require("fs");
 
 /**
  * Handles request for static file.
 */
 var handle = function(filesDirectory, pathPrefix, request, response){
-    var uri = urllib.parse(request.url).pathname;
+    var uri = url.parse(request.url).pathname;
     if (pathPrefix.length > 0 && uri.indexOf(pathPrefix) === 0) {
         uri = uri.substring(pathPrefix.length);
     }
@@ -28,14 +30,14 @@ var handle = function(filesDirectory, pathPrefix, request, response){
 
     path.exists(filename, function(exists) {
         if(!exists) {
-            res.writeHead(404, {"Content-Type": "text/plain"});
-            res.end("404 Not Found\n");
+            response.writeHead(404, {"Content-Type": "text/plain"});
+            response.end("404 Not Found\n");
             return;
         }
         fs.readFile(filename, "binary", function(err, file) {
             if(err) {
-                res.writeHead(500, {"Content-Type": "text/plain"});
-                res.end(err + "\n");
+                response.writeHead(500, {"Content-Type": "text/plain"});
+                response.end(err + "\n");
                 return;
             }
 
@@ -44,8 +46,8 @@ var handle = function(filesDirectory, pathPrefix, request, response){
             if (extension in mimeTypes) {
                 mimeType = mimeTypes[extension];
             }
-            res.writeHead(200, {"Content-Type": mimeType});
-            res.end(file, "binary");
+            response.writeHead(200, {"Content-Type": mimeType});
+            response.end(file, "binary");
         });
     });
 };
