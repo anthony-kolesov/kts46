@@ -10,8 +10,7 @@ Contents:
 
 .. toctree::
     :maxdepth: 2
-    :numbered:
-
+    
     ControlNode.rst
     NodeModules.rst
     kts46.rst

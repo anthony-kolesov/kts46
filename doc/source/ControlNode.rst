@@ -1,9 +1,27 @@
-*************************
-Control node JSON-RPC API
-*************************
+****************
+Control Node API
+****************
 
-Here is a description of API of control node based on node.js. This API replace
-first version of scheduler API described `here <http://code.google.com/p/kts46/wiki/SchedulerAPI>`_.
+This document describes an API of ControlNode based on NodeJS. This API consists
+of several parts: scheduler API, project management API and data API. Also a web
+user interface is hosted by the ControlNode. By default ControlNode listens on
+port 46400.
+
+
+.. toctree::
+    :maxdepth: 2
+    :numbered:
+
+    ManagementAPI.rst
+
+
+.. _kts46-cn-schedulerapi:
+
+Scheduler JSON-RPC API
+======================
+
+This API replace first version of scheduler API described
+`here <http://code.google.com/p/kts46/wiki/SchedulerAPI>`_.
 
 .. note::
     `JSON-RPC v1.0 <http://json-rpc.org/wiki/specification>`_ is used.
@@ -23,12 +41,12 @@ values:
 * ``taskType[1]`` - if argument is array and contains object of invalid type
 * ``taskType.field`` - same as array but for dictionary.
 
-To run nodejs requires followinf modules: ``mongodb-native``, ``jsonrpc`` and
+To run nodejs requires following modules: ``mongodb-native``, ``jsonrpc`` and
 ``config``.
 
 
 Methods
-=======
+-------
 
 .. js:function:: hello()
 
@@ -192,12 +210,12 @@ Methods
 
 
 Types
-=====
+-----
 
 .. _kts46-cn-taskType:
 
 task
-----
+^^^^
 
 .. js:attribute:: task.empty
 
@@ -244,7 +262,7 @@ task
 .. _kts46-cn-workerStatisticsType:
 
 workerStatistics
-----------------
+^^^^^^^^^^^^^^^^
 
 .. js:attribute:: workerStatistics.project
 
@@ -253,16 +271,16 @@ workerStatistics
 .. js:attribute:: workerStatistics.job
 
     ``[string]`` Name of task job. This property is set by scheduler.
-    
+
 .. js:attribute:: workerStatistics.taskType
 
     ``[string]`` Name of task type. This proeprty is set by scheduler.
-    
+
 .. js:attribute:: workerStatistics.executionTime
 
     ``[number]`` Number of seconds between start of task execution and its end. This value is
     calculated by scheduler, not worker.
-    
+
 .. js:attribute:: workerStatistics.hostName
 
     ``[string]`` Name of host on which worker is started.
@@ -274,19 +292,19 @@ workerStatistics
 .. js:attribute:: workerStatistics.vmRSS
 
     ``[number]`` Used resident memory at end of task in MiB.
-    
+
 .. js:attribute:: workerStatistics.version
 
     Version of worker.
 
 
 Constants
-=========
+---------
 
 .. _kts46-cn-taskTypes:
 
 Task types
-----------
+^^^^^^^^^^
 
 * ``taskType.simulation``: ``simulation``
 * ``taskType.basicStatistics``: ``basicStatistics``
