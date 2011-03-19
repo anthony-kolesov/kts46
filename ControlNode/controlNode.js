@@ -8,13 +8,13 @@ var http = require('http'),
 
 // Configuration
 var cfg = require('config')('ControlNode', {
-  port: 46212,
+  port: 46400,
   address: "",
   jsonRpcPath: "/jsonrpc",
   debugRpc: false,
   statusPath: "/status",
   webuiFilesPath: "../http_server/web",
-  webuiPathRoot: ""
+  webuiPathRoot: "/ui"
 });
 
 // Local variables
