@@ -18,6 +18,7 @@ Contents:
     jsonRpcClient.rst
     model.rst
     OfflineWorker.rst
+    Changelog.rst
 
 Indices and tables
 ==================
