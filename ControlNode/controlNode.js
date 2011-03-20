@@ -24,7 +24,7 @@ var cfg = require('config')('ControlNode', {
 });
 
 // Local variables
-var version = "0.1.6.5",
+var version = "0.1.6",
     versionString = ["ControlNode=", version, ";NodeJS=", process.version].join(""),
     logfile = fs.createWriteStream("/var/log/kts46/ControlNode.log", {flags:"a"});
 
@@ -37,7 +37,9 @@ var projectStorage = new ProjectStorage(new mongodb.Server(cfg.dbHost, cfg.dbPor
 var schedulerWrapper = new scheduler.Wrapper();
 
 var handleHttpRequest = function(req, res) {
-    var path = urllib.parse(req.url).pathname;
+    var url = urllib.parse(req.url, true),
+        path = url.pathname,
+        query = url.query;
     if(req.method == "POST"){
         // Define whether this is JSON request.
         if (path == cfg.jsonRpcPath) {
@@ -54,10 +56,8 @@ var handleHttpRequest = function(req, res) {
         res.end(JSON.stringify(schedulerWrapper.getStatus(), null, 4))
     } else if (path === "/api/data") {
         log(200, path);
-        res.writeHead(200, {'Content-Type': 'application/json'});
-        dataApi.serverStatus(projectStorage, function(data){
-            res.end(JSON.stringify(data, null, 2));
-        });
+        //res.writeHead(200, {'Content-Type': 'application/json'});
+        dataApi.serverStatus(projectStorage, query, res);
     } else {
         log(200, path);
         handleStaticFile(cfg.webuiFilesPath, cfg.webuiPathRoot, req, res);
