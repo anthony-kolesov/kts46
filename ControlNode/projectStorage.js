@@ -1,8 +1,10 @@
 var mongodb = require('mongodb'),
     fluentMongodb = require('./mongodb-fluent');
 
-var Storage = function(dbServer) {
+function Storage(dbServer) {
     this.dbServer = dbServer;
+    this.infoDbName = "kts46_info";
+    this.infoDb = null;
 };
 
 Storage.prototype._getDbClient = function(projectName) {
@@ -52,14 +54,77 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
     fluentMongodb.findOne(client, 'jobs', spec, fields, onJobLoaded, onError);
 };
 
+
 Storage.prototype.saveStatistics = function(statistics, onFinished, onError) {
-    var client = this._getDbClient("kts46_info");
+    if (this.infoDb === null) {
+        this.client = this._getDbClient(this.infoDbName);
+    }
     var onDone = function() {
-        client.close();
         if (onFinished)
             process.nextTick( onFinished );
     };
-    fluentMongodb.insert(client, "workerStatistics", statistics, {}, onDone, onError);
+    fluentMongodb.insert(this.infoDb, "workerStatistics", statistics, {}, onDone, onError);
+};
+
+
+/**
+ * Gets names of projects in database.
+ *
+ * @param onFinished {function(Array<String>)}
+ * @param onError {function(Error)}
+*/
+Storage.prototype.getProjectsNames = function(onFinished, onError) {
+    if (this.infoDb === null) {
+        this.infoDb = this._getDbClient(this.infoDbName);
+    }
+    var onLoaded = function(cursor){
+        cursor.toArray(function(err, data){
+            if (onFinished) {
+                onFinished(data.map(function(it){ return it['_id']; }));
+            }
+            cursor.close();
+        });
+    };
+    fluentMongodb.find(this.infoDb, "projects", {}, {'_id':1},onLoaded, onError);
+};
+
+
+/**
+ * Gets jobs status.
+ *
+ * @param onReady {function(Array<Job>)}
+ * @param onError {function(Error)}
+ */
+Storage.prototype.getStatus = function(onReady, onError){
+    var self = this;
+    var onHasNames = function(projectsNames){
+        var fields = {name:1, done:1, totalSteps:1, basicStatistics:1,
+            idleTimes:1, fullStatistics:1, throughput:1};
+        var progresses = [];
+        var getForProject = function() {
+            if (projectsNames.length > 0) {
+                var name = projectsNames.shift();
+                var client = self._getDbClient(name);
+                fluentMongodb.find(client, "progresses", {}, fields, function(cursor){
+                    cursor.toArray(function(err, array){
+                        for (var i in array) {
+                            array[i].name = array[i].name || array[i]['_id'];
+                            progresses.push(array[i]);
+                        }
+                        getForProject();
+                        cursor.close();
+                        client.close();
+                    });
+                }, onError);
+            } else {
+                if (onReady) {
+                    process.nextTick(function(){onReady(progresses);});
+                }
+            }
+        };
+        getForProject();
+    };
+    this.getProjectsNames(onHasNames, onError);
 };
 
 exports.Storage = Storage;
