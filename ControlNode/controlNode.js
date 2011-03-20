@@ -4,7 +4,10 @@ var http = require('http'),
     RPCHandler = require('jsonrpc').RPCHandler,
     scheduler = require('./schedulerRpcWrapper'),
     handleStaticFile = require('./staticFileHandler').handle,
-    fs = require('fs');
+    fs = require('fs'),
+    ProjectStorage = require('./projectStorage').Storage,
+    dataApi = require("./data_api"),
+    mongodb = require('mongodb');
 
 // Configuration
 var cfg = require('config')('ControlNode', {
@@ -14,11 +17,14 @@ var cfg = require('config')('ControlNode', {
   debugRpc: false,
   statusPath: "/status",
   webuiFilesPath: "../http_server/web",
-  webuiPathRoot: "/ui"
+  webuiPathRoot: "/ui",
+
+  dbHost: '192.168.42.3',
+  dbPort: 27017
 });
 
 // Local variables
-var version = "0.1.6",
+var version = "0.1.6.5",
     versionString = ["ControlNode=", version, ";NodeJS=", process.version].join(""),
     logfile = fs.createWriteStream("/var/log/kts46/ControlNode.log", {flags:"a"});
 
@@ -27,7 +33,8 @@ var log = function(code, path){
 };
 
 
-var schedulerWrapper = new scheduler.Wrapper(cfg.mongodbAddress);
+var projectStorage = new ProjectStorage(new mongodb.Server(cfg.dbHost, cfg.dbPort, {}));
+var schedulerWrapper = new scheduler.Wrapper();
 
 var handleHttpRequest = function(req, res) {
     var path = urllib.parse(req.url).pathname;
@@ -45,6 +52,12 @@ var handleHttpRequest = function(req, res) {
         log(200, path);
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify(schedulerWrapper.getStatus(), null, 4))
+    } else if (path === "/api/data") {
+        log(200, path);
+        res.writeHead(200, {'Content-Type': 'application/json'});
+        dataApi.serverStatus(projectStorage, function(data){
+            res.end(JSON.stringify(data, null, 2));
+        });
     } else {
         log(200, path);
         handleStaticFile(cfg.webuiFilesPath, cfg.webuiPathRoot, req, res);
