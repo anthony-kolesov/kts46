@@ -4,6 +4,12 @@ Model description
 
 Algorithms that are used in model are described in this document.
 
+.. toctree::
+    :maxdepth: 2
+    :numbered:
+
+    ModelChangelog.rst
+
 
 Moving equation
 ===============
@@ -16,7 +22,7 @@ So equation of vehicle own speed on time interval is:
 
 ..math::
     :label: getOwnDistance
-    
+
     S_{own}=S_{cur} + V_{leading} * t_{step} - S_{safe}
     0 \le S_{own} \le S_{desired}
 
