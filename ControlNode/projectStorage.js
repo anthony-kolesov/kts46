@@ -74,9 +74,9 @@ Storage.prototype.saveStatistics = function(statistics, onFinished, onError) {
  * @param onError {function(Error)}
 */
 Storage.prototype.getProjectsNames = function(onFinished, onError) {
-    if (this.infoDb === null) {
+    //if (this.infoDb === null) {
         this.infoDb = this._getDbClient(this.infoDbName);
-    }
+    //}
     var onLoaded = function(cursor){
         cursor.toArray(function(err, data){
             if (onFinished) {
@@ -109,10 +109,11 @@ Storage.prototype.getStatus = function(onReady, onError){
                     cursor.toArray(function(err, array){
                         for (var i in array) {
                             array[i].name = array[i].name || array[i]['_id'];
+                            array[i].project = name;
                             progresses.push(array[i]);
                         }
                         getForProject();
-                        cursor.close();
+                        //cursor.close(); // Causes error on second request.
                         client.close();
                     });
                 }, onError);

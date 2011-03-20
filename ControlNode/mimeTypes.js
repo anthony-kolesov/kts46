@@ -118,7 +118,8 @@ exports.ext2type = {
  '.xpm': 'image/x-xpixmap',
  '.xsl': 'application/xml',
  '.xwd': 'image/x-xwindowdump',
- '.zip': 'application/zip'
+ '.zip': 'application/zip',
+
+ // These are not from python but custom.
+ '.csv': 'text/csv'
 };
-
-
