@@ -38,6 +38,7 @@ distance allowed by traffic light.
 
 #. Get own distance using :eq:`getOwnDistance` for current line.
 #. If own distance is lesser then desired distance try neighbor lines:
+
   * Check that distance to following car is greater than or equal to
     ``safeDistanceRear``.
   * Get possible own distances on available lines using :eq:`getOwnDistance`.
