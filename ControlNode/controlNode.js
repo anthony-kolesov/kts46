@@ -65,7 +65,8 @@ var handleHttpRequest = function(req, res) {
         //res.writeHead(200, {'Content-Type': 'application/json'});
         //dataApi.serverStatus(projectStorage, query, res);
         var dataMethods = {
-            serverStatus: dataApi.serverStatus.bind({}, projectStorage)
+            serverStatus: dataApi.serverStatus.bind({}, projectStorage),
+            getJobStatistics: dataApi.getJobStatistics.bind({}, projectStorage)
         };
         getDataHandler.handle(query, res, dataMethods);
     } else {
