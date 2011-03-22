@@ -7,7 +7,8 @@ var http = require('http'),
     fs = require('fs'),
     ProjectStorage = require('./projectStorage').Storage,
     dataApi = require("./data_api"),
-    mongodb = require('mongodb');
+    mongodb = require('mongodb'),
+    getDataHandler = require("./GetDataHandler");
 
 // Configuration
 var cfg = require('config')('ControlNode', {
@@ -57,7 +58,16 @@ var handleHttpRequest = function(req, res) {
     } else if (path === "/api/data") {
         log(200, path);
         //res.writeHead(200, {'Content-Type': 'application/json'});
-        dataApi.serverStatus(projectStorage, query, res);
+        //dataApi.serverStatus(projectStorage, query, res);
+        var dataMethods = {
+            serverStatus: function(onFinish){
+                projectStorage.getStatus(
+                    onFinish,
+                    function(err){ console.log(err); process.exit(1); }
+                );
+            }
+        };
+        getDataHandler.handle(query, res, dataMethods);
     } else {
         log(200, path);
         handleStaticFile(cfg.webuiFilesPath, cfg.webuiPathRoot, req, res);
