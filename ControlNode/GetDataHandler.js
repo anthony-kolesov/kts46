@@ -18,6 +18,12 @@ var mimeTypes = require('./mimeTypes').ext2type
 
 function hasData(options, response, data){
     if (options.type === 'csv' || options.type === 'tsv') {
+        if (options.method !== "serverStatus") {
+            response.writeHead(400, {'Content-Type': mimeTypes['.txt']});
+            response.end("This output data type is not supported for this method.");
+            return;
+        }
+
         var type = mimeTypes['.'+options.type];
         //    disposition = "attachment;filename=ServerStatus."+options.type;
         response.writeHead(200, {'Content-Type': type});
@@ -51,8 +57,9 @@ function onError(response, err) {
 function handleRequest(options, response, methods){
     if ("method" in options){
         if (options.method in methods) {
-            methods[options.method](hasData.bind({}, options, response),
-                                    onError.bind({}, response));
+            methods[options.method](options,
+                                    hasData.bind({}, options, response),
+                                    onError.bind({}, response)  );
         } else {
             response.writeHead(404, {"Content-type": mimeTypes[".txt"]});
             response.end("Unknown method: " + options.method);

@@ -128,4 +128,24 @@ Storage.prototype.getStatus = function(onReady, onError){
     this.getProjectsNames(onHasNames, onError);
 };
 
+
+Storage.prototype.getJobStatistics = function(projectName, jobName, onDone, onError){
+    var self = this;
+    var fields = {name:1, done:1, totalSteps:1, basicStatistics:1,
+        idleTimes:1, fullStatistics:1, throughput:1};
+    var client = self._getDbClient(projectName);
+    fluentMongodb.findOne(client, "progresses", {"_id":jobName}, fields, function(doc){
+        if (doc !== null) {
+            doc.name = doc.name || doc['_id'];
+            doc.project = projectName;
+            client.close();
+        }
+
+        if (onDone) {
+            process.nextTick(onDone.bind({}, doc));
+        }
+
+    }, onError);
+};
+
 exports.Storage = Storage;
