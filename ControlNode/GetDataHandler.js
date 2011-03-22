@@ -16,37 +16,43 @@ limitations under the License.
 
 var mimeTypes = require('./mimeTypes').ext2type
 
-// All methods must be in format function(callback(data)). */
-function handleRequest(options, response, methods){
-    function hasData(data){
-        if (options.type === 'csv' || options.type === 'tsv') {
-            var type = mimeTypes['.'+options.type];
-            //    disposition = "attachment;filename=ServerStatus."+options.type;
-            response.writeHead(200, {'Content-Type': type});
-            //                   'Content-disposition': disposition});
+function hasData(options, response, data){
+    if (options.type === 'csv' || options.type === 'tsv') {
+        var type = mimeTypes['.'+options.type];
+        //    disposition = "attachment;filename=ServerStatus."+options.type;
+        response.writeHead(200, {'Content-Type': type});
+        //                   'Content-disposition': disposition});
 
-            var sep = options.type === 'csv' ? ',' : '\t';
-            response.write(['Project', 'Job', 'Done', 'Total steps',
-                'Basic statistics', 'Idle times', 'Throughput', 'Full statistics'
-                ].join(sep)+"\n");
-            data.forEach(function(it){
-                response.write([it.project, it.name, it.done, it.totalSteps,
-                    it.basicStatistics, it.idleTimes, it.throughput,
-                    it.fullStatistics].join(sep)+"\n");
-            });
-            response.end();
-        } else if (options.type === 'jsonp') {
-            response.writeHead(200, {'Content-Type': mimeTypes['.js']});
-            response.end([options.callback, "(", JSON.stringify(data), ")"].join(""));
-        } else {
-            response.writeHead(200, {'Content-Type': mimeTypes['.json']});
-            response.end(JSON.stringify(data));
-        }
+        var sep = options.type === 'csv' ? ',' : '\t';
+        response.write(['Project', 'Job', 'Done', 'Total steps',
+            'Basic statistics', 'Idle times', 'Throughput', 'Full statistics'
+            ].join(sep)+"\n");
+        data.forEach(function(it){
+            response.write([it.project, it.name, it.done, it.totalSteps,
+                it.basicStatistics, it.idleTimes, it.throughput,
+                it.fullStatistics].join(sep)+"\n");
+        });
+        response.end();
+    } else if (options.type === 'jsonp') {
+        response.writeHead(200, {'Content-Type': mimeTypes['.js']});
+        response.end([options.callback, "(", JSON.stringify(data), ")"].join(""));
+    } else {
+        response.writeHead(200, {'Content-Type': mimeTypes['.json']});
+        response.end(JSON.stringify(data));
     }
+}
 
+function onError(response, err) {
+    console.log(err);
+    response.writeHead(500, "Error getting data from database.")
+}
+
+// All methods must be in format function(callback(data), callback(error)). */
+function handleRequest(options, response, methods){
     if ("method" in options){
         if (options.method in methods) {
-            methods[options.method](hasData);
+            methods[options.method](hasData.bind({}, options, response),
+                                    onError.bind({}, response));
         } else {
             response.writeHead(404, {"Content-type": mimeTypes[".txt"]});
             response.end("Unknown method: " + options.method);
