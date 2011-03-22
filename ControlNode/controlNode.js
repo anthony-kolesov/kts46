@@ -29,9 +29,14 @@ var version = "0.1.6",
     versionString = ["ControlNode=", version, ";NodeJS=", process.version].join(""),
     logfile = fs.createWriteStream("/var/log/kts46/ControlNode.log", {flags:"a"});
 
-var log = function(code, path){
+
+var log = function(msg){
+    logfile.write([Date(), msg + "\n"].join("\t"));
+};
+var logRequest = function(code, path){
     logfile.write([Date(), code, path + "\n"].join("\t"));
 };
+
 
 
 var projectStorage = new ProjectStorage(new mongodb.Server(cfg.dbHost, cfg.dbPort, {}));
@@ -44,32 +49,27 @@ var handleHttpRequest = function(req, res) {
     if(req.method == "POST"){
         // Define whether this is JSON request.
         if (path == cfg.jsonRpcPath) {
-            log(200, path);
+            logRequest(200, path);
             new RPCHandler(req, res, schedulerWrapper, cfg.debugRpc);
         } else {
-            log(404, path);
+            logRequest(404, path);
             res.writeHead(404, {'Content-Type': 'text/plain'});
             res.end('Unknown path!\n');
         }
     } else if (path === cfg.statusPath) {
-        log(200, path);
+        logRequest(200, path);
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify(schedulerWrapper.getStatus(), null, 4))
     } else if (path === "/api/data") {
-        log(200, path);
+        logRequest(200, path);
         //res.writeHead(200, {'Content-Type': 'application/json'});
         //dataApi.serverStatus(projectStorage, query, res);
         var dataMethods = {
-            serverStatus: function(onFinish){
-                projectStorage.getStatus(
-                    onFinish,
-                    function(err){ console.log(err); process.exit(1); }
-                );
-            }
+            serverStatus: dataApi.serverStatus.bind({}, projectStorage)
         };
         getDataHandler.handle(query, res, dataMethods);
     } else {
-        log(200, path);
+        logRequest(200, path);
         handleStaticFile(cfg.webuiFilesPath, cfg.webuiPathRoot, req, res);
     }
 };
