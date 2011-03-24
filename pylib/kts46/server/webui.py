@@ -23,16 +23,17 @@ import re
 import urlparse
 import kts46.rpcClient
 
+# Add MIME types
+mimetypes.add_type("text/csv", ".csv", True) # True to add to official types.
+mimetypes.add_type("application/json", ".json", True) # True to add to official types.
+
 class DataAPIHandler(object):
 
     def __init__(self, cfg):
         self.xmlrpc = kts46.rpcClient.getRPCServerProxy(cfg)
         self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
         #self.cfg = cfg
-        self.logger = logging.getLogger('kts46.server.WebUI')
-        # Add MIME types
-        mimetypes.add_type("text/csv", ".csv", True) # True to add to official types.
-        mimetypes.add_type("application/json", ".json", True) # True to add to official types.
+        self.logger = logging.getLogger('kts46.server.WebUI.data')
 
 
     def _error(self, code, startResponse):
@@ -142,3 +143,107 @@ class DataAPIHandler(object):
 
     def modelState(self, projectName, jobName, time):
         return self.xmlrpc.getModelState(project, job, time)
+
+class ManagementAPIHandler(object):
+
+    def __init__(self, cfg):
+        self.xmlrpc = kts46.rpcClient.getRPCServerProxy(cfg)
+        self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
+        self.logger = logging.getLogger('kts46.server.WebUI.management')
+
+
+    def sendRPCResponse(self, response, result, id, error, httpcode=200):
+        response(str(httpcode) + ' ' + httplib.responses[httpcode], [
+            ('Content-Type', mimetypes.types_map[".json"]) ])
+        return json.dumps({'result':result, 'id':id, 'error': error})
+
+
+    def exceptBadRequest(self, response,  msg, id=None):
+        return self.sendRPCResponse(response, None, id, msg, httplib.BAD_REQUEST)
+
+
+    def checkJSONArgsNumber(self, response, params, amount):
+        if len(params) != amount:
+            msg = "Provided number of parameters is invalid. Required number of params: {0}, but has: {1}."
+            return self.exceptBadRequest(response, msg.format(amount, len(params)), id)
+        return None
+
+
+    def handle(self, environ, response):
+        # JSON RPC request must be in one line.
+        try:
+            request = json.loads(environ["wsgi.input"].readline())
+        except ValueError as err:
+            return self.exceptBadRequest(response, err.message)
+
+        if "id" not in request:
+            return self.exceptBadRequest(response,
+                """`id` field is missing from JSON RPC request body.
+It must be `null` if you want to send notification.""")
+
+        id = request["id"]
+
+        if "method" not in request:
+            return self.exceptBadRequest(response,
+                "`method` field is missing from JSON RPC request body.", id)
+        if "params" not in request:
+            return self.exceptBadRequest(response,
+                """`params` field is missing from JSON RPC request body.
+It must be an empty array if method has no params.""", id)
+
+        methodName = request['method']
+        params = request['params']
+
+        if not isinstance(params, type( [] )):
+            return self.exceptBadRequest(response,
+                                        "`params` fields must be an array.", id)
+
+        result = "success" # Methods can overwrite this variable.
+        try:
+            if methodName == "addProject":
+                test = self.checkJSONArgsNumber(params, 1)
+                if test is not None:
+                    return test
+                self.xmlrpc.createProject(params[0])
+            elif methodName == "deleteProject":
+                test = self.checkJSONArgsNumber(params, 1)
+                if test is not None:
+                    return test
+                self.xmlrpc.deleteProject(params[0])
+            elif methodName == 'addJob':
+                test = self.checkJSONArgsNumber(params, 3)
+                if test is not None:
+                    return test
+                self.xmlrpc.addJob(params[0], params[1], params[2])
+            elif methodName == 'deleteJob':
+                test = self.checkJSONArgsNumber(params, 2)
+                if test is not None:
+                    return test
+                self.xmlrpc.deleteJob(params[0], params[1])
+            elif methodName == 'listJobStatistics':
+                test = self.checkJSONArgsNumber(params, 1)
+                if test is not None:
+                    return test
+                result = []
+                for a in params[0]:
+                    result.append(self.xmlrpc.getJobStatistics(a['p'],a['j'], False))
+                    result[-1]['project'] = a['p']
+                    result[-1]['job'] = a['j']
+            elif methodName == 'runJob':
+                test = self.checkJSONArgsNumber(params, 2)
+                if test is not None:
+                    return test
+                try:
+                    self.jsonrpc.addTask(params[0], params[1])
+                except jsonRpcClient.RPCException as ex:
+                    self.logger.warning("Scheduler returned error: %s.", ex.error['type']);
+                    return self.sendRPCResponse(response, None, id, ex.error)
+            else:
+                return self.sendRPCResponse(response, None, id, "Unknown method: " + methodName)
+        except SocketException, msg:
+            self.log_error('Error connecting with RPC-server: %s', msg)
+            publicMessage = "Couldn't connect to RPC server."
+            return self.sendRPCResponse(response, None, id, publicMessage, httplib.INTERNAL_SERVER_ERROR)
+
+        # If we are here than all was a success.
+        return self.sendRPCResponse(response, result, id, None)
