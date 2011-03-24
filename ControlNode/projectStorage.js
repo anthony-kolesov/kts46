@@ -157,4 +157,19 @@ Storage.prototype.getModelDefinition = function(projectName, jobName, onDone, on
     }, onError);
 };
 
+Storage.prototype.getModelState = function(projectName, jobName, time, onDone, onError){
+    var fields = {definition:1};
+    var client = this._getDbClient(projectName);
+    fluentMongodb.findOne(client, "states", {"_id":jobName}, fields, function(doc){
+        if (onDone) {
+            if (doc === null)
+                process.nextTick(onDone.bind({}, null) );
+            else {
+                process.nextTick(onDone.bind({}, doc!==null?doc.definition:null) );
+            }
+        }
+    }, onError);
+};
+
+
 exports.Storage = Storage;
