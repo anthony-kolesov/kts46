@@ -29,10 +29,8 @@ mimetypes.add_type("application/json", ".json", True) # True to add to official 
 
 class DataAPIHandler(object):
 
-    def __init__(self, cfg):
-        self.xmlrpc = kts46.rpcClient.getRPCServerProxy(cfg)
-        self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
-        #self.cfg = cfg
+    def __init__(self, statusServer):
+        self.statusServer = statusServer
         self.logger = logging.getLogger('kts46.server.WebUI.data')
 
 
@@ -120,7 +118,7 @@ class DataAPIHandler(object):
         return output
 
     def serverStatusByGoogle(self, tqx):
-        data = self.xmlrpc.getServerStatus()
+        data = self.statusServer.getServerStatus()
         schema = {"project":("string", "Project"), "name":("string", "Job"),
                   "totalSteps": ("number", "Total states"),
                   "done": ("number", "Done steps"),
@@ -136,19 +134,20 @@ class DataAPIHandler(object):
         return response
 
     def jobStatistics(self, project, job):
-        return self.xmlrpc.getJobStatistics(project, job, False)
+        return self.statusServer.getJobStatistics(project, job, False)
 
     def modelDescription(self, project, job):
-        return self.xmlrpc.getModelDescription(project, job)
+        return self.statusServer.getModelDescription(project, job)
 
-    def modelState(self, projectName, jobName, time):
-        return self.xmlrpc.getModelState(project, job, time)
+    def modelState(self, project, job, time):
+        return self.statusServer.getModelState(project, job, time)
 
 class ManagementAPIHandler(object):
 
-    def __init__(self, cfg):
-        self.xmlrpc = kts46.rpcClient.getRPCServerProxy(cfg)
+    def __init__(self, cfg, dbServer, statusServer):
         self.jsonrpc = kts46.rpcClient.getJsonRpcClient(cfg)
+        self.dbServer = dbServer
+        self.statusServer = statusServer
         self.logger = logging.getLogger('kts46.server.WebUI.management')
 
 
@@ -204,29 +203,29 @@ It must be an empty array if method has no params.""", id)
                 test = self.checkJSONArgsNumber(params, 1)
                 if test is not None:
                     return test
-                self.xmlrpc.createProject(params[0])
+                self.dbServer.createProject(params[0])
             elif methodName == "deleteProject":
                 test = self.checkJSONArgsNumber(params, 1)
                 if test is not None:
                     return test
-                self.xmlrpc.deleteProject(params[0])
+                self.dbServer.deleteProject(params[0])
             elif methodName == 'addJob':
                 test = self.checkJSONArgsNumber(params, 3)
                 if test is not None:
                     return test
-                self.xmlrpc.addJob(params[0], params[1], params[2])
+                self.dbServer.addJob(params[0], params[1], params[2])
             elif methodName == 'deleteJob':
                 test = self.checkJSONArgsNumber(params, 2)
                 if test is not None:
                     return test
-                self.xmlrpc.deleteJob(params[0], params[1])
+                self.dbServer.deleteJob(params[0], params[1])
             elif methodName == 'listJobStatistics':
                 test = self.checkJSONArgsNumber(params, 1)
                 if test is not None:
                     return test
                 result = []
                 for a in params[0]:
-                    result.append(self.xmlrpc.getJobStatistics(a['p'],a['j'], False))
+                    result.append(self.statusServer.getJobStatistics(a['p'],a['j'], False))
                     result[-1]['project'] = a['p']
                     result[-1]['job'] = a['j']
             elif methodName == 'runJob':
