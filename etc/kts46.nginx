@@ -1,0 +1,60 @@
+server {
+
+	listen   46401; ## listen for ipv4
+	listen   [::]:46401 default ipv6only=on; ## listen for ipv6
+
+	server_name  localhost;
+
+	access_log  /var/log/nginx/kts46.access.log;
+
+	root   /home/anthony/Dropbox/Active/kts46/http_server/web/;
+	index  index.html index.htm;
+
+
+	location / { }
+
+	#error_page  404  /404.html;
+
+	# proxy the PHP scripts to Apache listening on 127.0.0.1:80
+	#location ~ \.php$ {
+		#proxy_pass   http://127.0.0.1;
+	#}
+
+	# pass the Python scripts to FastCGI server listening on socket
+	location ~ ^/api {
+		fastcgi_pass  unix:/tmp/kts46_fcgi.socket;
+		fastcgi_index fcgi_server.py;
+		fastcgi_param SCRIPT_FILENAME $fastcgi_script_name;
+		fastcgi_param QUERY_STRING $query_string;
+		# includefastcgi_params;
+	}
+
+	# deny access to .htaccess files, if Apache's document root
+	# concurs with nginx's one
+	#
+	#location ~ /\.ht {
+		#deny  all;
+	#}
+}
+
+# HTTPS server
+#
+#server {
+#listen   443;
+#server_name  localhost;
+
+#ssl  on;
+#ssl_certificate  cert.pem;
+#ssl_certificate_key  cert.key;
+
+#ssl_session_timeout  5m;
+
+#ssl_protocols  SSLv3 TLSv1;
+#ssl_ciphers  ALL:!ADH:!EXPORT56:RC4+RSA:+HIGH:+MEDIUM:+LOW:+SSLv3:+EXP;
+#ssl_prefer_server_ciphers   on;
+
+#location / {
+#root   html;
+#index  index.html index.htm;
+#}
+#}
