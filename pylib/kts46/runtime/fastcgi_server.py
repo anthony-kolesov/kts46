@@ -1,8 +1,6 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from cgi import escape
-import sys, os
 from flup.server.fcgi import WSGIServer
 from kts46.server.webui import DataAPIHandler, ManagementAPIHandler
 import kts46.utils
@@ -16,17 +14,19 @@ cfg = kts46.utils.getConfiguration([]) # configFiles)
 
 dh = DataAPIHandler(cfg)
 mh = ManagementAPIHandler(cfg)
+dataAddress = cfg.get("FastCGI", "dataAddress")
+rpcAddress = cfg.get("FastCGI", "JSONRPCAddress")
 
 def app(environ, startResponse):
     sfn = environ["SCRIPT_FILENAME"]
-    if sfn == "/api/data":
+    if sfn == dataAddress:
         return dh.handle(environ, startResponse)
-    elif sfn == "/api/jsonrpc":
+    elif sfn == rpcAddress:
         return mh.handle(environ, startResponse)
     else:
-        startResponse('200 OK', [("Content-Type", "text/plain")])
-        for k, v in environ.iteritems():
-            print("%s -> %s" % (k, v))
+        startResponse('404 Not found', [("Content-Type", "text/plain")])
+        #for k, v in environ.iteritems():
+        #    print("%s -> %s" % (k, v))
         return ""
 
-WSGIServer(app, bindAddress="/tmp/kts46_fcgi.socket", umask=0000).run()
+WSGIServer(app, bindAddress=cfg.get("FastCGI", "socket"), umask=0000).run()
