@@ -17,7 +17,7 @@ var kts46 = (function($){
 
     // cfg
     var serverPollInterval = 5000,
-        jsonRpcPath = "/json-rpc/",
+        jsonRpcPath = "/api/jsonrpc/",
         projectColumnId = 0,
         jobColumnId = 1,
         doneColumnId = 2,
@@ -27,7 +27,8 @@ var kts46 = (function($){
         throughputFinishedColumnId = 6,
         statsFinishedColumnId = 7,
         progressColumnId = 8,
-        googleTableId = "progress-table-2";
+        googleTableId = "progress-table-2",
+        dataPath = "/api/data";
 
     var addProject = function(){
         $("#add-project-confirm").dialog({
@@ -189,7 +190,7 @@ var kts46 = (function($){
 
     var updateStatus = function() {
 
-        var query = new google.visualization.Query("/api/serverStatus2/");
+        var query = new google.visualization.Query(dataPath + "?method=serverStatus");
         query.send( function(response){
             if (response.isError()) { return; }
             var dataTable = response.getDataTable();
@@ -293,7 +294,7 @@ var kts46 = (function($){
 
     var getStatistics = function(jobRow, cbk) {
         var pj = getJobNameByRow(jobRow);
-        $.getJSON(['/api/jobStatistics', pj['p'], pj['j'], ''].join('/'), cbk);
+        $.getJSON(dataPath, {method:'jobStatistics', p:pj['p'], j:pj['j']}, cbk);
     };
 
 

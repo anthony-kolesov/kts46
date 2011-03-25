@@ -61,23 +61,23 @@ class DataAPIHandler(object):
         if methodName == "serverStatus":
             if "tqx" not in params:
                 return self._missingParam(startResponse, "tqx")
-            result = self.serverStatusByGoogle(params["tqx"])
+            result = self.serverStatusByGoogle(params["tqx"][0])
         elif methodName == "jobStatistics":
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
-            result = self.jobStatistics(params['p'], params['j'])
+            result = self.jobStatistics(params['p'][0], params['j'][0])
         elif methodName == "modelDescription":
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
-            result = self.modelDescription(params['p'], params['j'])
+            result = self.modelDescription(params['p'][0], params['j'][0])
         elif methodName == "modelState":
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
             if "t" not in params: return self._missingParam(startResponse, "t")
-            if re.match("(\d+)|(\d*\.\d+)", params["t"]):
+            if re.match("(\d+)|(\d*\.\d+)", params["t"][0]):
                 self._error(httplib.NOT_FOUND)
                 return "Invalid `time` format: must be float number."
-            result = self.modelState(params['p'], params['j'], float(params['t']))
+            result = self.modelState(params['p'][0], params['j'][0], float(params['t'][0]))
         else:
             self._error(httplib.NOT_FOUND, startResponse)
             return "Unknown method: " + methodName + "\n"
@@ -86,16 +86,16 @@ class DataAPIHandler(object):
         type = "json"
         mimeType = mimetypes.types_map['.json']
         if "type" in params:
-            if params["type"] == "jsonp":
+            if params["type"][0] == "jsonp":
                 if "callback" not in params:
                     return self._missingParam(startResponse, "callback")
                 type = "jsonp"
-                callback = params["callback"]
+                callback = params["callback"][0]
                 mimeType = mimetypes.types_map['.js']
-            elif params["type"] == "csv":
+            elif params["type"][0] == "csv":
                 type = "csv"
                 mimeType = mimetypes.types_map['.csv']
-            elif params["type"] == "tsv":
+            elif params["type"][0] == "tsv":
                 type = "tsv"
                 mimeType = mimetypes.types_map['.tsv']
 
