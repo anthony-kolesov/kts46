@@ -1,5 +1,7 @@
 #!/bin/bash
 
-cd ../rpc_server
-./server.py worker
+BASEPATH=`dirname $(readlink -f $0)`/..
+PYTHONPATH=$BASEPATH/pylib/:$PYTHONPATH
+export PYTHONPATH
 
+python $BASEPATH/pylib/kts46/runtime/worker.py $@
