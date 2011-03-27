@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cStringIO import StringIO
 import csv
 import gviz_api
 import httplib
@@ -21,6 +20,8 @@ import logging
 import mimetypes
 import re
 import urlparse
+from cStringIO import StringIO
+from socket import error as SocketException
 import kts46.rpcClient
 
 # Add MIME types
@@ -202,27 +203,27 @@ It must be an empty array if method has no params.""", id)
         result = "success" # Methods can overwrite this variable.
         try:
             if methodName == "addProject":
-                test = self.checkJSONArgsNumber(params, 1)
+                test = self.checkJSONArgsNumber(response, params, 1)
                 if test is not None:
                     return test
                 self.dbServer.createProject(params[0])
             elif methodName == "deleteProject":
-                test = self.checkJSONArgsNumber(params, 1)
+                test = self.checkJSONArgsNumber(response, params, 1)
                 if test is not None:
                     return test
                 self.dbServer.deleteProject(params[0])
             elif methodName == 'addJob':
-                test = self.checkJSONArgsNumber(params, 3)
+                test = self.checkJSONArgsNumber(response, params, 3)
                 if test is not None:
                     return test
                 self.dbServer.addJob(params[0], params[1], params[2])
             elif methodName == 'deleteJob':
-                test = self.checkJSONArgsNumber(params, 2)
+                test = self.checkJSONArgsNumber(response, params, 2)
                 if test is not None:
                     return test
                 self.dbServer.deleteJob(params[0], params[1])
             elif methodName == 'listJobStatistics':
-                test = self.checkJSONArgsNumber(params, 1)
+                test = self.checkJSONArgsNumber(response, params, 1)
                 if test is not None:
                     return test
                 result = []
@@ -231,7 +232,7 @@ It must be an empty array if method has no params.""", id)
                     result[-1]['project'] = a['p']
                     result[-1]['job'] = a['j']
             elif methodName == 'runJob':
-                test = self.checkJSONArgsNumber(params, 2)
+                test = self.checkJSONArgsNumber(response, params, 2)
                 if test is not None:
                     return test
                 try:

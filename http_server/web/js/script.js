@@ -17,7 +17,7 @@ var kts46 = (function($){
 
     // cfg
     var serverPollInterval = 5000,
-        jsonRpcPath = "/api/jsonrpc/",
+        jsonRpcPath = "/api/jsonrpc",
         projectColumnId = 0,
         jobColumnId = 1,
         doneColumnId = 2,
