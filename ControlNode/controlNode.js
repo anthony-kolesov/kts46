@@ -16,10 +16,6 @@ var cfg = require('config')('ControlNode', {
   address: "",
   jsonRpcPath: "/jsonrpc",
   debugRpc: false,
-  statusPath: "/status",
-  webuiFilesPath: "../http_server/web",
-  webuiPathRoot: "/ui",
-
   dbHost: '192.168.42.3',
   dbPort: 27017
 });
@@ -56,23 +52,10 @@ var handleHttpRequest = function(req, res) {
             res.writeHead(404, {'Content-Type': 'text/plain'});
             res.end('Unknown path!\n');
         }
-    } else if (path === cfg.statusPath) {
+    } else /*if (path === cfg.statusPath) */{
         logRequest(200, path);
         res.writeHead(200, {'Content-Type': 'application/json'});
         res.end(JSON.stringify(schedulerWrapper.getStatus(), null, 4))
-    } else if (path === "/api/data") {
-        logRequest(200, path);
-        //res.writeHead(200, {'Content-Type': 'application/json'});
-        //dataApi.serverStatus(projectStorage, query, res);
-        var dataMethods = {
-            serverStatus: dataApi.serverStatus.bind({}, projectStorage),
-            getJobStatistics: dataApi.getJobStatistics.bind({}, projectStorage),
-            getModelDefinition: dataApi.getModelDefinition.bind({}, projectStorage)
-        };
-        getDataHandler.handle(query, res, dataMethods);
-    } else {
-        logRequest(200, path);
-        handleStaticFile(cfg.webuiFilesPath, cfg.webuiPathRoot, req, res);
     }
 };
 
