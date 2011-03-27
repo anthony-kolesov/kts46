@@ -97,8 +97,11 @@ var kts46 = (function($){
         var bValid = true;
 
         allFields.removeClass( "ui-state-error" );
-        bValid = bValid && checkRegexp($('#add-job-name'), /^[a-zA-Z][0-9a-zA-Z_]+$/i, "Job name may consist of a-z, A-Z, 0-9, underscores, begin with a letter." );
-        bValid = bValid && checkRegexp($('#add-job-count'), /^[0-9]+$/i, "Jobs count must be a number." );
+        bValid = bValid && checkRegexp($('#add-job-name'),
+                /^\w[\w-\+\!@#\$%\^&\*\(\)\{\}\[\]:;\<\>\/\?\.\,~`]*$/i,
+                "Job name may consist of letters, digits and underscores." );
+        }
+        bValid = bValid && checkRegexp($('#add-job-count'), /^\d+$/i, "Jobs count must be a number." );
 
         if ( bValid ) {
             var seriesLength = 1;
