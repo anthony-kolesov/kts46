@@ -280,16 +280,16 @@ Scheduler.prototype.taskFinished = function(response, workerId, sig, statistics)
         response.response("success");
     };
 
-    if (statistics) {
+    /*if (statistics) {
         statistics.execTime = (Date.now() - task.startTime.getTime()) / 1000;
         statistics.project = task.project;
         statistics.job = task.job;
         statistics.taskType = task.type;
         this.projectStorage.saveStatistics(statistics,
             onStatisticsSaved, onMongodbError.bind(response));
-    } else {
+    } else {*/
         process.nextTick(onStatisticsSaved);
-    }
+    //}
 };
 
 

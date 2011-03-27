@@ -4,7 +4,7 @@ var vows = require('vows'),
 
 var options = {
   host: 'localhost',
-  port: 46212,
+  port: 46400,
   path: '/jsonrpc',
   method: 'POST'
 };

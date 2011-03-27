@@ -292,19 +292,24 @@ var kts46 = (function($){
     };
 
 
-    var getStatistics = function(jobRow, cbk) {
-        var pj = getJobNameByRow(jobRow);
-        $.getJSON(dataPath, {method:'jobStatistics', p:pj['p'], j:pj['j']}, cbk);
+    var getStatistics = function(projectName, jobName, cbk) {
+        // var pj = getJobNameByRow(jobRow);
+        $.getJSON(dataPath, {
+            method:'jobStatistics',
+            p: projectName,
+            j: jobName
+        }, cbk);
     };
 
 
     var showStatistics = function() {
         var jobs = getSelectedJobs();
         if (jobs.length === 0) return;
-        getStatistics(jobs[0], function(data){
+        var jobInfo = getJobNameByRow(jobs[0]);
+        getStatistics(jobInfo.p, jobInfo.j, (function(jobInfo, data){
             var text = JSON.stringify(data, null, 4); // 4 is amount of spaces.
-            $('#details-content').text( [project,'.',job,'\n',text].join(''));
-        } );
+            $('#details-content').text( [jobInfo.p, '.', jobInfo.j, '\n',text].join(''));
+        }).bind({}, jobInfo) );
     };
 
 

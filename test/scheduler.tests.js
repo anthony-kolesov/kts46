@@ -1,4 +1,4 @@
-var RPCClient = require('../jslib/jsonrpc-client').Client,
+var RPCClient = require('../ControlNode/jsonrpc-client').Client,
     assert = require('assert');
 
 // Setup assert.
@@ -17,7 +17,7 @@ assert.RPCHasNoError = function(rpc) {
 };
 
 var getClient = function() {
-    return new RPCClient('192.168.1.3', 46212);
+    return new RPCClient('192.168.42.2', 46400);
 }
 var client = getClient();
 
