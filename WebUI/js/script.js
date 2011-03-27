@@ -435,12 +435,13 @@ var kts46 = (function($){
             draw(data);
 
             var updateState = function(time){
-                $.getJSON( ['/api', 'modelState', proj, job, time +'/'].join("/") , function(stateData){
+                $.getJSON(dataPath, {method: "modelState", p: proj, j: job, t: time}, function(stateData){
                     draw(data, stateData);
                     $('#live-view .time').text(time);
                     time += data.simulationParameters.stepDuration;
                     time = Math.round(time*10) / 10;
-                    if (time <= data.simulationParameters.duration) {
+                    console.log(time);console.log(data.simulationParameters.duration);
+                    if (time <= data.simulationParameters.duration) {console.log("HERE1");
                         var tid = setTimeout(updateState.bind({},time), data.simulationParameters.stepDuration * 1000);
                         c.data('timer', tid);
                     }
@@ -450,7 +451,7 @@ var kts46 = (function($){
         };
 
         forFirstSelectedJob(function(p, j){
-            $.getJSON( ['/api', 'modelDescription', p, j +'/'].join("/") ,
+            $.getJSON(dataPath, {method: "modelDescription", p: p, j: j},
                 drawModel.bind({}, p, j) );
         });
 

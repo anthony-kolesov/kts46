@@ -73,8 +73,8 @@ class DataAPIHandler(object):
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
             if "t" not in params: return self._missingParam(startResponse, "t")
-            if re.match("(\d+)|(\d*\.\d+)", params["t"][0]):
-                self._error(httplib.NOT_FOUND)
+            if not re.match("^(\d*\.)?\d+$", params["t"][0]):
+                self._error(httplib.NOT_FOUND, startResponse)
                 return "Invalid `time` format: must be float number."
             result = self.modelState(params['p'][0], params['j'][0], float(params['t'][0]))
         else:
