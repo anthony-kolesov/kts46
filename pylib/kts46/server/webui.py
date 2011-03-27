@@ -96,6 +96,8 @@ class DataAPIHandler(object):
             elif params["type"][0] == "tsv":
                 type = "tsv"
                 mimeType = mimetypes.types_map['.tsv']
+        elif methodName == "serverStatus":
+            mimeType = mimetypes.types_map['.js']
 
         startResponse(str(httplib.OK) + ' ' +httplib.responses[httplib.OK],
                      [("Content-Type", mimeType)])
@@ -112,7 +114,7 @@ class DataAPIHandler(object):
                     writer.writerows(result)
                     output = outputIO.getvalue()
         else:
-            output = result
+            output = str(result)
 
         # Return output.
         return output
