@@ -58,5 +58,5 @@ if __name__ == '__main__':
         import psyco
         psyco.full()
 
-    worker = Worker(cfg, id)
+    worker = Worker(cfg, options.wid)
     worker.run()
