@@ -17,7 +17,7 @@ Callbacks:
     onError(error)
 */
 Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
-    var onJobLoaded = function(jobDocument) {
+    var onJobLoaded = function(client1, jobDocument) {
         if (jobDocument === null) {
             if (onHasJob) onHasJob(null);
             return;
@@ -30,11 +30,11 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
             name: jobDocument.name,
             id: jobDocument._id
         };
-        fluentMongodb.findOne(client, 'progresses', {'_id': j.id}, {},
-            onProgressLoaded.bind({}, j), onError );
+        fluentMongodb.findOne(client1, 'progresses', {'_id': j.id}, {},
+            onProgressLoaded.bind({}, client1, j), onError );
     };
 
-    var onProgressLoaded = function(job, progressDocument) {
+    var onProgressLoaded = function(client2, job, progressDocument) {
         job.fullStatistics = progressDocument.fullStatistics;
         job.done = progressDocument.done;
         job.totalSteps = progressDocument.totalSteps;
@@ -44,14 +44,15 @@ Storage.prototype.getJob = function(projectName, jobName, onHasJob, onError) {
         job.idleTimes = progressDocument.idleTimes;
         job.throughput = progressDocument.throughput;
 
-        client.close();
+        client2.close();
         process.nextTick( onHasJob.bind({}, job) );
     };
 
     var spec = {'_id': jobName};
     var fields = {'name':1, 'definition': 1};
     var client = this._getDbClient(projectName);
-    fluentMongodb.findOne(client, 'jobs', spec, fields, onJobLoaded, onError);
+    fluentMongodb.findOne(client, 'jobs', spec, fields,
+                          onJobLoaded.bind({}, client), onError);
 };
 
 
