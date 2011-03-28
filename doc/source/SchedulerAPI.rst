@@ -3,6 +3,8 @@
 Scheduler JSON-RPC API
 ======================
 
+Scheduler listenes by default on port 46400 and accepts JSON-RPC calls with
+address ``/jsonrpc``.
 
 This API replace first version of scheduler API described
 `here <http://code.google.com/p/kts46/wiki/SchedulerAPI>`_.

@@ -12,12 +12,13 @@ Contents:
     :maxdepth: 2
     :numbered:
 
-    ControlNode.rst
+    SchedulerAPI.rst
     NodeModules.rst
     kts46.rst
     jsonRpcClient.rst
     model.rst
     OfflineWorker.rst
+    httpApi.rst
     Changelog.rst
 
 Indices and tables
