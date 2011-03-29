@@ -28,15 +28,41 @@ import kts46.rpcClient
 mimetypes.add_type("text/csv", ".csv", True) # True to add to official types.
 mimetypes.add_type("application/json", ".json", True) # True to add to official types.
 
+
+class MissingParameterException(Exception):
+    def __init__(self, message):
+        super(Exception, self).__init__()
+        self.message = message
+    def __str__(self):
+        return self.message.join( ("Required parameter `", "` is missing.") )
+
+
 class DataAPIHandler(object):
 
     def __init__(self, statusServer):
         self.statusServer = statusServer
         self.logger = logging.getLogger('kts46.server.WebUI.data')
+        self.serverStatusGvizSschema = {
+            "project":("string", "Project"),
+            "name":("string", "Job"),
+            "totalSteps": ("number", "Total states"),
+            "done": ("number", "Done steps"),
+            "basicStatistics":("boolean", "Basic stats"),
+            "idleTimes":("boolean", "Idle times"),
+            "throughput":("boolean", "Throughput"),
+            "fullStatistics":("boolean", "All stats")
+        }
+        self.serverStatusColumnsOrder = ("project", "name", "done", "totalSteps",
+                "basicStatistics", "idleTimes", "throughput", "fullStatistics")
 
 
     def _error(self, code, startResponse):
-        startResponse(str(code) + ' ' + httplib.responses[code], [('"Content-Type', 'text/plain')])
+        self._startResponse(code, startResponse)
+
+
+    def _startResponse(self, httpCode, response):
+        response(' '.join((str(httpCode), httplib.responses[httpCode])),
+                 [('"Content-Type', 'text/plain')])
 
 
     def _missingParam(self, startResponse, paramName):
@@ -60,11 +86,11 @@ class DataAPIHandler(object):
 
         # Call required method.
         if methodName == "serverStatus":
-            if "tqx" not in params:
-                return self._missingParam(startResponse, "tqx")
-            result = self.serverStatusByGoogle(params["tqx"][0])
-            fields = ["project", "name", "totalSteps", "done", "basicStatistics",
-                      "idleTimes", "throughput", "fullStatistics"]
+            try:
+                result = self.serverStatusByGoogle(params)
+            except MissingParameterException as ex:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
         elif methodName == "jobStatistics":
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
@@ -146,21 +172,15 @@ class DataAPIHandler(object):
         # Return output.
         return output
 
-    def serverStatusByGoogle(self, tqx):
+
+    def serverStatusByGoogle(self, params):
+        if "tqx" not in params: raise MissingParameterException("tqx")
+        tqx = params["tqx"][0]
+
         data = self.statusServer.getServerStatus()
-        schema = {"project":("string", "Project"), "name":("string", "Job"),
-                  "totalSteps": ("number", "Total states"),
-                  "done": ("number", "Done steps"),
-                  "basicStatistics":("boolean", "Basic stats"),
-                  "idleTimes":("boolean", "Idle times"),
-                  "throughput":("boolean", "Throughput"),
-                  "fullStatistics":("boolean", "All stats")}
-        table = gviz_api.DataTable(schema)
+        table = gviz_api.DataTable(self.serverStatusGvizSschema)
         table.LoadData(data)
-        columnsOrder = ("project", "name", "done", "totalSteps", "basicStatistics",
-                        "idleTimes", "throughput", "fullStatistics")
-        response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
-        return response
+        return table.ToResponse(columns_order=self.serverStatusColumnsOrder, tqx=tqx)
 
 
     def jobStatistics(self, project, job):
