@@ -92,38 +92,35 @@ class DataAPIHandler(object):
                 self._startResponse(httplib.NOT_FOUND, startResponse)
                 return ex.message
         elif methodName == "jobStatistics":
-            if "p" not in params: return self._missingParam(startResponse, "p")
-            if "j" not in params: return self._missingParam(startResponse, "j")
-            result = self.jobStatistics(params['p'][0], params['j'][0])
-        elif methodName == "modelDescription":
-            if "p" not in params: return self._missingParam(startResponse, "p")
-            if "j" not in params: return self._missingParam(startResponse, "j")
-            result = self.modelDescription(params['p'][0], params['j'][0])
-        elif methodName == "modelState":
-            if "p" not in params: return self._missingParam(startResponse, "p")
-            if "j" not in params: return self._missingParam(startResponse, "j")
-            if "t" not in params: return self._missingParam(startResponse, "t")
-            if not re.match("^(\d*\.)?\d+$", params["t"][0]):
-                self._error(httplib.NOT_FOUND, startResponse)
-                return "Invalid `time` format: must be float number."
-            result = self.modelState(params['p'][0], params['j'][0], float(params['t'][0]))
-        elif methodName == "listJobStatistics":
-            if "q" not in params: return self._missingParam(startResponse, "q")
-            query = params["q"][0]
-            projectsAsStrings = query.split(" ")
-            projects = {}
-            for pj in projectsAsStrings:
-                try:
-                    projectName, jobs = pj.split(":")
-                except ValueError:
-                    self._error(httplib.BAD_REQUEST, startResponse)
-                    return "Couldn't separate project name from job names.\n"
-                projects[projectName] = jobs.split(",")
             try:
-                result = self.listJobStatistics(projects)
+                result = self.jobStatistics(params)
+            except MissingParameterException as ex:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
+        elif methodName == "modelDescription":
+            try:
+                result = self.modelDescription(params)
+            except MissingParameterException as ex:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
+        elif methodName == "modelState":
+            try:
+                result = self.modelState(params)
+            except MissingParameterException as ex:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
+            except ValueError as ex:
+                self._startResponse(httplib.BAD_REQUEST, startResponse)
+                return ex.message
+        elif methodName == "listJobStatistics":
+            try:
+                result = self.listJobStatistics(params)
+            except MissingParameterException as ex:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
             except KeyError as ex:
-                self._error(httplib.NOT_FOUND, startResponse)
-                return "Project or job not found: " + ex.message
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return ex.message
             fields = ["project", "job", "average", "stdeviation", "averageSpeed",
                       "averageIdleTime", "startThroughput", "endThroughput"]
         else:
@@ -183,21 +180,43 @@ class DataAPIHandler(object):
         return table.ToResponse(columns_order=self.serverStatusColumnsOrder, tqx=tqx)
 
 
-    def jobStatistics(self, project, job):
-        return self.statusServer.getJobStatistics(project, job, False)
+    def jobStatistics(self, params):
+        if "p" not in params: raise MissingParameterException("p")
+        if "j" not in params: raise MissingParameterException("j")
+        return self.statusServer.getJobStatistics(params['p'][0], params['j'][0], False)
 
 
-    def modelDescription(self, project, job):
-        return self.statusServer.getModelDescription(project, job)
+    def modelDescription(self, params):
+        if "p" not in params: raise MissingParameterException("p")
+        if "j" not in params: raise MissingParameterException("j")
+        return self.statusServer.getModelDescription(params['p'][0], params['j'][0])
 
 
-    def modelState(self, project, job, time):
-        return self.statusServer.getModelState(project, job, time)
+    def modelState(self, params):
+        if "p" not in params: raise MissingParameterException("p")
+        if "j" not in params: raise MissingParameterException("j")
+        if "t" not in params: raise MissingParameterException("t")
+        if not re.match("^(\d*\.)?\d+$", params["t"][0]):
+            raise ValueError("Invalid `time` format: must be float number.")
+
+        return self.statusServer.getModelState(params['p'][0], params['j'][0], params['t'][0])
 
 
-    def listJobStatistics(self, query):
+    def listJobStatistics(self, params):
+        if "q" not in params: raise MissingParameterException("q")
+        query = params["q"][0]
+        projectsAsStrings = query.split(" ")
+        projects = {}
+        for pj in projectsAsStrings:
+            try:
+                projectName, jobs = pj.split(":")
+            except ValueError:
+                self._error(httplib.BAD_REQUEST, startResponse)
+                return "Couldn't separate project name from job names.\n"
+            projects[projectName] = jobs.split(",")
+
         result = []
-        for project, jobs in query.iteritems():
+        for project, jobs in projects.iteritems():
             for job in jobs:
                 stat = self.statusServer.getJobStatistics(project, job, False)
                 format = {
@@ -211,8 +230,6 @@ class DataAPIHandler(object):
                     "startThroughput": stat["throughput"][-1]["rate"]
                 }
                 result.append(format)
-
-
         return result
 
 
