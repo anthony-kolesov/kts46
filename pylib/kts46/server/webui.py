@@ -112,23 +112,11 @@ class DataAPIHandler(object):
             return ex.message
 
         # Convert output to apropriate format.
-        type = "json"
-        mimeType = mimetypes.types_map['.json']
-        if "type" in params:
-            if params["type"][0] == "jsonp":
-                if "callback" not in params:
-                    return self._missingParam(startResponse, "callback")
-                type = "jsonp"
-                callback = params["callback"][0]
-                mimeType = mimetypes.types_map['.js']
-            elif params["type"][0] == "csv":
-                type = "csv"
-                mimeType = mimetypes.types_map['.csv']
-            elif params["type"][0] == "tsv":
-                type = "tsv"
-                mimeType = mimetypes.types_map['.tsv']
-        elif methodName == "serverStatus":
-            mimeType = mimetypes.types_map['.js']
+        try:
+            type, mimeType = self.getType(params)
+        except MissingParameterException as ex:
+            self._startResponse(httplib.NOT_FOUND, startResponse)
+            return ex.message
 
         startResponse(str(httplib.OK) + ' ' +httplib.responses[httplib.OK],
                      [("Content-Type", mimeType)])
@@ -153,6 +141,27 @@ class DataAPIHandler(object):
         # Return output.
         return output
 
+
+    def getType(self, params):
+        "Gets type of output data (json, jsonp, csv, tsv). Returns (type, mimeType)."
+        type = "json"
+        mimeType = mimetypes.types_map['.json']
+        if "type" in params:
+            if params["type"][0] == "jsonp":
+                if "callback" not in params:
+                    raise MissingParameterException("callback")
+                type = "jsonp"
+                mimeType = mimetypes.types_map['.js']
+            elif params["type"][0] == "csv":
+                type = "csv"
+                mimeType = mimetypes.types_map['.csv']
+            elif params["type"][0] == "tsv":
+                type = "tsv"
+                mimeType = mimetypes.types_map['.tsv']
+        elif methodName == "serverStatus":
+            type = "jsonp"
+            mimeType = mimetypes.types_map['.js']
+    return (type, mimeType)
 
     def serverStatusByGoogle(self, params):
         if "tqx" not in params: raise MissingParameterException("tqx")
