@@ -56,11 +56,15 @@ class DataAPIHandler(object):
         # Get parameters.
         del params["method"]
 
+        fields = []
+
         # Call required method.
         if methodName == "serverStatus":
             if "tqx" not in params:
                 return self._missingParam(startResponse, "tqx")
             result = self.serverStatusByGoogle(params["tqx"][0])
+            fields = ["project", "name", "totalSteps", "done", "basicStatistics",
+                      "idleTimes", "throughput", "fullStatistics"]
         elif methodName == "jobStatistics":
             if "p" not in params: return self._missingParam(startResponse, "p")
             if "j" not in params: return self._missingParam(startResponse, "j")
@@ -77,6 +81,25 @@ class DataAPIHandler(object):
                 self._error(httplib.NOT_FOUND, startResponse)
                 return "Invalid `time` format: must be float number."
             result = self.modelState(params['p'][0], params['j'][0], float(params['t'][0]))
+        elif methodName == "listJobStatistics":
+            if "q" not in params: return self._missingParam(startResponse, "q")
+            query = params["q"][0]
+            projectsAsStrings = query.split(" ")
+            projects = {}
+            for pj in projectsAsStrings:
+                try:
+                    projectName, jobs = pj.split(":")
+                except ValueError:
+                    self._error(httplib.BAD_REQUEST, startResponse)
+                    return "Couldn't separate project name from job names.\n"
+                projects[projectName] = jobs.split(",")
+            try:
+                result = self.listJobStatistics(projects)
+            except KeyError as ex:
+                self._error(httplib.NOT_FOUND, startResponse)
+                return "Project or job not found: " + ex.message
+            fields = ["project", "job", "average", "stdeviation", "averageSpeed",
+                      "averageIdleTime", "startThroughput", "endThroughput"]
         else:
             self._error(httplib.NOT_FOUND, startResponse)
             return "Unknown method: " + methodName + "\n"
@@ -108,12 +131,15 @@ class DataAPIHandler(object):
             elif type == "jsonp":
                 output = "".join((callback, "(", json.dumps(result), ");"))
             elif type == "csv" or type == "tsv":
+                if len(fields) == 0:
+                    self._error(httplib.BAD_REQUEST, startResponse)
+                    return "This method doesn't support tabular response."
+
                 delim = "," if type == "csv" else "\t"
-                with StringIO() as outputIO:
-                    writer = csv.DictWriter(outputIO, [], delimeter=delim,
-                                            qouting=csv.QUOTE_MINIMAL)
-                    writer.writerows(result)
-                    output = outputIO.getvalue()
+                outputIO = StringIO()
+                writer = csv.DictWriter(outputIO, fields, delimiter=delim, quoting=csv.QUOTE_MINIMAL)
+                writer.writerows(result)
+                output = outputIO.getvalue()
         else:
             output = str(result)
 
@@ -136,14 +162,39 @@ class DataAPIHandler(object):
         response = table.ToResponse(columns_order=columnsOrder, tqx=tqx)
         return response
 
+
     def jobStatistics(self, project, job):
         return self.statusServer.getJobStatistics(project, job, False)
+
 
     def modelDescription(self, project, job):
         return self.statusServer.getModelDescription(project, job)
 
+
     def modelState(self, project, job, time):
         return self.statusServer.getModelState(project, job, time)
+
+
+    def listJobStatistics(self, query):
+        result = []
+        for project, jobs in query.iteritems():
+            for job in jobs:
+                stat = self.statusServer.getJobStatistics(project, job, False)
+                format = {
+                    "project": project,
+                    "job": job,
+                    "average": stat["average"],
+                    "stdeviation": stat["stdeviation"],
+                    "averageSpeed": stat["averageSpeed"],
+                    "averageIdleTime": stat["idleTimes"]["average"],
+                    "startThroughput": stat["throughput"][0]["rate"],
+                    "startThroughput": stat["throughput"][-1]["rate"]
+                }
+                result.append(format)
+
+
+        return result
+
 
 class ManagementAPIHandler(object):
 

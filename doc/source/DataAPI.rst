@@ -40,5 +40,5 @@ represented as table (see request documentation).
 .. describe:: listJobStatistics
 
     Returns job statistics of several jobs. Required parameter: array of jobs to
-    return. This parameters has name ``q`` (query) and formatted as a coma
-    separated list of pairs ``project:job``, e.g. ``?q=proj1:job1,proj2:job2``.
+    return. This parameters has name ``q`` (query) and following format:
+    ``project1:job1,job2 project2:job1,job3``. Supports tabular output.
