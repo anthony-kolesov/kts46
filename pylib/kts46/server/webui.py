@@ -85,47 +85,31 @@ class DataAPIHandler(object):
         fields = []
 
         # Call required method.
-        if methodName == "serverStatus":
-            try:
+        try:
+            if methodName == "serverStatus":
                 result = self.serverStatusByGoogle(params)
-            except MissingParameterException as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-        elif methodName == "jobStatistics":
-            try:
+            elif methodName == "jobStatistics":
                 result = self.jobStatistics(params)
-            except MissingParameterException as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-        elif methodName == "modelDescription":
-            try:
+            elif methodName == "modelDescription":
                 result = self.modelDescription(params)
-            except MissingParameterException as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-        elif methodName == "modelState":
-            try:
+            elif methodName == "modelState":
                 result = self.modelState(params)
-            except MissingParameterException as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-            except ValueError as ex:
-                self._startResponse(httplib.BAD_REQUEST, startResponse)
-                return ex.message
-        elif methodName == "listJobStatistics":
-            try:
+            elif methodName == "listJobStatistics":
                 result = self.listJobStatistics(params)
-            except MissingParameterException as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-            except KeyError as ex:
-                self._startResponse(httplib.NOT_FOUND, startResponse)
-                return ex.message
-            fields = ["project", "job", "average", "stdeviation", "averageSpeed",
+                fields = ["project", "job", "average", "stdeviation", "averageSpeed",
                       "averageIdleTime", "startThroughput", "endThroughput"]
-        else:
-            self._error(httplib.NOT_FOUND, startResponse)
-            return "Unknown method: " + methodName + "\n"
+            else:
+                self._startResponse(httplib.NOT_FOUND, startResponse)
+                return methodName.join(("Unknown method: ","\n"))
+        except MissingParameterException as ex:
+            self._startResponse(httplib.NOT_FOUND, startResponse)
+            return ex.message
+        except ValueError as ex:
+            self._startResponse(httplib.BAD_REQUEST, startResponse)
+            return ex.message
+        except KeyError as ex:
+            self._startResponse(httplib.NOT_FOUND, startResponse)
+            return ex.message
 
         # Convert output to apropriate format.
         type = "json"
@@ -211,8 +195,7 @@ class DataAPIHandler(object):
             try:
                 projectName, jobs = pj.split(":")
             except ValueError:
-                self._error(httplib.BAD_REQUEST, startResponse)
-                return "Couldn't separate project name from job names.\n"
+                raise ValueError("Couldn't separate project name from job names.")
             projects[projectName] = jobs.split(",")
 
         result = []
