@@ -462,26 +462,26 @@ var kts46 = (function($){
 
     var exportInCSV = function(){
         var jobs = getSelectedJobs(),
-            pjs = jobs.map(getJobNameByRow);
-        var params = JSON.stringify({
+            pjs = jobs.map(getJobNameByRow),
+            query = {},
+            queryStr = [],
+            params;
+        for (var job in pjs) {
+            if (pjs[job].p in query) {
+                query[pjs[job].p].push(pjs[job].j);
+            } else {
+                query[pjs[job].p] = [ pjs[job].j ];
+            }
+        }
+        for (var project in query) {
+            queryStr.push( [project, query[project].join(",")].join(":") )
+        }
+        params = {
             method: "listJobStatistics",
-            id: "ljs" + Date(),
-            params: [pjs]
-        }) + "\n";
-        $.post(jsonRpcPath, params, function(data) {
-            var result = data.result,
-                csv = [];
-            csv = result.map(function(n){
-                return [n.project, n.job, n.average, n.stdeviation,
-                        n.averageSpeed, n.idleTimes.average, n.throughput[0].rate,
-                        n.throughput[1].rate]
-                    .join(",");
-            });
-            csv.unshift(["Project", "Job", "Average", "Standard deviation",
-                         "Average speed", "Average idle time",
-                         "Start throughput", "End throughput"].join(","));
-            $("#details-content").text(csv.join("\n"));
-        });
+            q: queryStr.join("+"),
+            type: "csv"
+        };
+        window.location = [dataPath, $.param(params)].join("?");
     };
 
 

@@ -115,13 +115,16 @@ class DataAPIHandler(object):
 
         # Convert output to apropriate format.
         try:
-            type, mimeType = self.getType(params)
+            type, mimeType = self.getType(params, methodName)
         except MissingParameterException as ex:
             self._startResponse(httplib.NOT_FOUND, startResponse)
             return ex.message
 
+        headers = [("Content-Type", mimeType)]
+        if type == "csv" or type == "tsv":
+            headers.append(("Content-Disposition", "attachment;file-name=" + methodName + "." + type ))
         startResponse(str(httplib.OK) + ' ' +httplib.responses[httplib.OK],
-                     [("Content-Type", mimeType)])
+                     headers)
         if methodName != "serverStatus":
             if type == "json":
                 output = json.dumps(result)
@@ -144,7 +147,7 @@ class DataAPIHandler(object):
         return output
 
 
-    def getType(self, params):
+    def getType(self, params, methodName):
         "Gets type of output data (json, jsonp, csv, tsv). Returns (type, mimeType)."
         type = "json"
         mimeType = mimetypes.types_map['.json']
