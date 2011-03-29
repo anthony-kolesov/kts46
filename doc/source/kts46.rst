@@ -63,31 +63,6 @@ DatabaseServer
     :members:
 
 
-json_api
---------
-.. automodule:: kts46.server.json_api
-
-JSONApiServer
-~~~~~~~~~~~~~
-.. autoclass:: kts46.server.json_api.JSONApiServer
-    :members:
-
-JSONApiRequestHandler
-~~~~~~~~~~~~~~~~~~~~~
-.. autoclass:: kts46.server.json_api.JSONApiRequestHandler
-    :members:
-
-
-rpc
----
-.. automodule:: kts46.server.rpc
-
-RPCServer
-~~~~~~~~~
-.. autoclass:: kts46.server.rpc.RPCServer
-    :members:
-
-
 status
 ------
 .. automodule:: kts46.server.status
@@ -107,6 +82,7 @@ Supervisor
 .. autoclass:: kts46.server.supervisor.Supervisor
     :members:
 
+
 worker
 ------
 .. automodule:: kts46.server.worker
@@ -119,6 +95,26 @@ Worker
 WorkerException
 ~~~~~~~~~~~~~~~
 .. autoclass:: kts46.server.worker.WorkerException
+    :members:
+
+
+webui
+-----
+.. automodule:: kts46.server.webui
+
+MissingParameterException
+~~~~~~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: kts46.server.webui.MissingParameterException
+    :members:
+
+DataAPIHandler
+~~~~~~~~~~~~~~
+.. autoclass:: kts46.server.webui.DataAPIHandler
+    :members:
+
+ManagementAPIHandler
+~~~~~~~~~~~~~~~~~~~~
+.. autoclass:: kts46.server.webui.ManagementAPIHandler
     :members:
 
 

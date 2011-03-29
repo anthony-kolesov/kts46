@@ -30,6 +30,7 @@ mimetypes.add_type("application/json", ".json", True) # True to add to official 
 
 
 class MissingParameterException(Exception):
+    "Thrown if request hasn't got required parameter."
     def __init__(self, message):
         super(Exception, self).__init__()
         self.message = message
@@ -38,6 +39,7 @@ class MissingParameterException(Exception):
 
 
 class DataAPIHandler(object):
+    "Handles HTTP GET requests to Data API."
 
     def __init__(self, statusServer):
         self.statusServer = statusServer
@@ -127,7 +129,7 @@ class DataAPIHandler(object):
                 output = "".join((callback, "(", json.dumps(result), ");"))
             elif type == "csv" or type == "tsv":
                 if len(fields) == 0:
-                    self._error(httplib.BAD_REQUEST, startResponse)
+                    self._startResponse(httplib.BAD_REQUEST, startResponse)
                     return "This method doesn't support tabular response."
 
                 delim = "," if type == "csv" else "\t"
@@ -161,7 +163,7 @@ class DataAPIHandler(object):
         elif methodName == "serverStatus":
             type = "jsonp"
             mimeType = mimetypes.types_map['.js']
-    return (type, mimeType)
+        return (type, mimeType)
 
     def serverStatusByGoogle(self, params):
         if "tqx" not in params: raise MissingParameterException("tqx")
