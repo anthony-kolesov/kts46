@@ -197,7 +197,8 @@ class DataAPIHandler(object):
         if not re.match("^(\d*\.)?\d+$", params["t"][0]):
             raise ValueError("Invalid `time` format: must be float number.")
 
-        return self.statusServer.getModelState(params['p'][0], params['j'][0], params['t'][0])
+        time = float(params['t'][0])
+        return self.statusServer.getModelState(params['p'][0], params['j'][0], time)
 
 
     def listJobStatistics(self, params):
