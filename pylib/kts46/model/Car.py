@@ -49,7 +49,8 @@ class Car(object):
 
 
     def getDescriptionData(self):
-        """Get dictionary with data describing this car.
+        """Get dictionary with data describing this car. Conains: id, length,
+        width and desired speed.
 
         :rtype: dict"""
         return {'id': self.id,
@@ -60,7 +61,8 @@ class Car(object):
 
 
     def getStateData(self):
-        """Get data describing current state of car.
+        """Get data describing current state of car: position (as ``pos``), line
+        and current speed (as ``curspd``).
 
         :rtype: dict"""
         d = {'pos': round(self.position, 2),
@@ -71,7 +73,15 @@ class Car(object):
             d['state'] = self.state
         return d
 
+
     def load(self, description, state={}):
+        """Loads car from data description.
+
+        :param description:
+            dictionary with car definition (returned from getDescriptionData).
+        :param state:
+            dictionary with car current state (returned from getStateData).
+        """
         self.id = description['id']
         self.length = description['length']
         self.width = description['width']
@@ -81,16 +91,6 @@ class Car(object):
         if 'curspd' in state: self.currentSpeed = state['curspd']
         if 'state' in state: self.state = state['state']
 
-    #def getDistanceToLeadingCar(self, line=None):
-    #    """Get distance (in meters) to the leading car. If there is not leading
-    #    car then None value will be returned."""
-    #    if line is None:
-    #        line = self.line
-    #    leadingCar = self.model.getNearestCar(self.position, line)
-    #    if leadingCar is not None:
-    #        return leadingCar.position - self.position
-    #    else:
-    #        return None
 
     def getDistanceToFollowingCar(self, line=None):
         """Get distance (in meters) to the following car. If there is not
@@ -169,6 +169,9 @@ class Car(object):
         return min(possibleDistance, self.getDesiredDistance(time))
 
     def prepareMove(self, time):
+        """Calculates current car move but new parameters won't be saved to
+        fields, other cars will make decisions on the basis of current car
+        state, not future."""
         # Change state
         if self.state == Car.ADDED:
             self.state = Car.ACTIVE
@@ -218,12 +221,15 @@ class Car(object):
 
 
     def finishMove(self):
+        "Stores caclculated new moving parameters."
         self.line = self.newState['line']
         self.position = self.newState['position']
         self.currentSpeed = self.newState['speed']
         if 'state' in self.newState: self.state = self.newState['state']
 
     def getDistanceAllowedByTL(self, time):
+        """Get possible moving distance allowed by desired speed and nearest
+        traffic light."""
         nearestTL = self.model.getNearestTrafficLight(self.position)
         desiredDistance = self.getDesiredDistance(time)
         if nearestTL is not None and not nearestTL.isGreen:
