@@ -442,8 +442,7 @@ var kts46 = (function($){
                     $('#live-view .time').text(time);
                     time += data.simulationParameters.stepDuration;
                     time = Math.round(time*10) / 10;
-                    console.log(time);console.log(data.simulationParameters.duration);
-                    if (time <= data.simulationParameters.duration) {console.log("HERE1");
+                    if (time <= data.simulationParameters.duration) {
                         var tid = setTimeout(updateState.bind({},time), data.simulationParameters.stepDuration * 1000);
                         c.data('timer', tid);
                     }
