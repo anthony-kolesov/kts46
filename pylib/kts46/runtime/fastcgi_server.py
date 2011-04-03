@@ -34,4 +34,5 @@ def app(environ, startResponse):
         #    print("%s -> %s" % (k, v))
         return ""
 
-WSGIServer(app, bindAddress=cfg.get("FastCGI", "socket"), umask=0000).run()
+WSGIServer(app, bindAddress=cfg.get("FastCGI", "socket"), umask=0000,
+           multithreaded=True, multiprocess=True).run()
