@@ -46,6 +46,9 @@ class Car(object):
         self.position = position
         self.line = line
         self.state = Car.INACTIVE
+        self.accelerationLimit = 2 # m / s^2 for (13.5 s to 100 kmph)
+        self.brakingLimit = 6.5 # m / s^2 (like 21 m from 60 kmph)
+        self.driverReactionTime = 0.6 # s
 
 
     def getDescriptionData(self):

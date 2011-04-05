@@ -11,8 +11,22 @@ Algorithms that are used in model are described in this document.
     ModelChangelog.rst
 
 
-Moving equation
-===============
+Moving
+======
+
+Acceleration and braking
+------------------------
+
+Cars can't instanly change speed. They have technical limits for this. To
+simplify it is stated that cars reach 100 km/h in 13.5 seconds, thus maximum
+acceleration is 2 m/s^2. Braking consists if two parts: reaction time that is
+constant and is said to be 0.6 seconds in model (`see here for details <http://goo.gl/qpwD6>`_).
+Actual braking of car is limited by 6.5 m / s^2. That gives the braking distance
+of about 21.4 m from 60 km/h.
+
+
+Equation
+--------
 
 #. Get current speed of leading car.
 #. Get predicted distance to leading car.
@@ -26,10 +40,6 @@ So equation of vehicle own speed on time interval is:
     S_{own}=S_{cur} + V_{leading} * t_{step} - S_{safe}
     0 \le S_{own} \le S_{desired}
 
-
-
-Moving
-======
 
 Algorithm
 ---------
