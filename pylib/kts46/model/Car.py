@@ -240,3 +240,28 @@ class Car(object):
             distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
             desiredDistance = min(distanceToTL, desiredDistance)
         return desiredDistance
+
+    def applyTechnicalLimits(distance, timeInterval):
+        """Checks calculated speed and current values and if required changes
+        values to those that are aproriate for this car according to acceleration
+        and braking limits.
+
+        :returns: new car distance fixed with technical limits.
+        """
+
+        speed = distance / timeInterval
+        acceleration = speed - self.currentSpeed
+        modified = False
+        if acceleration > 0:
+            if acceleration > self.accelerationLimit:
+                acceleration = self.accelerationLimit
+                modified = True
+        else:
+            if (-acceleration) > self.brakingLimit:
+                acceleration = -self.brakingLimit
+                modified = True
+
+        if modified:
+            return (self.currentSpeed + acceleration) * timeInterval
+        else:
+            return distance
