@@ -22,7 +22,9 @@ trafficLights:
         position: 150
         green: 60
         red: 34
+        state: r
     "2":
         position: 350
         green: 60
         red: 34
+        state: r
