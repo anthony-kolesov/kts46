@@ -40,7 +40,7 @@ class Car(object):
         self.model = model
         self.road = road
         self.desiredSpeed = speed
-        self.currentSpeed = speed
+        self.currentSpeed = 0.0
         self.length = length
         self.width = width
         self.position = position
@@ -125,22 +125,29 @@ class Car(object):
         if following is not None and following - self.length < self.model.params['safeDistanceRear']:
             return None
 
-        #leading = self.getDistanceToLeadingCar(targetLine)
-        #if leading is None or leading < self.model.params.safeDistance:
-        #    return None
         leadingDistance = self.getOwnDistance(time, targetLine)
         if leadingDistance < 0:
             return None
 
         return leadingDistance
 
+
     def getDesiredDistance(self, time):
-        """Returns desired moving distance for car for given time interval.
+        """Returns desired moving distance for car for given time interval. It
+        returns not actually desired distance limited by ability of vehicle to
+        accelerate.
 
         :param timedelta time: Time for which to calculate moving distance."
         :rtype: float"""
-        distance = self.desiredSpeed * kts46.utils.timedeltaToSeconds(time)
-        return distance
+
+        ts = kts46.utils.timedeltaToSeconds(time)
+        possibleSpeed = self.desiredSpeed
+        accLimit = self.accelerationLimit * ts
+        if (self.desiredSpeed - self.currentSpeed) > accLimit:
+            possibleSpeed = self.currentSpeed + accLimit
+
+        return possibleSpeed * ts
+
 
     def getPredictedDistance(self, time):
         """Returns predicted moving distance for car for given time interval on
@@ -179,6 +186,8 @@ class Car(object):
         if self.state == Car.ADDED:
             self.state = Car.ACTIVE
 
+        ts = kts46.utils.timedeltaToSeconds(time)
+
         # Get own speed using :eq:`getOwnSpeed`.
         currentLineDistance = max(self.getOwnDistance(time, self.line), 0)
         # If own speed is lesser then desired speed try neighbor lines.
@@ -213,6 +222,9 @@ class Car(object):
                finalLine = self.line + 1
                finalDistance = rightDistance
 
+        # Check braking.
+        # finalDistance = self.applyBrakingLimits(finalDistance, ts)
+
         newPosition = self.position + finalDistance
         self.newState = {
             'line': finalLine,
@@ -241,27 +253,18 @@ class Car(object):
             desiredDistance = min(distanceToTL, desiredDistance)
         return desiredDistance
 
-    def applyTechnicalLimits(distance, timeInterval):
-        """Checks calculated speed and current values and if required changes
-        values to those that are aproriate for this car according to acceleration
-        and braking limits.
 
-        :returns: new car distance fixed with technical limits.
+    def applyBrakingLimits(self, distance, timeInterval):
+        """Checks calculated speed and current values and if required changes
+        values to those that are aproriate for this car according to braking limits.
+
+        :returns: new car distance fixed with technical limits of braking.
         """
 
-        speed = distance / timeInterval
-        acceleration = speed - self.currentSpeed
-        modified = False
-        if acceleration > 0:
-            if acceleration > self.accelerationLimit:
-                acceleration = self.accelerationLimit
-                modified = True
-        else:
-            if (-acceleration) > self.brakingLimit:
-                acceleration = -self.brakingLimit
-                modified = True
-
-        if modified:
+        acceleration = distance / timeInterval - self.currentSpeed
+        limit = self.brakingLimit * timeInterval
+        if (-acceleration) > limit:
+            acceleration = -limit
             return (self.currentSpeed + acceleration) * timeInterval
         else:
             return distance
