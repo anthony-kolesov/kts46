@@ -79,6 +79,7 @@ class StatusServer:
         # Remove cars idle times if required
         if not includeIdleTimes:
             d['idleTimes']['values'] = None
+
         return d
 
     def getModelDescription(self, projectName, jobName):
