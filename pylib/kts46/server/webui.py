@@ -111,7 +111,7 @@ class DataAPIHandler(object):
             return ex.message
         except KeyError as ex:
             self._startResponse(httplib.NOT_FOUND, startResponse)
-            return ex.message
+            return str(ex.message)
 
         # Convert output to apropriate format.
         try:
@@ -223,7 +223,7 @@ class DataAPIHandler(object):
                     "average": stat["average"],
                     "stdeviation": stat["stdeviation"],
                     "averageSpeed": stat["averageSpeed"],
-                    "averageIdleTime": stat["idleTimes"]["average"],
+                    "averageIdleTime": stat["idleTimes"].get("average", ""),
                     "startThroughput": stat["throughput"][0]["rate"],
                     "startThroughput": stat["throughput"][-1]["rate"]
                 }
