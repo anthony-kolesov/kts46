@@ -46,10 +46,6 @@ class Car(object):
         self.position = position
         self.line = line
         self.state = Car.INACTIVE
-        self.accelerationLimit = 2.0 # m / s^2 for (13.5 s to 100 kmph)
-        self.brakingLimit = 6.5 # m / s^2 (like 21 m from 60 kmph)
-        self.comformBrakingAcceleration = 4.5 # m / s^2
-        self.driverReactionTime = 0.8 # s
 
 
     def getDescriptionData(self):
@@ -143,7 +139,7 @@ class Car(object):
 
         ts = kts46.utils.timedeltaToSeconds(time)
         possibleSpeed = self.desiredSpeed
-        accLimit = self.accelerationLimit * ts
+        accLimit = self.model.params["accelerationLimit"] * ts
         if (self.desiredSpeed - self.currentSpeed) > accLimit:
             possibleSpeed = self.currentSpeed + accLimit
 
@@ -192,7 +188,7 @@ class Car(object):
         # Get own speed using :eq:`getOwnSpeed`.
         currentLineDistance = max(self.getOwnDistance(time, self.line), 0)
         # If own speed is lesser then desired speed try neighbor lines.
-        desiredDistance = self.getDistanceAllowedByTL(time)
+        desiredDistance = self.getMaximumDesiredDistance(ts)
         # currentLineDistance still could be greater because desired is limited
         # by TL. So if only TL limits our movement we will stay at a line.
         if self.road.lines == 1 or currentLineDistance >= desiredDistance:
@@ -244,13 +240,41 @@ class Car(object):
         if 'state' in self.newState: self.state = self.newState['state']
 
 
-    def getDistanceAllowedByTL(self, time):
-        """Get possible moving distance allowed by desired speed and nearest
-        traffic light."""
+    def getMaximumDesiredDistance(self, interval):
+        """Get maximum desired distance for this car in provided interval and
+        limited by red traffic light if it exists.
+
+        :param float interval: time interval in seconds for which to get distance."""
+
         nearestTL = self.model.getNearestTrafficLight(self.position)
-        desiredDistance = self.getDesiredDistance(time)
+        desiredDistance = self.desiredSpeed * interval
         if nearestTL is not None and not nearestTL.isGreen:
-            stopDistance = self.model.params['trafficLightStopDistance']
-            distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
-            desiredDistance = min(distanceToTL, desiredDistance)
+            # stopDistance = self.model.params['trafficLightStopDistance']
+            # distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
+            distanceToTL = nearestTL.position - self.position
+            if distanceToTL < 0: distanceToTL = 0
+            if distanceToTL < desiredDistance:
+                return distanceToTL
         return desiredDistance
+
+
+    def getDesiredDistance2(self, interval):
+        """Returns desired moving distance for car for given time interval.
+        Distance is limited by traffic lights and car acceleration limit.
+
+        :param float interval: Time interval for which to calculate distance.
+        :rtype: float"""
+
+        maxDistance = self.getMaximumDesiredDistance(interval)
+        accLimit = self.model.params["accelerationLimit"] * ts
+        if (self.desiredSpeed - self.currentSpeed) < accLimit:
+            return maxDistance
+        else:
+            speed = self.currentSpeed + accLimit
+
+        possibleSpeed = self.desiredSpeed
+        accLimit = self.model.params["accelerationLimit"] * ts
+        if (self.desiredSpeed - self.currentSpeed) > accLimit:
+            possibleSpeed = self.currentSpeed + accLimit
+
+        return possibleSpeed * ts
