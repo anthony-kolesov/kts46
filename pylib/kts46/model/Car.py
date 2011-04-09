@@ -46,9 +46,10 @@ class Car(object):
         self.position = position
         self.line = line
         self.state = Car.INACTIVE
-        self.accelerationLimit = 2 # m / s^2 for (13.5 s to 100 kmph)
+        self.accelerationLimit = 2.0 # m / s^2 for (13.5 s to 100 kmph)
         self.brakingLimit = 6.5 # m / s^2 (like 21 m from 60 kmph)
-        self.driverReactionTime = 0.6 # s
+        self.comformBrakingAcceleration = 4.5 # m / s^2
+        self.driverReactionTime = 0.8 # s
 
 
     def getDescriptionData(self):
@@ -242,6 +243,7 @@ class Car(object):
         self.currentSpeed = self.newState['speed']
         if 'state' in self.newState: self.state = self.newState['state']
 
+
     def getDistanceAllowedByTL(self, time):
         """Get possible moving distance allowed by desired speed and nearest
         traffic light."""
@@ -252,19 +254,3 @@ class Car(object):
             distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
             desiredDistance = min(distanceToTL, desiredDistance)
         return desiredDistance
-
-
-    def applyBrakingLimits(self, distance, timeInterval):
-        """Checks calculated speed and current values and if required changes
-        values to those that are aproriate for this car according to braking limits.
-
-        :returns: new car distance fixed with technical limits of braking.
-        """
-
-        acceleration = distance / timeInterval - self.currentSpeed
-        limit = self.brakingLimit * timeInterval
-        if (-acceleration) > limit:
-            acceleration = -limit
-            return (self.currentSpeed + acceleration) * timeInterval
-        else:
-            return distance
