@@ -15,5 +15,20 @@ safeDistanceRear
 maxSpeed
     Maximum desired speed of cars.
 
-minSpeed:
+minSpeed
     Minimum desired speed of cars.
+
+accelerationLimit
+    Maximum acceleration of car.
+
+brakingLimit
+    Maximum braking deacceleration of car.
+
+comformBrakingLimit
+    Deacceleration in normal circumstances.
+
+driverReactionTime
+    Time of driver reaction.
+
+minimalDistance
+    Distance to keep between cars when they are not moving.
