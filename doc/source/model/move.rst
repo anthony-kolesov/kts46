@@ -2,16 +2,16 @@ Moving
 ======
 
 
-
 Terms
 -----
 
 Maximum desired speed
-    Maximum speed that is desired by this vehicle at current road.
+    Maximum speed that is desired by this vehicle at current road. Note that it
+    can be limited by red traffic light.
 
 Desired speed
     That is *current speed* + *possible acceleration*. This couldn't be greater
-    than maximum desired speed. And it can limited by traffic light.
+    than maximum desired speed and it can limited by traffic light.
 
 Possible distance
     That is desired distance also limited by leading car and its predicted speed.
