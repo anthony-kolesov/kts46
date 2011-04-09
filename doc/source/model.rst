@@ -9,6 +9,7 @@ Algorithms that are used in model are described in this document.
     :numbered:
 
     ModelChangelog.rst
+    model/move.rst
 
 
 Moving
@@ -31,10 +32,21 @@ Equation
 #. Get current speed of leading car.
 #. Get predicted distance to leading car.
 #. Get own new possible distance on the base of predicted distance and safe distance.
+#. Safe distance depends on current vehicle speed which is a sum of braking
+   distance, distance covered with reaction time and minimal possible distance
+   between cars. Comfortable braking deacceleration is used.
+
+Safe distance:
+
+.. math::
+    :label: safe distance
+
+    S_{safe} = V_{cur} * ( V_{cur} / 2 * a_{comf} + t_{reaction} )
+
 
 So equation of vehicle own speed on time interval is:
 
-..math::
+.. math::
     :label: getOwnDistance
 
     S_{own}=S_{cur} + V_{leading} * t_{step} - S_{safe}
