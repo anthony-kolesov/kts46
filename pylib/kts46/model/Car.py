@@ -31,8 +31,8 @@ class Car(object):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
-        width and position in metrs.
-        """
+        width and position in metrs."""
+
         if id is None:
             self.id = str(uuid4())
         else:
@@ -93,7 +93,7 @@ class Car(object):
 
 
     def getDistanceToFollowingCar(self, line=None):
-        """Get distance (in meters) to the following car. If there is not
+        """Get distance (in meters) to the following car. If there is no
         following car then None value will be returned. Note that car which
         front is between current car front and rear is considered following. So
         this function will return distance between cars fronts. To check for
@@ -108,6 +108,7 @@ class Car(object):
             return self.position - followingCar.position
         else:
             return None
+
 
     def canChangeLine(self, targetLine, time):
         """Determines whether car can move to specified line with regard to
@@ -185,48 +186,94 @@ class Car(object):
 
         ts = kts46.utils.timedeltaToSeconds(time)
 
-        # Get own speed using :eq:`getOwnSpeed`.
-        currentLineDistance = max(self.getOwnDistance(time, self.line), 0)
-        # If own speed is lesser then desired speed try neighbor lines.
-        desiredDistance = self.getMaximumDesiredDistance(ts)
-        # currentLineDistance still could be greater because desired is limited
-        # by TL. So if only TL limits our movement we will stay at a line.
-        if self.road.lines == 1 or currentLineDistance >= desiredDistance:
-            finalDistance = min(desiredDistance, currentLineDistance)
-            finalLine = self.line
+        # == NEW ALGO ==
+        # Get desired distance
+        desiredSpeed = min(self.desiredSpeed,
+            self.currentSpeed + self.model.params["accelerationLimit"] * ts)
+        acceleration = max(desiredSpeed - self.currentSpeed, 0)
+        desiredDistance = desiredSpeed * ts + acceleration * ts * ts / 2.0
+
+        # Get distance to traffic light.
+        nearestTL = self.model.getNearestTrafficLight(self.position)
+        if nearestTL is not None and not nearestTL.isGreen:
+            distanceToTL = nearestTL.position - self.position
         else:
-           #  * Check that distance to following car is greater than or equal to safeDistanceRear.
-           #  * Get possible own speeds on available lines using :eq:`getOwnSpeed`.
-           if self.line > 0:
-               leftDistance = self.canChangeLine(self.line - 1, time)
-           else:
-               leftDistance = None
-           if self.line + 1 < self.road.lines:
-               rightDistance = self.canChangeLine(self.line + 1, time)
-           else:
-               rightDistance = None
+            distanceToTL = None
+        # Is TL in distance?
+        if distanceToTL > desiredDistance:
+            distanceToTL = None
 
-           # Choose line with maximum distance.
-           # If speeds are equal, than lines are choosen according to priority:
-           #   current, left, right. Thus overtaking will be done on left line.
-           finalLine = self.line
-           finalDistance = currentLineDistance
-           # First try left.
-           if leftDistance is not None and leftDistance > finalDistance:
-               finalLine = self.line - 1
-               finalDistance = leftDistance
-           if rightDistance is not None and rightDistance > finalDistance:
-               finalLine = self.line + 1
-               finalDistance = rightDistance
+        # Get distance to leading car.
+        distanceToLeadingCar = self.getDistanceToLeadingCar(ts, self.line)
+        # Skip it if it is after red light
+        if distanceToTL is not None and distanceToTL < distanceToLeadingCar:
+            distanceToLeadingCar = None
 
-        # Check braking.
-        # finalDistance = self.applyBrakingLimits(finalDistance, ts)
+        # Get current braking distance.
+        brakingDistance = self.getBrakingDistance()
 
-        newPosition = self.position + finalDistance
+        # Does leading car restatrains us?
+        if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
+            # Try other lines.
+            if self.line > 0:
+                leftDistance = self.getDistanceToLeadingCar(ts, self.line - 1)
+                # Check for traffic light.
+                if distanceToTL is not None and distanceToTL < leftDistance:
+                    leftDistance = None
+                # Check for rear safe distance but only if line wasn't already scrapped.
+                if leftDistance is not None:
+                    leftFollowing = self.getDistanceToFollowingCar(self.line - 1)
+                    if (leftFollowing is not None and
+                        leftFollowing - self.length < self.model.params['safeDistanceRear']):
+                        leftDistance = None
+            else:
+                leftDistance = None
+
+            if self.line + 1 < self.road.lines:
+                rightDistance = self.getDistanceToLeadingCar(ts, self.line + 1)
+                # Check for traffic light.
+                if distanceToTL is not None and distanceToTL < rightDistance:
+                    rightDistance = None
+                # Check for rear safe distance but only if line wasn't already scrapped.
+                if rightDistance is not None:
+                    rightFollowing = self.getDistanceToFollowingCar(self.line + 1)
+                    if (rightFollowing is not None and
+                        rightFollowing - self.length < self.model.params['safeDistanceRear']):
+                        rightDistance = None
+            else:
+                rightDistance = None
+
+            # Choose line with maximum distance.
+            # If speeds are equal, than lines are choosen according to priority:
+            # current, left, right. Thus overtaking will be done on left line if possible.
+            finalLine = self.line
+            finalDistance = distanceToLeadingCar
+            # First try left.
+            if leftDistance is not None and leftDistance > finalDistance:
+                finalLine = self.line - 1
+                finalDistance = leftDistance
+            if rightDistance is not None and rightDistance > finalDistance:
+                finalLine = self.line + 1
+                finalDistance = rightDistance
+        else:
+            finalLine = self.line
+            finalDistance = distanceToLeadingCar
+
+        if finalDistance <= brakingDistance:
+            deacceleration = self.currentSpeed * self.currentSpeed / (2.0 * finalDistance)
+            if deacceleration >= self.model.params["brakingLimit"]:
+                deacceleration = self.model.params["brakingLimit"]
+            newSpeed = self.currentSpeed * ts - deacceleration
+            newDistance = newSpeed * ts - deacceleration * ts * ts / 2.0
+        else:
+            newSpeed = desiredSpeed
+            newDistance = desiredDistance
+
+        newPosition = self.position + newDistance
         self.newState = {
             'line': finalLine,
             'position': newPosition,
-            'speed': finalDistance / kts46.utils.timedeltaToSeconds(time)
+            'speed': newSpeed
         }
         if self.road.length < newPosition:
             self.newState['state'] = Car.DELETED
@@ -246,15 +293,15 @@ class Car(object):
 
         :param float interval: time interval in seconds for which to get distance."""
 
-        nearestTL = self.model.getNearestTrafficLight(self.position)
+        #nearestTL = self.model.getNearestTrafficLight(self.position)
         desiredDistance = self.desiredSpeed * interval
-        if nearestTL is not None and not nearestTL.isGreen:
-            # stopDistance = self.model.params['trafficLightStopDistance']
-            # distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
-            distanceToTL = nearestTL.position - self.position
-            if distanceToTL < 0: distanceToTL = 0
-            if distanceToTL < desiredDistance:
-                return distanceToTL
+        #if nearestTL is not None and not nearestTL.isGreen:
+        #    # stopDistance = self.model.params['trafficLightStopDistance']
+        #    # distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
+        #    distanceToTL = nearestTL.position - self.position
+        #    if distanceToTL < 0: distanceToTL = 0
+        #    if distanceToTL < desiredDistance:
+        #        return distanceToTL
         return desiredDistance
 
 
@@ -271,10 +318,22 @@ class Car(object):
             return maxDistance
         else:
             speed = self.currentSpeed + accLimit
+            return speed * ts
 
-        possibleSpeed = self.desiredSpeed
-        accLimit = self.model.params["accelerationLimit"] * ts
-        if (self.desiredSpeed - self.currentSpeed) > accLimit:
-            possibleSpeed = self.currentSpeed + accLimit
 
-        return possibleSpeed * ts
+    def getBrakingDistance(self):
+        a = self.model.params["comfortBrakingLimit"]
+        treaction = self.model.params["driverReactionTime"]
+        smin = self.model.params["minimalDistance"]
+        brakingDistance = self.currentSpeed * (self.currentSpeed/(2*a) + treaction) + smin
+
+
+    def getDistanceToLeadingCar(self, interval, line)
+        "Get distance to leading car including its predicted movement."
+        # Get distance to leading car.
+        leadingCar = self.model.getNearestCar(self.position, line)
+        if leadingCar is None:
+            return None
+        else:
+            return (leadingCar.position - leadingCar.length - self.position +
+                    leadingCar.currentSpeed * interval)

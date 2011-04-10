@@ -24,7 +24,7 @@ accelerationLimit
 brakingLimit
     Maximum braking deacceleration of car.
 
-comformBrakingLimit
+comfortBrakingLimit
     Deacceleration in normal circumstances.
 
 driverReactionTime
