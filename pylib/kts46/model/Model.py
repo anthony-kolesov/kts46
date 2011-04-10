@@ -43,7 +43,7 @@ class Model(object):
         'minSpeed': 10, 'maxSpeed': 20,
         "accelerationLimit": 2.0, # m / s^2 for (13.5 s to 100 kmph)
         "brakingLimit": 6.5, # m / s^2 (like 21 m from 60 kmph)
-        "comformBrakingLimit": 4.5, # m / s^2
+        "comfortBrakingLimit": 4.5, # m / s^2
         "driverReactionTime": 0.8, # s
         "minimalDistance": 3 # m
     }
