@@ -38,9 +38,16 @@ class ModelParams:
 class Model(object):
     "Defines a model that can simulate road traffic."
 
-    defaultParams = {'inputRate': 1200, 'safeDistance': 20, 'safeDistanceRear': 10,
-        'minSpeed': 10, 'maxSpeed': 20, 'trafficLightStopDistance': 5 }
-    
+    defaultParams = {'inputRate': 1200,
+        'safeDistance': 20, 'safeDistanceRear': 10, 'trafficLightStopDistance': 5,
+        'minSpeed': 10, 'maxSpeed': 20,
+        "accelerationLimit": 2.0, # m / s^2 for (13.5 s to 100 kmph)
+        "brakingLimit": 6.5, # m / s^2 (like 21 m from 60 kmph)
+        "comfortBrakingLimit": 4.5, # m / s^2
+        "driverReactionTime": 0.8, # s
+        "minimalDistance": 3 # m
+    }
+
     def __init__(self, params):
         """Initializes new model with provided set of parameters.
 
@@ -156,6 +163,7 @@ class Model(object):
 
     def getNearestObjectInArray(self, array, position, line=0):
         "Get nearest object in array to specified position in forward destination."
+        position += 0.1
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
@@ -178,14 +186,14 @@ class Model(object):
                 current = i
                 current_pos = pos
         return current
-    
+
 
     def getFollowingCar(self, position, line=0):
         """Get nearest following car to specified position in backward destination.
         If there is no following car, then ``None`` will be returned."""
         return self.getFollowingObjectInArray(self._cars, position, line)
 
-    
+
     def getFollowingObjectInArray(self, array, position, line=0):
         "Get nearest object in array to specified position in backward destination."
         current = None
@@ -292,4 +300,3 @@ class Model(object):
             self.time = kts46.utils.str2timedelta(state['time'])
             self._lastCarGenerationTime = kts46.utils.str2timedelta(state['lastCarGenerationTime'])
             self._lastCarId = state['lastCarId']
-
