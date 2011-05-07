@@ -14,7 +14,7 @@
 
 
 import logging
-from kts46.model.Model import Model, ModelParams
+from kts46.model.Model import Model
 
 
 def timedeltaToSeconds(td):
@@ -34,7 +34,7 @@ class SimulationServer(object):
         simulates and stores simulation results to database."""
 
         model = Model(Model.defaultParams)
-       
+
         # Load current state: load state and set time
         curState = job.currentFullState
         if curState is not None:
@@ -42,15 +42,15 @@ class SimulationServer(object):
             t = timedeltaToSeconds(model.time)
         else:
             model.load(job.definition)
-            t = 0.0        
-        
+            t = 0.0
+
         step = job.definition['simulationParameters']['stepDuration']
         duration = job.definition['simulationParameters']['duration']
         batchLength = job.definition['simulationParameters']['batchLength']
 
         # Prepare infrastructure.
         saver.repair(t)
-        
+
         # Reset job progress step counter.
         if t == 0.0:
             # Document will be saved to database with state data.
@@ -64,7 +64,7 @@ class SimulationServer(object):
         # if is start then save it as initial state.
         if t == 0.0:
             saver.add(round(t, 3), data = model.getStateData())
-        
+
         # Run.
         while t <= duration and stepsCount < batchLength:
             model.run_step(stepAsMs)
