@@ -203,7 +203,6 @@ class Car(object):
         else:
             distanceToTL = None
         # Is TL in distance?
-        #print("Distance to TL: %s, TL: %s" % (str(distanceToTL), str(nearestTL)))
         #if distanceToTL > brakingDistance:
         #    distanceToTL = None
 
@@ -265,14 +264,6 @@ class Car(object):
             else:
                 finalDistance = brakingDistance + 1.0
 
-        print("TL: %s, leader: %s, braking: %s, final: %s, speed: %s" %(
-            str(distanceToTL), str(distanceToLeadingCar), str(brakingDistance), str(finalDistance),
-            str(self.currentSpeed)))
-
-        # Halt if we are too close to the object in front.
-        # if finalDistance <= self.model.params['minimalDistance']:
-
-
         if finalDistance <= brakingDistance:
             # Normal deacceleration.
             allowedDistance = finalDistance - self.model.params['minimalDistance']
@@ -285,20 +276,8 @@ class Car(object):
             else:
                 deacceleration = .0
                 newSpeed = .0
-            # Don't move at speed <5km/h (~1.4 m/s)
-            #if newSpeed < 1.4:
-            #    redefinedDeacceleration = self.currentSpeed / ts
-            #    if redefinedDeacceleration <= self.model.params["brakingLimit"]:
-            #        # If car is able to stop at this cycle then do it. Otherwise
-            #        # deaccelerate normally and wait for next cycle to halt.
-            #        newSpeed = 0.0
             newDistance = self.currentSpeed * ts - deacceleration * ts * ts / 2.0
             if newDistance < 0: newDistance = 0
-            print("deacc: %s, newSpeed: %s, newdistance: %s" %(
-                str(deacceleration), str(newSpeed), str(newDistance)))
-        #elif finalDistance <= 5.0 and self.currentSpeed == 0:
-        #    newSpeed = 0.0
-        #    newDistance = 0.0
         else:
             newSpeed = desiredSpeed
             newDistance = desiredDistance
