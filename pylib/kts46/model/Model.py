@@ -163,6 +163,7 @@ class Model(object):
 
     def getNearestObjectInArray(self, array, position, line=0):
         "Get nearest object in array to specified position in forward destination."
+        position += 0.1
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
