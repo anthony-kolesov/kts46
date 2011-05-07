@@ -110,41 +110,41 @@ class Car(object):
             return None
 
 
-    def canChangeLine(self, targetLine, time):
-        """Determines whether car can move to specified line with regard to
-        safe distances.
+    #def canChangeLine(self, targetLine, time):
+    #    """Determines whether car can move to specified line with regard to
+    #    safe distances.
+    #
+    #    :param int targetLine: Line for which to perform check.
+    #    :returns:
+    #        distance to leading car if possible or None value if isn't possible.
+    #    :rtype: float
+    #    """
+    #    following = self.getDistanceToFollowingCar(targetLine)
+    #    if following is not None and following - self.length < self.model.params['safeDistanceRear']:
+    #        return None
+    #
+    #    leadingDistance = self.getOwnDistance(time, targetLine)
+    #    if leadingDistance < 0:
+    #        return None
+    #
+    #    return leadingDistance
 
-        :param int targetLine: Line for which to perform check.
-        :returns:
-            distance to leading car if possible or None value if isn't possible.
-        :rtype: float
-        """
-        following = self.getDistanceToFollowingCar(targetLine)
-        if following is not None and following - self.length < self.model.params['safeDistanceRear']:
-            return None
 
-        leadingDistance = self.getOwnDistance(time, targetLine)
-        if leadingDistance < 0:
-            return None
-
-        return leadingDistance
-
-
-    def getDesiredDistance(self, time):
-        """Returns desired moving distance for car for given time interval. It
-        returns not actually desired distance limited by ability of vehicle to
-        accelerate.
-
-        :param timedelta time: Time for which to calculate moving distance."
-        :rtype: float"""
-
-        ts = kts46.utils.timedeltaToSeconds(time)
-        possibleSpeed = self.desiredSpeed
-        accLimit = self.model.params["accelerationLimit"] * ts
-        if (self.desiredSpeed - self.currentSpeed) > accLimit:
-            possibleSpeed = self.currentSpeed + accLimit
-
-        return possibleSpeed * ts
+    #def getDesiredDistance(self, time):
+    #    """Returns desired moving distance for car for given time interval. It
+    #    returns not actually desired distance limited by ability of vehicle to
+    #    accelerate.
+    #
+    #    :param timedelta time: Time for which to calculate moving distance."
+    #    :rtype: float"""
+    #
+    #    ts = kts46.utils.timedeltaToSeconds(time)
+    #    possibleSpeed = self.desiredSpeed
+    #    accLimit = self.model.params["accelerationLimit"] * ts
+    #    if (self.desiredSpeed - self.currentSpeed) > accLimit:
+    #        possibleSpeed = self.currentSpeed + accLimit
+    #
+    #    return possibleSpeed * ts
 
 
     def getPredictedDistance(self, time):
@@ -187,30 +187,31 @@ class Car(object):
         ts = kts46.utils.timedeltaToSeconds(time)
 
         # == NEW ALGO ==
+        # Get current braking distance.
+        brakingDistance = self.getBrakingDistance()
+
         # Get desired distance
         desiredSpeed = min(self.desiredSpeed,
             self.currentSpeed + self.model.params["accelerationLimit"] * ts)
         acceleration = max(desiredSpeed - self.currentSpeed, 0)
-        desiredDistance = desiredSpeed * ts + acceleration * ts * ts / 2.0
+        desiredDistance = self.currentSpeed * ts + acceleration * ts * ts / 2.0
 
         # Get distance to traffic light.
         nearestTL = self.model.getNearestTrafficLight(self.position)
         if nearestTL is not None and not nearestTL.isGreen:
-            distanceToTL = nearestTL.position - self.position
+            distanceToTL = nearestTL.position - self.position #- self.model.params['minimalDistance']
         else:
             distanceToTL = None
         # Is TL in distance?
-        if distanceToTL > desiredDistance:
-            distanceToTL = None
+        #print("Distance to TL: %s, TL: %s" % (str(distanceToTL), str(nearestTL)))
+        #if distanceToTL > brakingDistance:
+        #    distanceToTL = None
 
         # Get distance to leading car.
         distanceToLeadingCar = self.getDistanceToLeadingCar(ts, self.line)
-        # Skip it if it is after red light
+        # Skip it if it is after red light.
         if distanceToTL is not None and distanceToTL < distanceToLeadingCar:
             distanceToLeadingCar = None
-
-        # Get current braking distance.
-        brakingDistance = self.getBrakingDistance()
 
         # Does leading car restatrains us?
         if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
@@ -257,14 +258,47 @@ class Car(object):
                 finalDistance = rightDistance
         else:
             finalLine = self.line
-            finalDistance = distanceToLeadingCar
+            if distanceToLeadingCar is not None:
+                finalDistance = distanceToLeadingCar
+            elif distanceToTL is not None:
+                finalDistance = distanceToTL
+            else:
+                finalDistance = brakingDistance + 1.0
+
+        print("TL: %s, leader: %s, braking: %s, final: %s, speed: %s" %(
+            str(distanceToTL), str(distanceToLeadingCar), str(brakingDistance), str(finalDistance),
+            str(self.currentSpeed)))
+
+        # Halt if we are too close to the object in front.
+        # if finalDistance <= self.model.params['minimalDistance']:
+
 
         if finalDistance <= brakingDistance:
-            deacceleration = self.currentSpeed * self.currentSpeed / (2.0 * finalDistance)
-            if deacceleration >= self.model.params["brakingLimit"]:
-                deacceleration = self.model.params["brakingLimit"]
-            newSpeed = self.currentSpeed * ts - deacceleration
-            newDistance = newSpeed * ts - deacceleration * ts * ts / 2.0
+            # Normal deacceleration.
+            allowedDistance = finalDistance - self.model.params['minimalDistance']
+            if allowedDistance > 0:
+                deacceleration = self.currentSpeed * self.currentSpeed / (2.0 * allowedDistance)
+                if deacceleration >= self.model.params["brakingLimit"]:
+                    deacceleration = self.model.params["brakingLimit"]
+                newSpeed = self.currentSpeed - deacceleration * ts
+                if newSpeed < 0: newSpeed = .0
+            else:
+                deacceleration = .0
+                newSpeed = .0
+            # Don't move at speed <5km/h (~1.4 m/s)
+            #if newSpeed < 1.4:
+            #    redefinedDeacceleration = self.currentSpeed / ts
+            #    if redefinedDeacceleration <= self.model.params["brakingLimit"]:
+            #        # If car is able to stop at this cycle then do it. Otherwise
+            #        # deaccelerate normally and wait for next cycle to halt.
+            #        newSpeed = 0.0
+            newDistance = self.currentSpeed * ts - deacceleration * ts * ts / 2.0
+            if newDistance < 0: newDistance = 0
+            print("deacc: %s, newSpeed: %s, newdistance: %s" %(
+                str(deacceleration), str(newSpeed), str(newDistance)))
+        #elif finalDistance <= 5.0 and self.currentSpeed == 0:
+        #    newSpeed = 0.0
+        #    newDistance = 0.0
         else:
             newSpeed = desiredSpeed
             newDistance = desiredDistance
@@ -323,12 +357,13 @@ class Car(object):
 
     def getBrakingDistance(self):
         a = self.model.params["comfortBrakingLimit"]
-        treaction = self.model.params["driverReactionTime"]
+        #treaction = self.model.params["driverReactionTime"]
+        treaction = 0.0
         smin = self.model.params["minimalDistance"]
-        brakingDistance = self.currentSpeed * (self.currentSpeed/(2*a) + treaction) + smin
+        return self.currentSpeed * (self.currentSpeed/(2*a) + treaction) + smin
 
 
-    def getDistanceToLeadingCar(self, interval, line)
+    def getDistanceToLeadingCar(self, interval, line):
         "Get distance to leading car including its predicted movement."
         # Get distance to leading car.
         leadingCar = self.model.getNearestCar(self.position, line)
@@ -336,4 +371,4 @@ class Car(object):
             return None
         else:
             return (leadingCar.position - leadingCar.length - self.position +
-                    leadingCar.currentSpeed * interval)
+                    leadingCar.currentSpeed * interval)# - self.model.params['minimalDistance'])
