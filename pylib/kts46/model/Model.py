@@ -24,17 +24,6 @@ from Road import Road
 from TrafficLight import SimpleSemaphore
 
 
-class ModelParams:
-    """Defines simulation parameters such as min and max speed, safe distance
-    between vehicles and interval between generations of new cars."""
-
-    def __init__(self):
-        self.carGenerationInterval = 3.0
-        self.safeDistance = 5.0
-        self.maxSpeed = 20.0
-        self.minSpeed = 10.0
-
-
 class Model(object):
     "Defines a model that can simulate road traffic."
 
@@ -52,7 +41,7 @@ class Model(object):
         """Initializes new model with provided set of parameters.
 
         :param params: Model parameters.
-        :type params: :py:class:`ModelParams`"""
+        :type params: dictionary"""
         self.time = timedelta()
         self._cars = []
         self._enterQueue = []
