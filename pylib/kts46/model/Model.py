@@ -29,12 +29,12 @@ class Model(object):
 
     defaultParams = {'inputRate': 1200,
         'safeDistance': 20, 'safeDistanceRear': 10, 'trafficLightStopDistance': 5,
-        'minSpeed': 10, 'maxSpeed': 20,
         "accelerationLimit": 2.0, # m / s^2 for (13.5 s to 100 kmph)
         "brakingLimit": 6.5, # m / s^2 (like 21 m from 60 kmph)
         "comfortBrakingLimit": 4.5, # m / s^2
         "driverReactionTime": 0.8, # s
-        "minimalDistance": 3 # m
+        "minimalDistance": 3, # m
+        "speed": [10, 20] # m/s
     }
 
     def __init__(self, params):
@@ -119,8 +119,8 @@ class Model(object):
 
         :param amount: Amount of cars to add to queue.
         :type amount: int"""
-        speedMultiplier = self.params['maxSpeed'] - self.params['minSpeed']
-        speedAdder = self.params['minSpeed']
+        speedMultiplier = self.params['speed'][1] - self.params['speed'][0]
+        speedAdder = self.params['speed'][0]
         for i in xrange(amount):
             speed = math.floor(random.random() * speedMultiplier) + speedAdder
             self._lastCarId += 1
