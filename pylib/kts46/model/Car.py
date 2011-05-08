@@ -110,43 +110,6 @@ class Car(object):
             return None
 
 
-    #def canChangeLine(self, targetLine, time):
-    #    """Determines whether car can move to specified line with regard to
-    #    safe distances.
-    #
-    #    :param int targetLine: Line for which to perform check.
-    #    :returns:
-    #        distance to leading car if possible or None value if isn't possible.
-    #    :rtype: float
-    #    """
-    #    following = self.getDistanceToFollowingCar(targetLine)
-    #    if following is not None and following - self.length < self.model.params['safeDistanceRear']:
-    #        return None
-    #
-    #    leadingDistance = self.getOwnDistance(time, targetLine)
-    #    if leadingDistance < 0:
-    #        return None
-    #
-    #    return leadingDistance
-
-
-    #def getDesiredDistance(self, time):
-    #    """Returns desired moving distance for car for given time interval. It
-    #    returns not actually desired distance limited by ability of vehicle to
-    #    accelerate.
-    #
-    #    :param timedelta time: Time for which to calculate moving distance."
-    #    :rtype: float"""
-    #
-    #    ts = kts46.utils.timedeltaToSeconds(time)
-    #    possibleSpeed = self.desiredSpeed
-    #    accLimit = self.model.params["accelerationLimit"] * ts
-    #    if (self.desiredSpeed - self.currentSpeed) > accLimit:
-    #        possibleSpeed = self.currentSpeed + accLimit
-    #
-    #    return possibleSpeed * ts
-
-
     def getPredictedDistance(self, time):
         """Returns predicted moving distance for car for given time interval on
         the base of current car speed.
@@ -156,25 +119,6 @@ class Car(object):
         distance = self.currentSpeed * kts46.utils.timedeltaToSeconds(time)
         return distance
 
-    def getOwnDistance(self, time, line=None):
-        """Calculates possible distance that can be passed on the specified line
-        for the specified interval of time. If returned value is negative, than
-        you couldn't move to that line because of safe distance limit. Values is
-        limited by desired distance."""
-        if line is None: line = self.line
-
-        # Need to add little value so car will not think of itself as a leader.
-        startPosition = self.position if line != self.line else self.position + 0.1
-        leader = self.model.getNearestCar(startPosition, line)
-        if leader is None:
-            return self.getDesiredDistance(time)
-
-        distanceToLeader = leader.position - leader.length - self.position
-        leaderMove = leader.getPredictedDistance(time)
-        safeDistance = self.model.params['safeDistance']
-        possibleDistance = distanceToLeader + leaderMove - safeDistance
-
-        return min(possibleDistance, self.getDesiredDistance(time))
 
     def prepareMove(self, time):
         """Calculates current car move but new parameters won't be saved to
@@ -298,40 +242,6 @@ class Car(object):
         self.position = self.newState['position']
         self.currentSpeed = self.newState['speed']
         if 'state' in self.newState: self.state = self.newState['state']
-
-
-    def getMaximumDesiredDistance(self, interval):
-        """Get maximum desired distance for this car in provided interval and
-        limited by red traffic light if it exists.
-
-        :param float interval: time interval in seconds for which to get distance."""
-
-        #nearestTL = self.model.getNearestTrafficLight(self.position)
-        desiredDistance = self.desiredSpeed * interval
-        #if nearestTL is not None and not nearestTL.isGreen:
-        #    # stopDistance = self.model.params['trafficLightStopDistance']
-        #    # distanceToTL = max(nearestTL.position - self.position - stopDistance, 0)
-        #    distanceToTL = nearestTL.position - self.position
-        #    if distanceToTL < 0: distanceToTL = 0
-        #    if distanceToTL < desiredDistance:
-        #        return distanceToTL
-        return desiredDistance
-
-
-    def getDesiredDistance2(self, interval):
-        """Returns desired moving distance for car for given time interval.
-        Distance is limited by traffic lights and car acceleration limit.
-
-        :param float interval: Time interval for which to calculate distance.
-        :rtype: float"""
-
-        maxDistance = self.getMaximumDesiredDistance(interval)
-        accLimit = self.model.params["accelerationLimit"] * ts
-        if (self.desiredSpeed - self.currentSpeed) < accLimit:
-            return maxDistance
-        else:
-            speed = self.currentSpeed + accLimit
-            return speed * ts
 
 
     def getBrakingDistance(self):
