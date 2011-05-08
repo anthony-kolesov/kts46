@@ -124,31 +124,16 @@ class Car(object):
         """Calculates current car move but new parameters won't be saved to
         fields, other cars will make decisions on the basis of current car
         state, not future."""
+
         # Change state
         if self.state == Car.ADDED:
             self.state = Car.ACTIVE
 
         ts = kts46.utils.timedeltaToSeconds(time)
 
-        # == NEW ALGO ==
-        # Get current braking distance.
         brakingDistance = self.getBrakingDistance()
-
-        # Get desired distance
-        desiredSpeed = min(self.desiredSpeed,
-            self.currentSpeed + self.model.params["accelerationLimit"] * ts)
-        acceleration = max(desiredSpeed - self.currentSpeed, 0)
-        desiredDistance = self.currentSpeed * ts + acceleration * ts * ts / 2.0
-
-        # Get distance to traffic light.
-        nearestTL = self.model.getNearestTrafficLight(self.position)
-        if nearestTL is not None and not nearestTL.isGreen:
-            distanceToTL = nearestTL.position - self.position #- self.model.params['minimalDistance']
-        else:
-            distanceToTL = None
-        # Is TL in distance?
-        #if distanceToTL > brakingDistance:
-        #    distanceToTL = None
+        desiredSpeed, desiredDistance = self.getDesiredDistance(ts)
+        distanceToTL = self.getNearestTLDistance()
 
         # Get distance to leading car.
         distanceToLeadingCar = self.getDistanceToLeadingCar(ts, self.line)
@@ -261,3 +246,23 @@ class Car(object):
         else:
             return (leadingCar.position - leadingCar.length - self.position +
                     leadingCar.currentSpeed * interval)# - self.model.params['minimalDistance'])
+
+
+    def getDesiredDistance(self, ts):
+        """Get desired distance for car in following time cycle.
+
+        :return: (desiredSpeed, desiredDistance)"""
+        desiredSpeed = min(self.desiredSpeed,
+            self.currentSpeed + self.model.params["accelerationLimit"] * ts)
+        acceleration = max(desiredSpeed - self.currentSpeed, 0)
+        desiredDistance = self.currentSpeed * ts + acceleration * ts * ts / 2.0
+        return (desiredSpeed, desiredDistance)
+
+
+    def getNearestTLDistance(self):
+        "Returns distance to nearest traffic light or None if there is not any."
+        nearestTL = self.model.getNearestTrafficLight(self.position)
+        if nearestTL is not None and not nearestTL.isGreen:
+            return nearestTL.position - self.position
+        else:
+            return None
