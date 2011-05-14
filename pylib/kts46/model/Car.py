@@ -145,30 +145,11 @@ class Car(object):
         if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
             # Try other lines.
             if self.line > 0:
-                leftDistance = self.getDistanceToLeadingCar(ts, self.line - 1)
-                # Check for traffic light.
-                if distanceToTL is not None and distanceToTL < leftDistance:
-                    leftDistance = None
-                # Check for rear safe distance but only if line wasn't already scrapped.
-                if leftDistance is not None:
-                    leftFollowing = self.getDistanceToFollowingCar(self.line - 1)
-                    if (leftFollowing is not None and
-                        leftFollowing - self.length < self.model.params['safeDistanceRear']):
-                        leftDistance = None
+                leftDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
             else:
                 leftDistance = None
-
             if self.line + 1 < self.road.lines:
-                rightDistance = self.getDistanceToLeadingCar(ts, self.line + 1)
-                # Check for traffic light.
-                if distanceToTL is not None and distanceToTL < rightDistance:
-                    rightDistance = None
-                # Check for rear safe distance but only if line wasn't already scrapped.
-                if rightDistance is not None:
-                    rightFollowing = self.getDistanceToFollowingCar(self.line + 1)
-                    if (rightFollowing is not None and
-                        rightFollowing - self.length < self.model.params['safeDistanceRear']):
-                        rightDistance = None
+                rightDistance = self.tryOtherLine(ts, self.line + 1, distanceToTL)
             else:
                 rightDistance = None
 
@@ -266,3 +247,25 @@ class Car(object):
             return nearestTL.position - self.position
         else:
             return None
+
+
+    def tryOtherLine(self, ts, lineNumber, distanceToTL):
+        """Checks whether it is possible to move to specified lines. It checks
+        distance to leading and following cars.
+
+        :returns:
+            predicted distance to leading car or None if it isn't possible to
+            move to that line or -1 if there is no leading car."""
+
+        lineDistance = self.getDistanceToLeadingCar(ts, lineNumber)
+        if lineDistance is None: return -1
+        # Ignore if after read light.
+        if distanceToTL is not None and distanceToTL < lineDistance:
+            return None
+        # Check for rear safe distance.
+        lineFollowing = self.getDistanceToFollowingCar(lineNumber)
+        if (lineFollowing is not None and
+            lineFollowing - self.length < self.model.params['safeDistanceRear']):
+            return None
+
+        return lineDistance
