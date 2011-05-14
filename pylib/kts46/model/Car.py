@@ -24,6 +24,10 @@ class Car(object):
     ACTIVE = 'active'
     DEFAULT = 'active'
     DELETED = 'del'
+    BLINKER_OFF = 0
+    BLINKER_LEFT = 1
+    BLINKER_RIGHT = 2
+    BLINKER_ALARM = 3
 
 
     def __init__(self, model, road, id=None, speed=15, length=4.5, width=1.5, position=0,
@@ -46,6 +50,8 @@ class Car(object):
         self.position = position
         self.line = line
         self.state = Car.INACTIVE
+        self.blinker = Car.BLINKER_OFF
+        self.blinkerTime = 0.0
 
 
     def getDescriptionData(self):
@@ -71,6 +77,9 @@ class Car(object):
         }
         if self.state != Car.DEFAULT:
             d['state'] = self.state
+        if self.blinker != Car.BLINKER_OFF:
+            d['blinker'] = self.blinker
+            d['blinkerTime'] = self.blinkerTime
         return d
 
 
@@ -90,6 +99,8 @@ class Car(object):
         if 'line' in state: self.line = state['line']
         if 'curspd' in state: self.currentSpeed = state['curspd']
         if 'state' in state: self.state = state['state']
+        if 'blinker' in state: self.blinker = state['blinker']
+        if 'blinkerTime' in state: self.blinkerTime = state['blinkerTime']
 
 
     def getDistanceToFollowingCar(self, line=None):
