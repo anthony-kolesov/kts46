@@ -5,17 +5,15 @@ simulationParameters:
 
 
 modelParameters: 
-    inputRate: 1600
+    inputRate: 1800
     safeDistance: 20
     safeDistanceRear: 10
-    maxSpeed: 22
-    minSpeed: 14
     trafficLightStopDistance: 5
-    accelerationLimit: 2.0
+    accelerationLimit: 200.0
     brakingLimit: 6.5
     comfortBrakingLimit: 4.5
-    driverReactionTime: 0.8
     minimalDistance: 3
+    speed: [14, 22]
 
 road:
     length: 500
