@@ -156,28 +156,39 @@ class Car(object):
         if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
             # Try other lines.
             if self.line > 0:
-                leftDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
-            else:
-                leftDistance = None
-            if self.line + 1 < self.road.lines:
-                rightDistance = self.tryOtherLine(ts, self.line + 1, distanceToTL)
+                rightDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
             else:
                 rightDistance = None
+            if self.line + 1 < self.road.lines:
+                leftDistance = self.tryOtherLine(ts, self.line + 1, distanceToTL)
+            else:
+                leftDistance = None
 
             # Choose line with maximum distance.
             # If speeds are equal, than lines are choosen according to priority:
             # current, left, right. Thus overtaking will be done on left line if possible.
             finalLine = self.line
             finalDistance = distanceToLeadingCar
+            finalBlinker = Car.BLINKER_OFF
             # First try left.
             if leftDistance is not None and leftDistance > finalDistance:
-                finalLine = self.line - 1
-                finalDistance = leftDistance
+                # We want to go to this line, but we will be ably only if enough time passed.
+                if self.blinker == Car.BLINKER_LEFT and self.blinkerTime >= self.model.params['lineChangingDelay']:
+                    finalLine = self.line - 1
+                    finalDistance = leftDistance
+                    finalBlinker = Car.BLINKER_OFF
+                else:
+                    finalBlinker = Car.BLINKER_LEFT
             if rightDistance is not None and rightDistance > finalDistance:
-                finalLine = self.line + 1
-                finalDistance = rightDistance
+                if self.blinker == Car.BLINKER_RIGHT and self.blinkerTime >= self.model.params['lineChangingDelay']:
+                    finalLine = self.line + 1
+                    finalDistance = rightDistance
+                    finalBlinker = Car.BLINKER_OFF
+                else:
+                    finalBlinker = Car.BLINKER_RIGHT
         else:
             finalLine = self.line
+            finalBlinker = Car.BLINKER_OFF
             if distanceToLeadingCar is not None:
                 finalDistance = distanceToLeadingCar
             elif distanceToTL is not None:
@@ -204,20 +215,30 @@ class Car(object):
             newDistance = desiredDistance
 
         newPosition = self.position + newDistance
+        if finalBlinker == Car.BLINKER_OFF:
+            blinkerTime = 0.0
+        elif self.blinker == finalBlinker:
+            blinkerTime = self.blinkerTime + ts
+        else:
+            blinkerTime = ts
         self.newState = {
             'line': finalLine,
             'position': newPosition,
-            'speed': newSpeed
+            'speed': newSpeed,
+            'blinker': finalBlinker,
+            'blinkerTime': blinkerTime
         }
         if self.road.length < newPosition:
             self.newState['state'] = Car.DELETED
 
 
     def finishMove(self):
-        "Stores caclculated new moving parameters."
+        "Stores caclculated new moving parameters in the car fields."
         self.line = self.newState['line']
         self.position = self.newState['position']
         self.currentSpeed = self.newState['speed']
+        self.blinker = self.newState['blinker']
+        self.blinkerTime = self.newState['blinkerTime']
         if 'state' in self.newState: self.state = self.newState['state']
 
 
@@ -278,5 +299,19 @@ class Car(object):
         if (lineFollowing is not None and
             lineFollowing - self.length < self.model.params['safeDistanceRear']):
             return None
+        # After check for target line also try to check line after target for
+        # other car that wants to change line into our target. We have a priority
+        # if we are on the left, so check only if target line is on the right.
+        if lineNumber > 0:
+            # Use here move simple calculations then for cars that are on nearest lines:
+            # Car must be in rearSafeDistance from us to change line.
+            nextLineLeader = self.model.getNearestCar(self.position, lineNumber-1)
+            if (nextLineLeader is not None and nextLineLeader.blinker == Car.BLINKER_LEFT
+                and nextLineLeader.position - self.position - nextLineLeader.length < self.model.params['safeDistanceRear']):
+                return None
+            nextLineFollowing = self.model.getFollowingCar(self.position, line)
+            if (nextlineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
+                self.position - nextLineFollowing.position - self.length < self.model.params['safeDistanceRear']):
+                return None
 
         return lineDistance

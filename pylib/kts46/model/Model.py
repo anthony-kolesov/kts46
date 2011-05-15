@@ -34,7 +34,8 @@ class Model(object):
         "comfortBrakingLimit": 4.5, # m / s^2
         "driverReactionTime": 0.8, # s
         "minimalDistance": 3, # m
-        "speed": [10, 20] # m/s
+        "speed": [10, 20], # m/s
+        "lineChangingDelay": 1.0 # m/s
     }
 
     def __init__(self, params):
