@@ -400,7 +400,7 @@ var kts46 = (function($){
 
                 if (state) {
                     drawTrafficLights(model.trafficLights, state.data.trafficLights);
-                    drawCars(state.data.cars);
+                    drawCars(state.data.cars, margin + efWidth);
                 } else {
                     drawTrafficLights(model.trafficLights);
                 }
@@ -422,15 +422,16 @@ var kts46 = (function($){
                 });
             };
 
-            var drawCars = function(cars) {
+            var drawCars = function(cars, roadRightSide) {
                 $.each(cars, function(index, car){
                     var position = Math.floor(car.pos * ratio),
                         color = "rgb(0, 0, 255)",
                         carEfWidth = Math.max(Math.ceil(car.width * ratio), 2),
                         carEfLength = Math.max(Math.ceil(car.length * ratio), 3),
-                        carMargin = Math.ceil(lineWidth * car.line);
+                        carMargin = Math.ceil(roadRightSide - lineWidth * car.line +
+                                              carEfWidth - (lineWidth - carEfWidth)/2 );
                     dc.fillStyle = color;
-                    dc.fillRect(margin + position, margin + carMargin, carEfLength, carEfWidth);
+                    dc.fillRect(margin + position, carMargin, carEfLength, carEfWidth);
                 });
             };
 
