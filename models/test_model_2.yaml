@@ -14,6 +14,7 @@ modelParameters:
     comfortBrakingLimit: 4.5
     minimalDistance: 3
     speed: [14, 22]
+    lineChangingDelay: 1.0
 
 road:
     length: 500
