@@ -309,8 +309,8 @@ class Car(object):
             if (nextLineLeader is not None and nextLineLeader.blinker == Car.BLINKER_LEFT
                 and nextLineLeader.position - self.position - nextLineLeader.length < self.model.params['safeDistanceRear']):
                 return None
-            nextLineFollowing = self.model.getFollowingCar(self.position, line)
-            if (nextlineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
+            nextLineFollowing = self.model.getFollowingCar(self.position, lineNumber)
+            if (nextLineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
                 self.position - nextLineFollowing.position - self.length < self.model.params['safeDistanceRear']):
                 return None
 
