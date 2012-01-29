@@ -1,0 +1,10 @@
+.bar {
+    width: 100%;
+    height: 40px;
+    background-color: rgba(0, 0, 0, .1);
+}
+
+#drawboard {
+    width: 100%;
+    height: 90%;
+}
