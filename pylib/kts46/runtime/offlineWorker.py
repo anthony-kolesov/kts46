@@ -17,6 +17,7 @@
 import atexit
 import csv
 import glob
+import json
 import os
 import os.path
 import sys
@@ -69,7 +70,7 @@ class CSVStateStorage(object):
         self.carsWriter = csv.writer(carsFile, quoting=csv.QUOTE_MINIMAL)
 
         self.statesWriter.writerow( ["Time", "TimeAsTD",
-            "Last car generation time", "Last car id"] )
+            "Enter queue"] )
         self.carsWriter.writerow(["Time", "Car id", "Desired speed",
             "Current speed", "Position", "Line" ])
 
@@ -80,8 +81,7 @@ class CSVStateStorage(object):
         state = [
             time,
             data['time'],
-            data['lastCarGenerationTime'],
-            data['lastCarId']
+            json.dumps(data['endpoints'])
         ]
         self.statesWriter.writerow(state)
 

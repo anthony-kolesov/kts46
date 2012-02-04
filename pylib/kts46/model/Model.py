@@ -22,6 +22,7 @@ import kts46.utils
 from Car import Car
 from Road import Road
 from TrafficLight import SimpleSemaphore
+from Endpoint import Endpoint
 
 
 class Model(object):
@@ -47,7 +48,7 @@ class Model(object):
         self._cars = []
         self._enterQueue = []
         self._lights = []
-        #self._road = Road()
+        self._road = Road()
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
@@ -64,6 +65,8 @@ class Model(object):
         newTime = self.time + timeStep
 
         # Add cars to enter points
+        self.generateCars(newTime)
+
         # Move cars from enter points to roads
         # Move cars (change temporary variable)
         # Finalize movement of cars
@@ -150,13 +153,37 @@ class Model(object):
 
     def howManyCarsToAdd(self, newTime):
         "Define how many cars can be added to the model."
-        newCarGenRate = timedelta(seconds=3600/self.params['inputRate'])
+        newCarGenRate = timedelta(seconds=3600/endpoint['inputRate'])
         lastCarTime = self._lastCarGenerationTime
         carsToGenerate = 0
         while lastCarTime <= newTime:
             carsToGenerate += 1
             lastCarTime += newCarGenRate
         return (carsToGenerate, lastCarTime)
+
+
+    def generateCars(self, newTime):
+        "Generate new cars at endpoints."
+        for endpointId, endpoint in self._endpoints.iteritems():
+            carGenRate = timedelta(seconds=3600/endpoint.inputRate)
+
+            # How many
+            carsToGenerate = 0
+            while (endpoint.lastGenerationTime + carGenRate) <= newTime:
+                carsToGenerate += 1
+                endpoint.lastGenerationTime += carGenRate
+
+            # Add
+            speedMultiplier = self.params['speed'][1] - self.params['speed'][0]
+            speedAdder = self.params['speed'][0]
+            for i in xrange(carsToGenerate):
+                speed = math.floor(random.random() * speedMultiplier) + speedAdder
+                self._lastCarId += 1
+                line = math.floor(random.random() * 2) #  self._road.lines)
+                newCar = Car(model=self, road=self._road, id=self._lastCarId, speed=speed, line=line)
+                self._logger.debug('Created car: [speed: %f].', speed)
+                endpoint.enterQueue.append(newCar)
+                
 
 
     def getNearestTrafficLight(self, position):
@@ -261,6 +288,9 @@ class Model(object):
         data['lastCarGenerationTime'] = kts46.utils.timedelta2str(self._lastCarGenerationTime)
         data['lastCarId'] = self._lastCarId
 
+        # Endpoints
+        data['endpoints'] = dict( (endpointId, endpoint.getDescriptionData()) for endpointId, endpoint in self._endpoints.iteritems())
+
         # Result.
         return data
 
@@ -280,8 +310,10 @@ class Model(object):
 
     def load(self, description, state=None):
         self.params = description['modelParameters']
-        for endpointId, endpoint in description['endpoints'].iteritems():
-            self._endpoints[endpointId] = endpoint
+        for endpointId, endpointData in description['endpoints'].iteritems():
+            if 'inputRate' not in endpointData:
+                endpointData['inputRate'] = self.params['inputRate']
+            self._endpoints[endpointId] = Endpoint(name=endpointId, **endpointData)
 
 
     def load1(self, description, state=None):
