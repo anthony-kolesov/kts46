@@ -64,7 +64,6 @@ class Model(object):
         newTime = self.time + timeStep
 
         # Add cars to enter points
-        print(self.time)
         # Move cars from enter points to roads
         # Move cars (change temporary variable)
         # Finalize movement of cars
