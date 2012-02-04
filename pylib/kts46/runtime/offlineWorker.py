@@ -99,9 +99,8 @@ class CSVStateStorage(object):
             self.carsWriter.writerow(row)
 
         self.stepsDone += 1
-        if (self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
-            with open("done.txt", "w") as f:
-                f.write( str(float(self.stepsDone) / self.totalSteps) )
+        if ( self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
+            print('%g%%...' % (self.stepsDone * 100 / self.totalSteps))
 
     def close(self):
         pass
@@ -122,12 +121,14 @@ else:
     os.makedirs(options.output)
 
 # Temp data
-tempDir = tempfile.mkdtemp(prefix='kts46-')
-statesFilePath = os.path.join(tempDir, options.statesFile)
-carsFilePath = os.path.join(tempDir, options.carsFile)
+#tempDir = tempfile.mkdtemp(prefix='kts46-')
+#statesFilePath = os.path.join(tempDir, options.statesFile)
+#carsFilePath = os.path.join(tempDir, options.carsFile)
+statesFilePath = options.statesFile
+carsFilePath = options.carsFile
 
 # Remove temp directory
-atexit.register(lambda dir: os.rmdir(dir), tempDir)
+#atexit.register(lambda dir: os.rmdir(dir), tempDir)
 
 for inputFilePath in inputFilePaths:
     # Get model definition
@@ -148,15 +149,13 @@ for inputFilePath in inputFilePaths:
     #carsFile = open(carsFilePath, "rb")
 
     # Compress
-    tarName = os.path.splitext(os.path.split(inputFilePath)[1])[0]
-    outpath = os.path.join(options.output, tarName + ".tar.bz2")
-    tar = tarfile.open(outpath, "w:bz2")
-    #tar.addfile(tar.gettarinfo(fileobj=statesFile), statesFile)
-    #tar.addfile(tar.gettarinfo(fileobj=carsFile), carsFile)
-    tar.add(statesFilePath, arcname=tarName+'/'+os.path.basename(statesFilePath))
-    tar.add(carsFilePath, arcname=tarName+'/'+os.path.basename(carsFilePath))
+    #tarName = os.path.splitext(os.path.split(inputFilePath)[1])[0]
+    #outpath = os.path.join(options.output, tarName + ".tar.bz2")
+    #tar = tarfile.open(outpath, "w:bz2")
+    #tar.add(statesFilePath, arcname=tarName+'/'+os.path.basename(statesFilePath))
+    #tar.add(carsFilePath, arcname=tarName+'/'+os.path.basename(carsFilePath))
 
     # Cleanup
-    tar.close()
+    #tar.close()
     #statesFile.close(), carsFile.close()
-    os.remove(statesFilePath), os.remove(carsFilePath)
+    #os.remove(statesFilePath), os.remove(carsFilePath)
