@@ -18,6 +18,7 @@ modelParameters:
 endpoints: 
     "E_1":
         coords: {x: 600, y: 300}
+        inputRate: 300
     "W_1":
         coords: {x: 0, y: 300}
 #    "N_1":
@@ -34,11 +35,11 @@ roads:
     "E_CR":
         points: [["CR_1", 1], ["E_1", 0]]
         length: 300
-        lines: 4
+        lines: [2, 2]
     "W_CR":
         points: [["CR_1", 3], ["W_1", 0]]
         length: 300
-        lines: 4
+        lines: [2, 2]
 #    "N_CR":
 #        points: [["CR_1", 0], ["N_1", 0]]
 #        length: 300
