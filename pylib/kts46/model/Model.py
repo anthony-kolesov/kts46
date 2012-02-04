@@ -47,15 +47,33 @@ class Model(object):
         self._cars = []
         self._enterQueue = []
         self._lights = []
-        self._road = Road()
+        #self._road = Road()
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
         self._logger = logging.getLogger(self._loggerName)
         self._lastCarId = -1
 
+        # New
+        self._endpoints = {}
+
 
     def run_step(self, milliseconds):
+        stopDistance = self.params['safeDistance']
+        timeStep = timedelta(milliseconds=milliseconds)
+        newTime = self.time + timeStep
+
+        # Add cars to enter points
+        print(self.time)
+        # Move cars from enter points to roads
+        # Move cars (change temporary variable)
+        # Finalize movement of cars
+        # Remove cars that reached endpoint
+
+        self.time = newTime
+
+
+    def run_step1(self, milliseconds):
         """Performs one step of simulation.
 
         :param milliseconds: length of step in milliseconds.
@@ -262,6 +280,12 @@ class Model(object):
 
 
     def load(self, description, state=None):
+        self.params = description['modelParameters']
+        for endpointId, endpoint in description['endpoints'].iteritems():
+            self._endpoints[endpointId] = endpoint
+
+
+    def load1(self, description, state=None):
         "Loads object from JSON data."
 
         self.params = description['modelParameters']
