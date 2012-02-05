@@ -48,7 +48,7 @@ class Model(object):
         self._cars = []
         self._enterQueue = []
         self._lights = []
-        self._road = Road()
+        self._roads = {}
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
@@ -179,8 +179,8 @@ class Model(object):
             for i in xrange(carsToGenerate):
                 speed = math.floor(random.random() * speedMultiplier) + speedAdder
                 self._lastCarId += 1
-                line = math.floor(random.random() * 2) #  self._road.lines)
-                newCar = Car(model=self, road=self._road, id=self._lastCarId, speed=speed, line=line)
+                line = math.floor(random.random() * endpoint.road.getLinesForPoint(endpointId))
+                newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line)
                 self._logger.debug('Created car: [speed: %f].', speed)
                 endpoint.enterQueue.append(newCar)
                 
@@ -314,6 +314,10 @@ class Model(object):
             if 'inputRate' not in endpointData:
                 endpointData['inputRate'] = self.params['inputRate']
             self._endpoints[endpointId] = Endpoint(name=endpointId, **endpointData)
+        for roadId, roadData in description['roads'].iteritems():
+            roadData['points'][0] = self._endpoints[ roadData['points'][0][0] ]
+            roadData['points'][1] = self._endpoints[ roadData['points'][1][0] ]
+            self._roads[roadId] = Road(name=roadId, **roadData)
 
 
     def load1(self, description, state=None):

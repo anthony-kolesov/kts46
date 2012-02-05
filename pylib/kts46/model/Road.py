@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2012 Anthony Kolesov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,29 @@
 class Road(object):
     "Defines a road in the model."
 
-    def __init__(self, length=1000, width=10, lines=1):
+    def __init__(self, name, length=1000, width=10, lines=[1,1], points=[]):
         "Creates new road."
+        self.name = name
         self.length = length
         self.width = width
         self.lines = lines
+        self.points = points
+        for point in self.points:
+            point.road = self
+
+
+    def getLinesForPoint(self, pointName):
+        if self.points[0].name == pointName:
+            return self.lines[0]
+        else:
+            return self.lines[1]
+
 
     def getDescriptionData(self):
         "Gets dictionary describing this road."
-        return {'length': self.length,
-                'width': self.width,
-                'lines': self.lines
+        return {#'length': self.length,
+                #'width': self.width,
+                #'lines': self.lines
                }
                
     def load(self, description):
