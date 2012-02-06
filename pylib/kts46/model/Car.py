@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2012 Anthony Kolesov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ class Car(object):
             line = self.line
         # Get distances between cars fronts, so car that is a the same level
         # will be like following.
-        followingCar = self.model.getFollowingCar(self.position, line)
+        followingCar = self.model.getFollowingCar(self.road, self.position, self.direction, line)
         if followingCar is not None:
             return self.position - followingCar.position
         else:
@@ -160,7 +160,7 @@ class Car(object):
                 rightDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
             else:
                 rightDistance = None
-            if self.line + 1 < self.road.lines:
+            if self.line + 1 < self.road.lines[self.direction]:
                 leftDistance = self.tryOtherLine(ts, self.line + 1, distanceToTL)
             else:
                 leftDistance = None
@@ -254,7 +254,7 @@ class Car(object):
     def getDistanceToLeadingCar(self, interval, line):
         "Get distance to leading car including its predicted movement."
         # Get distance to leading car.
-        leadingCar = self.model.getNearestCar(self.position, line)
+        leadingCar = self.model.getNearestCar(self.road, self.position, self.direction, line)
         if leadingCar is None:
             return None
         else:
@@ -306,11 +306,11 @@ class Car(object):
         if lineNumber > 0:
             # Use here move simple calculations then for cars that are on nearest lines:
             # Car must be in rearSafeDistance from us to change line.
-            nextLineLeader = self.model.getNearestCar(self.position, lineNumber-1)
+            nextLineLeader = self.model.getNearestCar(self.road, self.position, self.direction, lineNumber-1)
             if (nextLineLeader is not None and nextLineLeader.blinker == Car.BLINKER_LEFT
                 and nextLineLeader.position - self.position - nextLineLeader.length < self.model.params['safeDistanceRear']):
                 return None
-            nextLineFollowing = self.model.getFollowingCar(self.position, lineNumber)
+            nextLineFollowing = self.model.getFollowingCar(self.road, self.position, self.direction, lineNumber)
             if (nextLineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
                 self.position - nextLineFollowing.position - self.length < self.model.params['safeDistanceRear']):
                 return None

@@ -45,8 +45,8 @@ class Model(object):
         :param params: Model parameters.
         :type params: dictionary"""
         self.time = timedelta()
-        self._cars = []
-        self._enterQueue = []
+        #self._cars = []
+        #self._enterQueue = []
         self._lights = []
         self._roads = {}
         self._lastCarGenerationTime = timedelta()
@@ -68,6 +68,8 @@ class Model(object):
         self.generateCars(newTime)
 
         # Move cars from enter points to roads
+        self.addCarsFromEndpointsToRoad()
+
         # Move cars (change temporary variable)
         # Finalize movement of cars
         # Remove cars that reached endpoint
@@ -113,9 +115,9 @@ class Model(object):
 
 
     def addCarsFromEndpointsToRoad(self):
-        for endpointId in self.endpoints:
-            endpoint = self.endpoints[endpointId]
-            self.addCarsFromQueusToRoad(endpoint)
+        for endpointId in self._endpoints:
+            endpoint = self._endpoints[endpointId]
+            self.addCarsFromQueueToRoad(endpoint)
 
 
     def addCarsFromQueueToRoad(self, endpoint):
@@ -123,7 +125,7 @@ class Model(object):
         # If there is a car in the queue, then send it.
         # Try to add cars while there was at least one succesfull added.
         addCar = True
-        while len(self.enterQueue) > 0 and addCar:
+        while len(endpoint.enterQueue) > 0 and addCar:
             # Start with generated line and if it is busy try others.
             addCar = False
             car = endpoint.enterQueue[0]
@@ -205,17 +207,20 @@ class Model(object):
         return current
 
 
-    def getFollowingCar(self, position, line=0):
+    def getFollowingCar(self, road, position, direction, line=0):
         """Get nearest following car to specified position in backward destination.
         If there is no following car, then ``None`` will be returned."""
         return self.getFollowingObjectInArray(self._cars, position, line)
 
 
-    def getFollowingObjectInArray(self, array, position, line=0):
+    def getFollowingObjectInArray(self, array, road, position, direction, line=0):
         "Get nearest object in array to specified position in backward destination."
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
+
+            if hasattr(i, 'direction') and i.direction != direction:
+                continue
 
             # Check if it is in our line and skip it if not.
             # Objects that has not line attribute affect all lines,
@@ -224,7 +229,7 @@ class Model(object):
                 continue
 
             # Deleted cars already doesn't exists.
-            if hasattr(i, "state") and i.state == Car.DELETED:
+            if isinstance(i, Car) and hasattr(i, "state") and i.state == Car.DELETED:
                 continue
 
             pos = i.position
@@ -250,17 +255,18 @@ class Model(object):
 
         # Cars
         cars = {}
-        for car in self._cars:
-            cars[car.id] = car.getStateData()
-            cars[car.id].update(car.getDescriptionData())
+        for road in self._roads:
+            for car in self._roads[road].cars:
+                cars[car.id] = car.getStateData()
+                cars[car.id].update(car.getDescriptionData())
         data['cars'] = cars
 
         # Enter queue
-        enterQueue = []
-        for car in self._enterQueue:
-            enterQueue.append(car.getStateData())
-            enterQueue[-1].update(car.getDescriptionData())
-        data['enterQueue'] = enterQueue
+        #enterQueue = []
+        #for car in self._enterQueue:
+        #    enterQueue.append(car.getStateData())
+        #    enterQueue[-1].update(car.getDescriptionData())
+        #data['enterQueue'] = enterQueue
 
         # Fields
         data['time'] = kts46.utils.timedelta2str(self.time)
