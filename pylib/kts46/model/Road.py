@@ -22,8 +22,12 @@ class Road(object):
         self.width = width
         self.lines = lines
         self.points = points
+        directionCnt = 0
+        self.cars = []
         for point in self.points:
             point.road = self
+            point.direction = directionCnt
+            directionCnt += 1
 
 
     def getLinesForPoint(self, pointName):

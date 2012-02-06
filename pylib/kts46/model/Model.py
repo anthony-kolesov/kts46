@@ -112,27 +112,35 @@ class Model(object):
         self.time = newTime
 
 
-    def addCarsFromQueueToRoad(self):
+    def addCarsFromEndpointsToRoad(self):
+        for endpointId in self.endpoints:
+            endpoint = self.endpoints[endpointId]
+            self.addCarsFromQueusToRoad(endpoint)
+
+
+    def addCarsFromQueueToRoad(self, endpoint):
         "Add cars from entering queue to road."
         # If there is a car in the queue, then send it.
         # Try to add cars while there was at least one succesfull added.
         addCar = True
-        while len(self._enterQueue) > 0 and addCar:
+        while len(self.enterQueue) > 0 and addCar:
             # Start with generated line and if it is busy try others.
             addCar = False
-            if self.canAddCar(self._enterQueue[0].line):
+            car = endpoint.enterQueue[0]
+            if self.canAddCar(endpoint, car.line):
                addCar = True
             else:
-                # This algorithms favorites first lines. That is considered
-                # logical in most cases.
-                for i in range(0, self._road.lines):
-                    if self.canAddCar(i):
-                        self._enterQueue[0].line = i
+                # This algorithms favorites first lines.
+                # I consider this correct for most cases.
+                for i in range(0, endpoint.road.lines[endpoint.direction] ):
+                    if i != car.line and self.canAddCar(endpoint, i):
+                        car.line = i
                         addCar = True
                         break
             if addCar:
-                self._addCar(self._enterQueue[0])
-                del self._enterQueue[0]
+                endpoint.road.cars.append(car)
+                car.state = Car.ADDED
+                del endpoint.enterQueue[0]
 
 
     def generateCars(self, newTime):
@@ -154,6 +162,7 @@ class Model(object):
                 self._lastCarId += 1
                 line = math.floor(random.random() * endpoint.road.getLinesForPoint(endpointId))
                 newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line)
+                newCar.direction = endpoint.direction
                 self._logger.debug('Created car: [speed: %f].', speed)
                 endpoint.enterQueue.append(newCar)
                 
@@ -163,17 +172,20 @@ class Model(object):
         "Get nearest traffic light to specified position in forward destination."
         return self.getNearestObjectInArray(self._lights, position)
 
-    def getNearestCar(self, position, line=0):
+    def getNearestCar(self, road, position, direction, line=0):
         """Get nearest car to specified position in forward destination.
         If there is no leading car, then ``None`` will be returned."""
-        return self.getNearestObjectInArray(self._cars, position, line)
+        return self.getNearestObjectInArray(road.cars, position, direction, line)
 
-    def getNearestObjectInArray(self, array, position, line=0):
+    def getNearestObjectInArray(self, array, position, direction, line=0):
         "Get nearest object in array to specified position in forward destination."
         position += 0.1
         current = None
         current_pos = -1.0 # just to make sure :)
         for i in array:
+
+            if hasattr(i, 'direction') and i.direction != direction:
+                continue
 
             # Check if it is in our line and skip it if not.
             # Objects that has not line attribute affect all lines,
@@ -182,12 +194,10 @@ class Model(object):
                 continue
 
             # Deleted cars already doesn't exists.
-            if hasattr(i, "state") and i.state == Car.DELETED:
+            if isinstance(i, Car) and hasattr(i, "state") and i.state == Car.DELETED:
                 continue
 
             pos = i.position
-            #if hasattr(i, "length"):
-            #    pos -= i.length
             # >= is very important so car won't try to go through another car.
             if pos >= position and ((current is None) or current_pos > pos):
                 current = i
@@ -223,15 +233,11 @@ class Model(object):
                 current_pos = pos
         return current
 
-    def canAddCar(self, line=0):
+    def canAddCar(self, endpoint, line=0):
         "Defines whether car can be added to specified line."
-        lastCar = self.getNearestCar(-100.0, line) # Detect cars which are comming on the road.
+        lastCar = self.getNearestCar(endpoint.road, -100.0, endpoint.direction, line)
         return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
 
-    def _addCar(self, car):
-        "Add car to the model, but not to the road."
-        self._cars.append(car)
-        car.state = Car.ADDED
 
     def getStateData(self):
         """Returns object data that represents current state of a model."""
