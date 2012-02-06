@@ -31,7 +31,7 @@ class Car(object):
 
 
     def __init__(self, model, road, id=None, speed=15, length=4.5, width=1.5, position=0,
-                line=0):
+                line=0, direction=0):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
@@ -52,6 +52,7 @@ class Car(object):
         self.state = Car.INACTIVE
         self.blinker = Car.BLINKER_OFF
         self.blinkerTime = 0.0
+        self.direction = direction
 
 
     def getDescriptionData(self):

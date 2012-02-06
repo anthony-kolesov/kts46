@@ -24,7 +24,8 @@ class Endpoint(object):
         self.inputRate = inputRate
         self.enterQueue = []
         self.lastGenerationTime = timedelta(0)
-        self.road = None 
+        self.road = None
+        self.direction = None 
 
 
     def getDescriptionData(self):
