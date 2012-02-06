@@ -135,33 +135,6 @@ class Model(object):
                 del self._enterQueue[0]
 
 
-    def addCars(self, amount):
-        """Add cars to entering queue.
-
-        :param amount: Amount of cars to add to queue.
-        :type amount: int"""
-        speedMultiplier = self.params['speed'][1] - self.params['speed'][0]
-        speedAdder = self.params['speed'][0]
-        for i in xrange(amount):
-            speed = math.floor(random.random() * speedMultiplier) + speedAdder
-            self._lastCarId += 1
-            line = math.floor(random.random() * self._road.lines)
-            newCar = Car(model=self, road=self._road, id=self._lastCarId, speed=speed, line=line)
-            self._logger.debug('Created car: [speed: %f].', speed)
-            self._enterQueue.append(newCar)
-
-
-    def howManyCarsToAdd(self, newTime):
-        "Define how many cars can be added to the model."
-        newCarGenRate = timedelta(seconds=3600/endpoint['inputRate'])
-        lastCarTime = self._lastCarGenerationTime
-        carsToGenerate = 0
-        while lastCarTime <= newTime:
-            carsToGenerate += 1
-            lastCarTime += newCarGenRate
-        return (carsToGenerate, lastCarTime)
-
-
     def generateCars(self, newTime):
         "Generate new cars at endpoints."
         for endpointId, endpoint in self._endpoints.iteritems():
