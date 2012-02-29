@@ -71,46 +71,20 @@ class Model(object):
         self.addCarsFromEndpointsToRoad()
 
         # Move cars (change temporary variable)
+        for road in self._roads.itervalues():
+            toRemove = [ ]
+            for car in road.cars:
+                if car.state != Car.DELETED:
+                    car.prepareMove(timeStep)
+                else:
+                    toRemove.append(car)
+            for car in toRemove: road.cars.remove(car)
+
         # Finalize movement of cars
-        # Remove cars that reached endpoint
+        for road in self._roads.itervalues():
+            for car in road.cars:
+                car.finishMove()
 
-        self.time = newTime
-
-
-    def run_step1(self, milliseconds):
-        """Performs one step of simulation.
-
-        :param milliseconds: length of step in milliseconds.
-        :type milliseconds: int"""
-        stopDistance = self.params['safeDistance']
-
-        timeStep = timedelta(milliseconds=milliseconds)
-        newTime = self.time + timeStep # Time after step is performed.
-
-        for light in self._lights:
-            if newTime > light.getNextSwitchTime():
-                light.switch(newTime)
-
-        toRemove = [ ]
-        for car in self._cars:
-            if car.state != Car.DELETED:
-                car.prepareMove(timeStep)
-            else:
-                toRemove.append(car)
-
-        for car in toRemove: self._cars.remove(car)
-        for car in self._cars: car.finishMove()
-
-        # Generate new car.
-        # It is always added to the queue and if there is enough place then
-        # it will be instantly added to the road.
-        carsToAdd, newLastCarTime = self.howManyCarsToAdd(newTime)
-        self.addCars(carsToAdd)
-        self._lastCarGenerationTime = newLastCarTime
-
-        self.addCarsFromQueueToRoad()
-
-        # Update time.
         self.time = newTime
 
 
@@ -170,9 +144,9 @@ class Model(object):
                 
 
 
-    def getNearestTrafficLight(self, position):
+    def getNearestTrafficLight(self, position, direction, line=0):
         "Get nearest traffic light to specified position in forward destination."
-        return self.getNearestObjectInArray(self._lights, position)
+        return self.getNearestObjectInArray(self._lights, position, direction, line)
 
     def getNearestCar(self, road, position, direction, line=0):
         """Get nearest car to specified position in forward destination.
@@ -210,7 +184,7 @@ class Model(object):
     def getFollowingCar(self, road, position, direction, line=0):
         """Get nearest following car to specified position in backward destination.
         If there is no following car, then ``None`` will be returned."""
-        return self.getFollowingObjectInArray(self._cars, position, line)
+        return self.getFollowingObjectInArray(road.cars, position, direction, line)
 
 
     def getFollowingObjectInArray(self, array, road, position, direction, line=0):

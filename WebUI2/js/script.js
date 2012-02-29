@@ -1,5 +1,14 @@
 (function(){
 
+    function sumArray(array) {
+        var result = 0, i, l
+        for (i = 0, l = array.length; i < l; i++) { 
+            result += array[i]
+        }
+        return result
+    }
+
+
     function proc(p) {
         var viewParams = this.view
           , model = this
@@ -24,13 +33,13 @@
                 endy = endPoint.coords.y                
             
                 if (startx === endx) {
-                    roadWidth = road.lines * 3
+                    roadWidth = sumArray(road.lines) * 3
                     roadHeight = endy - starty
                     roadx = startx - roadWidth / 2
                     roady = starty
                 } else {
                     roadWidth = endx - startx
-                    roadHeight = road.lines * 3
+                    roadHeight = sumArray(road.lines) * 3
                     roadx = startx
                     roady = starty - roadHeight / 2
                 }
