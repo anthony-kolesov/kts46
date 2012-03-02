@@ -9,13 +9,16 @@
     }
 
 
-    function proc(p) {
+    function proc(cars, p) {
         var viewParams = this.view
           , model = this
           , scale = viewParams.scale
           , startx, starty, endx, endy, startName, endName, startPoint, endPoint, roads, i
           , roadx, roady, roadWidth, roadHeight, road
+        p.draw = drawFrame.bind(p, model, cars)
         p.setup = function() {
+            p.frameRate(1 / model.simulationParameters.stepDuration)
+
             p.size(viewParams.size.x * scale, viewParams.size.y * scale)
             p.background(200)
             p.stroke(0)
@@ -44,14 +47,27 @@
                     roady = starty - roadHeight / 2
                 }
                 p.rect(roadx, roady, roadWidth, roadHeight)
-            } 
+                // Save for future use
+                road.view = {start: {x: startx, y: starty}, end: {x: endx, y: endy} }
+            }
         }
     }
 
-    function drawModel(model) {
+
+    function drawFrame(model, cars) {
+        var currentCars = cars.shift()
+          , i, l, road, car
+        for (i = 0, l = currentCars.length; i < l; ++i) {
+            car = currentCars[i]
+            road = model.roads[car.road || 0]
+        }
+        //this.point(model.pointx++, model.pointy++)
+    }
+
+
+    function drawModel(model, cars) {
         var canvas = document.getElementById('drawboard')
-          , p = new Processing(canvas, proc.bind(model) )
-        p.exit()
+          , p = new Processing(canvas, proc.bind(model, cars) )
     }
 
     $(document).ready(function(){
@@ -59,11 +75,15 @@
             var file = document.getElementById('model-file').files[0]
               , reader = new FileReader()
             reader.onload = function(e) {
-                drawModel(JSON.parse(e.target.result))
+                var carsFile = document.getElementById('cars-file').files[0]
+                  , carsReader = new FileReader()    
+                carsReader.onload = function(carsEvent) {
+                    drawModel(JSON.parse(e.target.result), JSON.parse(carsEvent.target.result))
+                }
+                carsReader.onerror = console.log
+                carsReader.readAsText(carsFile)
             }
-            reader.onerror = function(e) {
-                console.log(e)
-            }
+            reader.onerror = console.log(e)}
             reader.readAsText(file)
         })
     })
