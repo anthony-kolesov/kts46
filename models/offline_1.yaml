@@ -35,6 +35,7 @@ roads:
     "E_CR":
         points: [["W_1", 0], ["E_1", 0]]
         length: 300
+        width: 10
         lines: [2, 2]
 #    "W_CR":
 #        points: [["CR_1", 3], ["W_1", 0]]

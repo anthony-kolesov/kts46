@@ -60,6 +60,7 @@ class Model(object):
         self._endpoints = {}
         self.crossroads = {}
         self.view = {}
+        self.simulationParameters = {}
 
 
     def run_step(self, milliseconds):
@@ -272,6 +273,7 @@ class Model(object):
 
     def load(self, description):
         self.params = description['modelParameters']
+        self.simulationParameters = description['simulationParameters']
         self.view = description['view']
         for endpointId, endpointData in description['endpoints'].iteritems():
             if 'inputRate' not in endpointData:
