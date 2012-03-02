@@ -13,9 +13,7 @@
         var viewParams = this.viewParameters
           , model = this
           , scale = viewParams.scale
-          , startx, starty, endx, endy, startName, endName, startPoint, endPoint, roads, i
-          , roadx, roady, roadWidth, roadHeight, road
-          , roadId, horizontalRoad
+          , roads, road, roadId, horizontalRoad
         p.draw = drawFrame.bind(p, model, cars)
         p.setup = function() {
             p.frameRate(1 / viewParams.frameRate)
@@ -45,35 +43,6 @@
                 }
                 p.endShape()
             }
-            
-            /*for (roads = Object.keys(model.view.roads), i = 0, road = model.view.roads[roads[i]]; i < roads.length; ++i, road = model.view.roads[roads[i]]) {
-
-            
-            
-                startName = road.points[0][0]
-                endName = road.points[1][0]
-                startPoint = startName in model.endpoints ? model.view.endpoints[startName] : model.crossroads[startName]
-                endPoint = endName in model.endpoints ? model.endpoints[endName] : model.crossroads[endName]
-                startx = startPoint.coords.x
-                starty = startPoint.coords.y                
-                endx = endPoint.coords.x                
-                endy = endPoint.coords.y                
-            
-                if (startx === endx) {
-                    roadWidth = sumArray(road.lines) * 3
-                    roadHeight = endy - starty
-                    roadx = startx - roadWidth / 2
-                    roady = starty
-                } else {
-                    roadWidth = endx - startx
-                    roadHeight = sumArray(road.lines) * 3
-                    roadx = startx
-                    roady = starty - roadHeight / 2
-                }
-                p.rect(roadx, roady, roadWidth, roadHeight)
-                // Save for future use
-                road.view = {start: {x: startx, y: starty}, end: {x: endx, y: endy} }
-            }*/
         }
     }
 
