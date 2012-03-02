@@ -109,6 +109,39 @@ class CSVStateStorage(object):
         pass
 
 
+class JSONStateStorage:
+    
+    def __init__(self, statesFile, carsFile, totalSteps):
+        self.totalSteps = totalSteps
+        self.stepsDone = 0
+        self.states = []
+        self.carsFile = carsFile
+        self.cars = []
+
+
+    def add(self, time, data):
+        stateCars = []
+        for carId, car in data['cars'].items():
+            stateCars.append({
+                'carId': carId,
+                'pos': car['pos'],
+                'line': car['line'],
+                'width': car['width'],
+                'length': car['length'],
+                'road': car.road.name
+            })
+        self.cars.append(stateCars)
+
+        self.stepsDone += 1
+        if ( self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
+            print('%g%%...' % (self.stepsDone * 100 / self.totalSteps))
+
+    def close(self):
+        json.dump(self.cars, self.carsFile)
+
+    def repair(self, currentTime):
+        pass
+
 cfg = SafeConfigParser()
 options, inputFilePaths = configureCmdOptions()
 
@@ -139,7 +172,7 @@ for inputFilePath in inputFilePaths:
     ss = SimulationServer(cfg)
     statesFile = open(statesFilePath, "wb")
     carsFile = open(carsFilePath, "wb")
-    storage = CSVStateStorage(statesFile, carsFile, definition['simulationParameters']['batchLength'])
+    storage = JSONStateStorage(statesFile, carsFile, definition['simulationParameters']['batchLength'])
     job = OfflineJob(definition)
     ss.runSimulationJob(job, storage)
 

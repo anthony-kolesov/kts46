@@ -153,7 +153,7 @@ class Car(object):
         if distanceToTL is not None and distanceToTL < distanceToLeadingCar:
             distanceToLeadingCar = None
 
-        # Does leading car restatrains us?
+        # Does leading car restrains us?
         if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
             # Try other lines.
             if self.line > 0:

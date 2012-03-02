@@ -23,6 +23,7 @@ from Car import Car
 from Road import Road
 from TrafficLight import SimpleSemaphore
 from Endpoint import Endpoint
+from Crossroad import Crossroad
 
 
 class Model(object):
@@ -48,7 +49,7 @@ class Model(object):
         #self._cars = []
         #self._enterQueue = []
         self._lights = []
-        self._roads = {}
+        self.roads = {}
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
@@ -57,6 +58,8 @@ class Model(object):
 
         # New
         self._endpoints = {}
+        self.crossroads = {}
+        self.view = {}
 
 
     def run_step(self, milliseconds):
@@ -71,7 +74,7 @@ class Model(object):
         self.addCarsFromEndpointsToRoad()
 
         # Move cars (change temporary variable)
-        for road in self._roads.itervalues():
+        for road in self.roads.itervalues():
             toRemove = [ ]
             for car in road.cars:
                 if car.state != Car.DELETED:
@@ -81,7 +84,7 @@ class Model(object):
             for car in toRemove: road.cars.remove(car)
 
         # Finalize movement of cars
-        for road in self._roads.itervalues():
+        for road in self.roads.itervalues():
             for car in road.cars:
                 car.finishMove()
 
@@ -229,8 +232,8 @@ class Model(object):
 
         # Cars
         cars = {}
-        for road in self._roads:
-            for car in self._roads[road].cars:
+        for road in self.roads:
+            for car in self.roads[road].cars:
                 cars[car.id] = car.getStateData()
                 cars[car.id].update(car.getDescriptionData())
         data['cars'] = cars
@@ -267,44 +270,21 @@ class Model(object):
         return data
 
 
-    def load(self, description, state=None):
+    def load(self, description):
         self.params = description['modelParameters']
+        self.view = description['view']
         for endpointId, endpointData in description['endpoints'].iteritems():
             if 'inputRate' not in endpointData:
                 endpointData['inputRate'] = self.params['inputRate']
             self._endpoints[endpointId] = Endpoint(name=endpointId, **endpointData)
+        for crossroadId, crossroadData in description['crossroads'].iteritems():
+            self.crossroads[crossroadId] = Crossroad(name=crossroadId, **crossroadData)
         for roadId, roadData in description['roads'].iteritems():
-            roadData['points'][0] = self._endpoints[ roadData['points'][0][0] ]
-            roadData['points'][1] = self._endpoints[ roadData['points'][1][0] ]
-            self._roads[roadId] = Road(name=roadId, **roadData)
+            roadData['points'][0] = self.getPoint(roadData['points'][0][0])
+            roadData['points'][1] = self.getPoint(roadData['points'][1][0])
+            self.roads[roadId] = Road(name=roadId, **roadData)
 
-
-    def load1(self, description, state=None):
-        "Loads object from JSON data."
-
-        self.params = description['modelParameters']
-        self._road.load(description['road'])
-
-        for lightId, lightData in description['trafficLights'].iteritems():
-            light = SimpleSemaphore(id=lightId)
-            lState = {}
-            if state is not None:
-                lState = state['trafficLights'][lightId]
-            light.load(lightData, lState)
-            self._lights.append(light)
-
-        if state is not None:
-            for carData in state['cars'].itervalues():
-                c = Car(model=self, road=self._road)
-                c.load(carData, carData)
-                self._cars.append(c)
-
-            for carData in state['enterQueue']:
-                c = Car(model=self, road=self._road)
-                c.load(carData, carData)
-                self._enterQueue.append(c)
-
-            # Fields
-            self.time = kts46.utils.str2timedelta(state['time'])
-            self._lastCarGenerationTime = kts46.utils.str2timedelta(state['lastCarGenerationTime'])
-            self._lastCarId = state['lastCarId']
+    def getPoint(self, pointName):
+        if pointName in self._endpoints:
+            return self._endpoints[pointName]
+        return self.crossroads[pointName]
