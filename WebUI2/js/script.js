@@ -10,45 +10,19 @@
 
 
     function proc(p) {
-        var viewParams = this.viewParameters
-          , model = this
-          , scale = viewParams.scale
-          , roads, road, roadId, horizontalRoad
-        p.draw = drawFrame.bind(p, model)
+        p.draw = drawFrame.bind(p, this)
         p.setup = function() {
-            p.frameRate(viewParams.frameRate)
-
-            p.size(viewParams.size.x * scale, viewParams.size.y * scale)
+            p.frameRate(this.viewParameters.frameRate)
+            p.size(this.viewParameters.size.x * this.viewParameters.scale,
+                   this.viewParameters.size.y * this.viewParameters.scale)
             p.background(200)
-            /*p.stroke(0)
-            p.fill(0)
-            p.scale(scale)*/
-            
-            /*for (roadId in model.view.roads) {
-                if (!model.view.roads.hasOwnProperty(roadId))
-                    continue
-                road = model.view.roads[roadId]
-                horizontalRoad = Math.abs(road.x1 - road.x2) > Math.abs(road.y1 - road.y2)
-                p.beginShape()
-                if (horizontalRoad) {
-                    p.vertex(road.x1, road.y1 - road.width)
-                    p.vertex(road.x2, road.y2 - road.width)
-                    p.vertex(road.x2, road.y2 + road.width)
-                    p.vertex(road.x1, road.y1 + road.width)
-                } else {
-                    p.vertex(road.x1 + road.width, road.y1)
-                    p.vertex(road.x2 + road.width, road.y2)
-                    p.vertex(road.x2 - road.width, road.y2)
-                    p.vertex(road.x1 - road.width, road.y1)
-                }
-                p.endShape()
-            }*/
-            drawRoads(p, model)
+            drawRoads(p, this)
         }
     }
 
     
     function drawRoads(p, model) {
+        var road, roadId, horizontalRoad
         p.stroke(0)
         p.fill(0)
         p.scale(model.viewParameters.scale)
@@ -84,7 +58,6 @@
         var currentCars = model.cars.shift()
           , i, l, car
         drawRoads(this, model)
-        //this.scale(model.viewParameters.scale)
         this.stroke(255)
         this.fill(255)
         for (i = 0, l = currentCars.length; i < l; ++i) {
