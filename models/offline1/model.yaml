@@ -21,6 +21,7 @@ endpoints:
         inputRate: 300
     "W_1":
         coords: {x: 0, y: 300}
+        inputRate: 0
 #    "N_1":
 #        coords: {x: 300, y: 0}
 #    "S_1":
