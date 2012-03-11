@@ -5,6 +5,7 @@ import sys
 import yaml
 from optparse import OptionParser
 from kts46.model.Model import Model
+from kts46.model.Car import Car
 
 def configureCmdOptions():
     cmdOpts = OptionParser()
@@ -30,10 +31,14 @@ else:
     cars = {}
 
 roads = {}
+resultCars = []
 result = {
     'view': {'roads': roads},
-    'viewParameters': model.view
+    'viewParameters': model.view,
+    'cars': resultCars
 }
+result['viewParameters']['frameRate'] = 1.0 / model.simulationParameters['stepDuration']
+
 for roadId, road in model.roads.iteritems():
     roads[roadId] = {
         'x1': road.points[0].coords['x'],
@@ -42,9 +47,28 @@ for roadId, road in model.roads.iteritems():
         'y2': road.points[1].coords['y'],
         'width': road.width
     }
-    
-result['cars'] = cars
-result['viewParameters']['frameRate'] = 1.0 / model.simulationParameters['stepDuration']
-    
-print(json.dumps(result, indent=2))
 
+for timeCars in cars:
+    a = []
+    resultCars.append(a)
+    for car in timeCars:
+        roadId = car['road']
+        del car['road']
+        carObj = Car(model, model.roads[roadId])
+        carObj.load(car)
+        road = carObj.road
+        
+        relativePosition = float(carObj.position) / road.length
+        if carObj.direction == 0:
+            point0 = road.points[0].coords
+            point1 = road.points[1].coords
+        else:
+            point0 = road.points[1].coords
+            point1 = road.points[0].coords
+        carX = (point1['x'] - point0['x']) * relativePosition + point0['x']
+        carY = (point1['y'] - point0['y']) * relativePosition + point0['y']
+        newData = {'l': carObj.length, 'w': carObj.width, 'p': (carX, carY)}
+        
+        a.append(newData)
+
+print(json.dumps(result, indent=2))

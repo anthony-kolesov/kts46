@@ -39,10 +39,10 @@ def configureCmdOptions():
     cmdOpts = OptionParser(usage=usage)
 
     cmdOpts.add_option('--states-file', action='store', dest='statesFile',
-        default='states.csv',
+        default='states.js',
         help="Output file for states." )
     cmdOpts.add_option('--cars-file', action='store', dest='carsFile',
-        default='cars.csv',
+        default='cars.js',
         help="Output file for cars." )
     cmdOpts.add_option('-o', '--out', action='store', dest='output',
         default='./',
@@ -128,7 +128,8 @@ class JSONStateStorage:
                 'line': car['line'],
                 'width': car['width'],
                 'length': car['length'],
-                'road': car.road.name
+                'road': car['road'],
+                'dir': car['dir']
             })
         self.cars.append(stateCars)
 
@@ -137,7 +138,7 @@ class JSONStateStorage:
             print('%g%%...' % (self.stepsDone * 100 / self.totalSteps))
 
     def close(self):
-        json.dump(self.cars, self.carsFile)
+        json.dump(self.cars, self.carsFile, indent=1)
 
     def repair(self, currentTime):
         pass

@@ -63,7 +63,8 @@ class Car(object):
         return {'id': self.id,
                 'length': self.length,
                 'width': self.width,
-                'desiredSpeed': self.desiredSpeed
+                'desiredSpeed': self.desiredSpeed,
+                'road': self.road.name
         }
 
 
@@ -74,7 +75,8 @@ class Car(object):
         :rtype: dict"""
         d = {'pos': round(self.position, 2),
              'line': self.line,
-             'curspd': self.currentSpeed
+             'curspd': self.currentSpeed,
+             'dir': self.direction
         }
         if self.state != Car.DEFAULT:
             d['state'] = self.state
@@ -84,7 +86,17 @@ class Car(object):
         return d
 
 
-    def load(self, description, state={}):
+    def load(self, data):
+        "Load car from saved state."
+        self.length = data['length']
+        self.width = data['width']
+        self.line = data['line']
+        self.id = data['carId']
+        self.position = data['pos']
+        self.direction = data['dir']
+
+
+    def load1(self, description, state={}):
         """Loads car from data description.
 
         :param description:
