@@ -10,13 +10,14 @@
 
 
     function proc(p) {
-        p.draw = drawFrame.bind(p, this)
+        var model = this
+        p.draw = drawFrame.bind(p, model)
         p.setup = function() {
-            p.frameRate(this.viewParameters.frameRate)
-            p.size(this.viewParameters.size.x * this.viewParameters.scale,
-                   this.viewParameters.size.y * this.viewParameters.scale)
+            p.frameRate(model.viewParameters.frameRate)
+            p.size(model.viewParameters.size.x * model.viewParameters.scale,
+                   model.viewParameters.size.y * model.viewParameters.scale)
             p.background(200)
-            drawRoads(p, this)
+            drawRoads(p, model)
         }
     }
 
