@@ -50,4 +50,4 @@ class Road(object):
         self.lines = description['lines']
         
     def isHorizontalRoad(self):
-        return abs(self.points[0]['x'] - self.points[1]['x']) > abs(self.points[0]['y'] - self.points[1]['y'])
+        return abs(self.points[0].coords['x'] - self.points[1].coords['x']) > abs(self.points[0].coords['y'] - self.points[1].coords['y'])

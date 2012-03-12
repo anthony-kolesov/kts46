@@ -68,13 +68,13 @@ for timeCars in cars:
         carX = (point1['x'] - point0['x']) * relativePosition + point0['x']
         
         lineWidth = float(road.width) / sum(road.lines)
-        roadTopY = point0['y'] - road.width / 2.0
+        #roadTopY = point0['y'] - road.width / 2.0
         if road.isHorizontalRoad():
             if point0['x'] < point1['x']:
-                yOffset = lineWidth * (road.lines[1] + (road.lines[0] - car.line - 1) )
+                yOffset = lineWidth * (road.lines[1] + (road.lines[0] - carObj.line - 1) )
             else:
-                yOffset = lineWidth * car.line
-        carY = (point1['y'] - point0['y']) * relativePosition + point0['y'] + yOffset
+                yOffset = lineWidth * carObj.line
+        carY = (point1['y'] - point0['y']) * relativePosition + point0['y'] + yOffset - road.width / 2.0
 
         newData = {'l': carObj.length, 'w': carObj.width, 'p': (carX, carY)}
         
