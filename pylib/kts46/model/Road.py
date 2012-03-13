@@ -100,7 +100,11 @@ class Road(object):
                 current = i
                 current_pos = pos
         return current
+   
     
+    def getFirstEndpoint(self, direction):
+        return (self.points[direction], self.pointExits[direction])
+ 
     def getNextEndpoint(self, direction):
         if direction == 0:
             return (self.points[1], self.pointExits[1])
