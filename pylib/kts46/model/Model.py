@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
+import json, sys
 import logging
 import math
 import random
@@ -155,7 +155,32 @@ class Model(object):
     def getNearestCar(self, road, position, direction, line=0):
         """Get nearest car to specified position in forward destination.
         If there is no leading car, then ``None`` will be returned."""
-        return self.getNearestObjectInArray(road.cars, position, direction, line)
+        #return self.getNearestObjectInArray(road.cars, position, direction, line)
+        nextCar = road.getNearestCar(position, direction, line)
+        distance = 0
+
+        targetEndpoint = road.getNextEndpoint(direction)
+        while nextCar is None and isinstance(targetEndpoint[0], Crossroad):
+            oppositeRoad = targetEndpoint[0].roads[ (targetEndpoint[1] + 2) % 4 ]
+            if oppositeRoad is not None:
+                distance += road.length
+                road = oppositeRoad
+                
+                if targetEndpoint[0] is road.points[0]:
+                    direction = 0
+                else:
+                    direction = 1
+                
+                nextCar = road.getNearestCar(0, direction, line)
+                targetEndpoint = road.getNextEndpoint(direction)
+            else:
+                break
+
+        if nextCar is not None:
+            return (nextCar, nextCar.position - position - nextCar.length + distance)
+        else:
+            return None
+
 
     def getNearestObjectInArray(self, array, position, direction, line=0):
         "Get nearest object in array to specified position in forward destination."
@@ -218,8 +243,9 @@ class Model(object):
 
     def canAddCar(self, endpoint, line=0):
         "Defines whether car can be added to specified line."
-        lastCar = self.getNearestCar(endpoint.road, -100.0, endpoint.direction, line)
-        return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
+        lastCar = self.getNearestCar(endpoint.road, 0.0, endpoint.direction, line)
+        #return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
+        return lastCar is None or lastCar[1] > self.params['safeDistance']
 
 
     def getStateData(self):
@@ -272,7 +298,8 @@ class Model(object):
 
 
     def load(self, description):
-        self.params = description['modelParameters']
+        self.params = dict(Model.defaultParams)
+        self.params.update(description['modelParameters'])
         self.simulationParameters = description['simulationParameters']
         self.view = description['view']
         for endpointId, endpointData in description['endpoints'].iteritems():
@@ -282,9 +309,9 @@ class Model(object):
         for crossroadId, crossroadData in description['crossroads'].iteritems():
             self.crossroads[crossroadId] = Crossroad(name=crossroadId, **crossroadData)
         for roadId, roadData in description['roads'].iteritems():
-            roadData['points'][0] = self.getPoint(roadData['points'][0][0])
-            roadData['points'][1] = self.getPoint(roadData['points'][1][0])
-            self.roads[roadId] = Road(name=roadId, **roadData)
+            #roadData['points'][0] = self.getPoint(roadData['points'][0][0])
+            #roadData['points'][1] = self.getPoint(roadData['points'][1][0])
+            self.roads[roadId] = Road(roadId, self, **roadData)
 
     def getPoint(self, pointName):
         if pointName in self._endpoints:

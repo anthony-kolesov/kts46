@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2012 Anthony Kolesov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class CSVStateStorage(object):
 
         self.stepsDone += 1
         if ( self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
-            print('%g%%...' % (self.stepsDone * 100 / self.totalSteps))
+            print('%4.0f%%...' % (self.stepsDone * 100 / self.totalSteps))
 
     def close(self):
         pass
@@ -135,10 +135,10 @@ class JSONStateStorage:
 
         self.stepsDone += 1
         if ( self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
-            print('%g%%...' % (self.stepsDone * 100 / self.totalSteps))
+            print('%3.0f%%...' % (self.stepsDone * 100.0 / self.totalSteps))
 
     def close(self):
-        json.dump(self.cars, self.carsFile, indent=1)
+        json.dump(self.cars, self.carsFile)
 
     def repair(self, currentTime):
         pass

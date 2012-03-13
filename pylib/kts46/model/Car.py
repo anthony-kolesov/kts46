@@ -15,6 +15,7 @@
 import logging
 from uuid import uuid4
 import kts46.utils
+from Crossroad import Crossroad
 
 class Car(object):
     "Represent a car in the model."
@@ -241,8 +242,23 @@ class Car(object):
             'blinker': finalBlinker,
             'blinkerTime': blinkerTime
         }
+        
         if self.road.length < newPosition:
-            self.newState['state'] = Car.DELETED
+            # Try next road if possible.
+            nextCrossroad = self.road.getNextEndpoint(self.direction)
+            if isinstance(nextCrossroad[0], Crossroad):
+                oppositeRoad = nextCrossroad[0].roads[ (nextCrossroad[1] + 2) % 4 ]
+                if oppositeRoad is not None:
+                    self.newState['position'] = newPosition - self.road.length
+                    self.newState['road'] = oppositeRoad
+                    if nextCrossroad[0] is self.road.points[0]:
+                        self.newState['direction'] = 0
+                    else:
+                        self.newState['direction'] = 1
+                else:
+                    self.newState['state'] = Car.DELETED
+            else:
+                self.newState['state'] = Car.DELETED
 
 
     def finishMove(self):
@@ -253,6 +269,11 @@ class Car(object):
         self.blinker = self.newState['blinker']
         self.blinkerTime = self.newState['blinkerTime']
         if 'state' in self.newState: self.state = self.newState['state']
+        if 'direction' in self.newState: self.direction = self.newState['direction']
+        if 'road' in self.newState:
+            self.road.cars.remove(self)
+            self.road = self.newState['road']
+            self.road.cars.append(self)
 
 
     def getBrakingDistance(self):
@@ -270,8 +291,9 @@ class Car(object):
         if leadingCar is None:
             return None
         else:
-            return (leadingCar.position - leadingCar.length - self.position +
-                    leadingCar.currentSpeed * interval)# - self.model.params['minimalDistance'])
+            return leadingCar[1] + leadingCar[0].currentSpeed * interval
+            #return (leadingCar.position - leadingCar.length - self.position +
+            #        leadingCar.currentSpeed * interval)# - self.model.params['minimalDistance'])
 
 
     def getDesiredDistance(self, ts):
@@ -319,8 +341,8 @@ class Car(object):
             # Use here move simple calculations then for cars that are on nearest lines:
             # Car must be in rearSafeDistance from us to change line.
             nextLineLeader = self.model.getNearestCar(self.road, self.position, self.direction, lineNumber-1)
-            if (nextLineLeader is not None and nextLineLeader.blinker == Car.BLINKER_LEFT
-                and nextLineLeader.position - self.position - nextLineLeader.length < self.model.params['safeDistanceRear']):
+            if (nextLineLeader is not None and nextLineLeader[0].blinker == Car.BLINKER_LEFT
+                and nextLineLeader[0].position - self.position - nextLineLeader[0].length < self.model.params['safeDistanceRear']):
                 return None
             nextLineFollowing = self.model.getFollowingCar(self.road, self.position, self.direction, lineNumber)
             if (nextLineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
