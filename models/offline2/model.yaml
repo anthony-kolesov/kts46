@@ -1,11 +1,11 @@
 simulationParameters:
     duration: 90
-    stepDuration: 0.2
-    batchLength: 450
+    stepDuration: 0.04
+    batchLength: 2250
 
 
 modelParameters: 
-    inputRate: 1800
+    inputRate: 600
     safeDistance: 20
     safeDistanceRear: 10
     trafficLightStopDistance: 5
@@ -18,7 +18,6 @@ modelParameters:
 endpoints: 
     "E_1":
         coords: {x: 600, y: 300}
-        inputRate: 300
     "W_1":
         coords: {x: 0, y: 300}
     "N_1":
@@ -32,11 +31,15 @@ crossroads:
         coords: {x: 300, y: 300}
 
 roads:
-    "E_CR":
+    #"N_S":
+    #    points: [["N_1", 0], ["S_1", 0]]
+    #    length: 300
+    #    lines: [2, 2]
+    "E_CR1":
         points: [["CR_1", 1], ["E_1", 0]]
         length: 300
         lines: [2, 2]
-    "W_CR":
+    "W_CR1":
         points: [["CR_1", 3], ["W_1", 0]]
         length: 300
         lines: [2, 2]
@@ -51,5 +54,5 @@ roads:
 
 view:
     size: {x: 600, y: 600}
-    scale: 0.7
+    scale: 0.8
    

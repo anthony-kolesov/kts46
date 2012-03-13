@@ -19,7 +19,8 @@ class Crossroad(object):
         "Creates new endpoint."
         self.name = name
         self.coords = coords
-        self.road = None
+        self.roads = [None, None, None, None]
+        self.directions = [None, None, None, None]
         self.trafficLight = trafficLight
 
 

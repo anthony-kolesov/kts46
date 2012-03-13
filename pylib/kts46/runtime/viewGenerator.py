@@ -80,4 +80,4 @@ for timeCars in cars:
         
         a.append(newData)
 
-print(json.dumps(result, indent=2))
+print(json.dumps(result))
