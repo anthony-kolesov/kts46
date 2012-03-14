@@ -148,7 +148,7 @@ class Model(object):
                 
 
 
-    def getNearestTrafficLight(self, position, direction, line=0):
+    def getNearestTrafficLight(self, road, position, direction, line=0):
         "Get nearest traffic light to specified position in forward destination."
         #return self.getNearestObjectInArray(self._lights, position, direction, line)
         return self._getNearest(road.getNearestStop, road, position, direction, line)
@@ -181,7 +181,10 @@ class Model(object):
                 break
 
         if nextCar is not None:
-            return (nextCar, nextCar.position - position - nextCar.length + distance)
+            distanceToCar = nextCar.position - position + distance
+            if hasattr(nextCar, 'length'):
+                distanceToCar -= nextCar.length
+            return (nextCar, distanceToCar)
         else:
             return None
 

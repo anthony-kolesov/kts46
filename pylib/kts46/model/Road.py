@@ -15,7 +15,7 @@
 from Car import Car
 from Crossroad import Crossroad
 from Endpoint import Endpoint
-from SimpleSemaphore import TrafficLight
+from TrafficLight import SimpleSemaphore
 
 class Road(object):
     "Defines a road in the model."
@@ -43,15 +43,16 @@ class Road(object):
             if isinstance(point, Crossroad):
                 point.roads[pointExitNumber] = self
                 point.directions[pointExitNumber] = directionCnt
-                directionCnt += 1
                 
                 # Check if crossroad has traffic lights.
                 if point.trafficLight is not None:
                     greenDuration = point.trafficLight[ pointExitNumber % 2 ]
                     redDuration = (greenDuration + 1 ) % 2
-                    tl = SimpleSemaphore(greenDuration=greenDuration, redDuration=redDuration,
-                            position=self.length - 10)
+                    tl = SimpleSemaphore(point.name + '_' + str(pointExitNumber),
+                            greenDuration=greenDuration, redDuration=redDuration,
+                            position=self.length - 20, direction=(directionCnt+1)%2 )
                     self.trafficLights.add(tl)
+                directionCnt += 1
 
             self.points.append(point)
             self.pointExits.append(pointExitNumber)

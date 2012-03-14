@@ -309,9 +309,9 @@ class Car(object):
 
     def getNearestTLDistance(self):
         "Returns distance to nearest traffic light or None if there is not any."
-        nearestTL = self.model.getNearestTrafficLight(self.position, self.direction, self.line)
-        if nearestTL is not None and not nearestTL.isGreen:
-            return nearestTL.position - self.position
+        nearestTL = self.model.getNearestTrafficLight(self.road, self.position, self.direction, self.line)
+        if nearestTL is not None and not nearestTL[0].isGreen:
+            return nearestTL[1]
         else:
             return None
 
