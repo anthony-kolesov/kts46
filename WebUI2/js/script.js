@@ -24,12 +24,12 @@
     
     function drawRoads(p, model) {
         var road, roadId, horizontalRoad
-        p.stroke(0)
-        p.fill(0)
         p.scale(model.viewParameters.scale)
         for (roadId in model.view.roads) {
             if (!model.view.roads.hasOwnProperty(roadId))
                 continue
+            p.stroke(0)
+            p.fill(0)
             road = model.view.roads[roadId]
             horizontalRoad = Math.abs(road.x1 - road.x2) > Math.abs(road.y1 - road.y2)
             p.beginShape()
