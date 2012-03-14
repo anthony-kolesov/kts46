@@ -134,7 +134,7 @@ class JSONStateStorage:
         self.cars.append(stateCars)
 
         self.stepsDone += 1
-        if ( self.stepsDone % 100 == 0) or (self.stepsDone == self.totalSteps):
+        if ( self.stepsDone % (self.totalSteps / 20) == 0) or (self.stepsDone == self.totalSteps):
             print('%3.0f%%...' % (self.stepsDone * 100.0 / self.totalSteps))
 
     def close(self):

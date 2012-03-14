@@ -23,7 +23,7 @@
 
     
     function drawRoads(p, model) {
-        var road, roadId, horizontalRoad
+        var road, roadId, horizontalRoad, tlid, tl
         p.scale(model.viewParameters.scale)
         for (roadId in model.view.roads) {
             if (!model.view.roads.hasOwnProperty(roadId))
@@ -48,6 +48,14 @@
             // Middle line
             p.stroke(255)
             p.line(road.x1, road.y1, road.x2, road.y2)
+            // Traffic lights
+            for (tlid in road.trafficLights) {
+                if (road.trafficLights.hasOwnProperty(tlid)) {
+                    tl = road.trafficLights[tlid]
+                    p.stroke(0, 255, 0)
+                    p.rect(tl.coords[0], tl.coords[1], 2, 2)
+                }
+            }
         }
     }
     
