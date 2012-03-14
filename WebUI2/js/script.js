@@ -34,17 +34,20 @@
             horizontalRoad = Math.abs(road.x1 - road.x2) > Math.abs(road.y1 - road.y2)
             p.beginShape()
             if (horizontalRoad) {
-                p.vertex(road.x1, road.y1 - road.width)
-                p.vertex(road.x2, road.y2 - road.width)
-                p.vertex(road.x2, road.y2 + road.width)
-                p.vertex(road.x1, road.y1 + road.width)
+                p.vertex(road.x1, road.y1 - road.width/2)
+                p.vertex(road.x2, road.y2 - road.width/2)
+                p.vertex(road.x2, road.y2 + road.width/2)
+                p.vertex(road.x1, road.y1 + road.width/2)
             } else {
-                p.vertex(road.x1 + road.width, road.y1)
-                p.vertex(road.x2 + road.width, road.y2)
-                p.vertex(road.x2 - road.width, road.y2)
-                p.vertex(road.x1 - road.width, road.y1)
+                p.vertex(road.x1 + road.width/2, road.y1)
+                p.vertex(road.x2 + road.width/2, road.y2)
+                p.vertex(road.x2 - road.width/2, road.y2)
+                p.vertex(road.x1 - road.width/2, road.y1)
             }
             p.endShape()
+            // Middle line
+            p.stroke(255)
+            p.line(road.x1, road.y1, road.x2, road.y2)
         }
     }
     
