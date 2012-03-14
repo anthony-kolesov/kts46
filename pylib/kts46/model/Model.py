@@ -153,10 +153,13 @@ class Model(object):
         return self.getNearestObjectInArray(self._lights, position, direction, line)
 
     def getNearestCar(self, road, position, direction, line=0):
+        return self._getNearest(road.getNearestCar, road, position, direction, line)
+
+
+    def _getNearest(self, funcToGetObj, road, position, direction, line):
         """Get nearest car to specified position in forward destination.
         If there is no leading car, then ``None`` will be returned."""
-        #return self.getNearestObjectInArray(road.cars, position, direction, line)
-        nextCar = road.getNearestCar(position, direction, line)
+        nextCar = funcToGetObj(position, direction, line)
         distance = 0
 
         targetEndpoint = road.getNextEndpoint(direction)
@@ -171,7 +174,7 @@ class Model(object):
                 else:
                     direction = 1
                 
-                nextCar = road.getNearestCar(0, direction, line)
+                nextCar = funcToGetObj(0, direction, line)
                 targetEndpoint = road.getNextEndpoint(direction)
             else:
                 break

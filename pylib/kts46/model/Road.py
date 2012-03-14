@@ -27,11 +27,9 @@ class Road(object):
         self.lines = lines
         directionCnt = 0
         self.cars = []
-        #self.nextRoad = None
-        #self.previousRoad = None
+        self.trafficLights = set()
         
         # Setup endpoints and crossroads.
-        #roadData['points'][0] = self.getPoint(roadData['points'][0][0])
         self.points = []
         self.pointExits = []
         for pointDescription in points:
@@ -47,9 +45,6 @@ class Road(object):
                 directionCnt += 1
             self.points.append(point)
             self.pointExits.append(pointExitNumber)
-                #oppositeRoad = point.roads[ (pointExitNumber + 2) % 4 ]
-                #if oppositeRoad is not None:
-                #    oppositeRoad
 
 
     def getLinesForPoint(self, pointName):
@@ -76,10 +71,19 @@ class Road(object):
 
 
     def getNearestCar(self, position, direction, line=0):
+        return self._getNearest(self.cars, position, direction, line)
+
+
+    def getNearestStop(self, position, direction, line=0):
+        tl = self._getNearest(self.trafficLights, position, direction, line)
+        return tl
+
+
+    def _getNearest(self, items, position, direction, line):
         position += 0.1
         current = None
         current_pos = -1.0 # just to make sure :)
-        for i in self.cars:
+        for i in items:
 
             if hasattr(i, 'direction') and i.direction != direction:
                 continue
