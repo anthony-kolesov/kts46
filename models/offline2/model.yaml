@@ -39,20 +39,24 @@ roads:
         points: [["CR_1", 1], ["E_1", 0]]
         length: 300
         lines: [2, 2]
+        width: 20
     "W_CR1":
         points: [["CR_1", 3], ["W_1", 0]]
         length: 300
         lines: [2, 2]
+        width: 20
     "N_CR":
         points: [["CR_1", 0], ["N_1", 0]]
         length: 300
         lines: [2, 2]
+        width: 20
     "S_CR":
         points: [["CR_1", 2], ["S_1", 0]]
         length: 300
         lines: [2, 2]
+        width: 20
 
 view:
     size: {x: 600, y: 600}
-    scale: 0.8
+    scale: 1.3
    
