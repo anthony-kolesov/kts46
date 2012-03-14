@@ -27,14 +27,10 @@ endpoints:
 
 crossroads: 
     "CR_1":
-        trafficLight: [30, 20]
+        trafficLight: [10, 15]
         coords: {x: 300, y: 300}
 
 roads:
-    #"N_S":
-    #    points: [["N_1", 0], ["S_1", 0]]
-    #    length: 300
-    #    lines: [2, 2]
     "E_CR1":
         points: [["CR_1", 1], ["E_1", 0]]
         length: 300

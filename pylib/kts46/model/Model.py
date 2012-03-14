@@ -150,7 +150,8 @@ class Model(object):
 
     def getNearestTrafficLight(self, position, direction, line=0):
         "Get nearest traffic light to specified position in forward destination."
-        return self.getNearestObjectInArray(self._lights, position, direction, line)
+        #return self.getNearestObjectInArray(self._lights, position, direction, line)
+        return self._getNearest(road.getNearestStop, road, position, direction, line)
 
     def getNearestCar(self, road, position, direction, line=0):
         return self._getNearest(road.getNearestCar, road, position, direction, line)
