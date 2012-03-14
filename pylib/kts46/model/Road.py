@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from Endpoint import Endpoint
-from Crossroad import Crossroad
 from Car import Car
+from Crossroad import Crossroad
+from Endpoint import Endpoint
+from SimpleSemaphore import TrafficLight
 
 class Road(object):
     "Defines a road in the model."
@@ -43,6 +44,15 @@ class Road(object):
                 point.roads[pointExitNumber] = self
                 point.directions[pointExitNumber] = directionCnt
                 directionCnt += 1
+                
+                # Check if crossroad has traffic lights.
+                if point.trafficLight is not None:
+                    greenDuration = point.trafficLight[ pointExitNumber % 2 ]
+                    redDuration = (greenDuration + 1 ) % 2
+                    tl = SimpleSemaphore(greenDuration=greenDuration, redDuration=redDuration,
+                            position=self.length - 10)
+                    self.trafficLights.add(tl)
+
             self.points.append(point)
             self.pointExits.append(pointExitNumber)
 
