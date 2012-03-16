@@ -167,7 +167,7 @@ class Car(object):
             distanceToLeadingCar = None
 
         # Does leading car restrains us?
-        if self.road.lines > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
+        if self.road.lines[self.direction] > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
             # Try other lines.
             if self.line > 0:
                 rightDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
@@ -188,14 +188,14 @@ class Car(object):
             if leftDistance is not None and leftDistance > finalDistance:
                 # We want to go to this line, but we will be ably only if enough time passed.
                 if self.blinker == Car.BLINKER_LEFT and self.blinkerTime >= self.model.params['lineChangingDelay']:
-                    finalLine = self.line - 1
+                    finalLine = self.line + 1
                     finalDistance = leftDistance
                     finalBlinker = Car.BLINKER_OFF
                 else:
                     finalBlinker = Car.BLINKER_LEFT
             if rightDistance is not None and rightDistance > finalDistance:
                 if self.blinker == Car.BLINKER_RIGHT and self.blinkerTime >= self.model.params['lineChangingDelay']:
-                    finalLine = self.line + 1
+                    finalLine = self.line - 1
                     finalDistance = rightDistance
                     finalBlinker = Car.BLINKER_OFF
                 else:

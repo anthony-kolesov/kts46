@@ -117,6 +117,7 @@ class JSONStateStorage:
         self.states = []
         self.carsFile = carsFile
         self.cars = []
+        self.trafficLights = []
 
 
     def add(self, time, data):
