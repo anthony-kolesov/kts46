@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Anthony Kolesov
+# Copyright 2010-2012 Anthony Kolesov
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -48,17 +48,15 @@ class Model(object):
         self.time = timedelta()
         #self._cars = []
         #self._enterQueue = []
-        self._lights = []
-        self.roads = {}
         self._lastCarGenerationTime = timedelta()
         self.params = params
         self._loggerName = 'kts46.roadModel'
         self._logger = logging.getLogger(self._loggerName)
         self._lastCarId = -1
 
-        # New
         self._endpoints = {}
         self.crossroads = {}
+        self.roads = {}
         self.view = {}
         self.simulationParameters = {}
 
@@ -259,9 +257,10 @@ class Model(object):
         """Returns object data that represents current state of a model."""
         data = {}
         # Traffic lights
-        lights = {}
-        for light in self._lights:
-            lights[light.id] = light.getStateData()
+        lights = []
+        for road in self.roads.itervalues():
+            for light in road.trafficLights:
+                lights.append( light.getObjectData() )
         data['trafficLights'] = lights
 
         # Cars

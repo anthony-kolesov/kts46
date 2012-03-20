@@ -42,7 +42,7 @@ result['viewParameters']['frameRate'] = 1.0 / model.simulationParameters['stepDu
 
 # Roads
 for roadId, road in model.roads.iteritems():
-    tls = []
+    tls = {}
     for tl in road.trafficLights:
         xcoord = ((road.points[(tl.direction+1)%2].coords['x']
                  - road.points[tl.direction].coords['x']) * tl.position / road.length
@@ -51,7 +51,7 @@ for roadId, road in model.roads.iteritems():
                  - road.points[tl.direction].coords['y']) * tl.position / road.length
                  + road.points[tl.direction].coords['y'])
         tldata = {'coords': [xcoord, ycoord]}
-        tls.append(tldata)
+        tls[tl.id] = tldata
     roads[roadId] = {
         'x1': road.points[0].coords['x'],
         'y1': road.points[0].coords['y'],
@@ -63,7 +63,7 @@ for roadId, road in model.roads.iteritems():
 
 
 # Cars
-for timeCars in cars:
+for timeCars in cars['cars']:
     a = []
     resultCars.append(a)
     for car in timeCars:
@@ -100,4 +100,8 @@ for timeCars in cars:
         
         a.append(newData)
 
-print(json.dumps(result))
+
+# Traffic lights
+result['trafficLights'] = cars['trafficLights']
+
+print(json.dumps(result, indent=2))

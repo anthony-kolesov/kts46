@@ -117,8 +117,8 @@ class JSONStateStorage:
         self.states = []
         self.carsFile = carsFile
         self.cars = []
-        self.trafficLights = []
-
+        self.trafficLights = {}
+        self.trafficLightsInfo = {}
 
     def add(self, time, data):
         stateCars = []
@@ -134,12 +134,29 @@ class JSONStateStorage:
             })
         self.cars.append(stateCars)
 
+        # Traffic lights
+        addTl = False
+        for tl in data['trafficLights']:
+            addTl = False
+            if tl['id'] in self.trafficLightsInfo:
+                if tl['state'] != self.trafficLightsInfo[tl['id']]['state']:
+                    addTl = True
+            else:
+                addTl = True
+            
+            if addTl:
+                if self.stepsDone not in self.trafficLights:
+                    self.trafficLights[self.stepsDone] = []
+                self.trafficLights[self.stepsDone].append({'id': tl['id'], 'state': tl['state']})
+                self.trafficLightsInfo[tl['id']] = tl
+
         self.stepsDone += 1
-        if ( self.stepsDone % (self.totalSteps / 20) == 0) or (self.stepsDone == self.totalSteps):
+        if ( self.stepsDone % (self.totalSteps / 20) == 0):
             print('%3.0f%%...' % (self.stepsDone * 100.0 / self.totalSteps))
 
     def close(self):
-        json.dump(self.cars, self.carsFile)
+        json.dump({'cars': self.cars, 'trafficLights': self.trafficLights}, self.carsFile)
+        #json.dump({'trafficLights': self.trafficLights, 'cars': []}, self.carsFile, indent=2)
 
     def repair(self, currentTime):
         pass

@@ -17,6 +17,11 @@
             p.size(model.viewParameters.size.x * model.viewParameters.scale,
                    model.viewParameters.size.y * model.viewParameters.scale)
             p.background(200)
+
+            // Setup traffic lights
+            model.framesCount = 0
+            model.trafficLightsStates = {}
+
             drawRoads(p, model)
         }
     }
@@ -48,11 +53,18 @@
             // Middle line
             p.stroke(255)
             p.line(road.x1, road.y1, road.x2, road.y2)
+
             // Traffic lights
             for (tlid in road.trafficLights) {
-                if (road.trafficLights.hasOwnProperty(tlid)) {
+                if (road.trafficLights.hasOwnProperty(tlid) && tlid in model.trafficLightsStates) {
                     tl = road.trafficLights[tlid]
-                    p.stroke(0, 255, 0)
+                    if (model.trafficLightsStates[tlid].state == 'g') {
+                        p.stroke(0, 255, 0)
+                        p.fill(0, 255, 0)
+                    } else {
+                        p.stroke(255, 0, 0)
+                        p.fill(255, 0, 0)
+                    }
                     p.rect(tl.coords[0], tl.coords[1], 2, 2)
                 }
             }
@@ -68,7 +80,16 @@
         }
         
         var currentCars = model.cars.shift()
-          , i, l, car
+          , i, l, car, tl
+
+        // Setup traffic lights states.
+        if (model.framesCount in model.trafficLights) {
+            for (i = 0, l = model.trafficLights[model.framesCount].length; i < l; ++i) {
+                tl = model.trafficLights[model.framesCount][i]
+                model.trafficLightsStates[tl.id] = tl.state
+            }
+        }
+
         drawRoads(this, model)
         this.stroke(255)
         this.fill(255)
@@ -77,6 +98,8 @@
             // road = model.view.roads[car.road || 0]
             this.rect(car.p[0], car.p[1], car.l, car.w)
         }
+
+        model.framesCount += 1
     }
 
 

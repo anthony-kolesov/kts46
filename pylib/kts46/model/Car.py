@@ -187,19 +187,19 @@ class Car(object):
             # First try left.
             if leftDistance is not None and leftDistance > finalDistance:
                 # We want to go to this line, but we will be ably only if enough time passed.
-                if self.blinker == Car.BLINKER_LEFT and self.blinkerTime >= self.model.params['lineChangingDelay']:
+                #if self.blinker == Car.BLINKER_LEFT and self.blinkerTime >= self.model.params['lineChangingDelay']:
                     finalLine = self.line + 1
                     finalDistance = leftDistance
                     finalBlinker = Car.BLINKER_OFF
-                else:
-                    finalBlinker = Car.BLINKER_LEFT
+                #else:
+                #    finalBlinker = Car.BLINKER_LEFT
             if rightDistance is not None and rightDistance > finalDistance:
-                if self.blinker == Car.BLINKER_RIGHT and self.blinkerTime >= self.model.params['lineChangingDelay']:
+                #if self.blinker == Car.BLINKER_RIGHT and self.blinkerTime >= self.model.params['lineChangingDelay']:
                     finalLine = self.line - 1
                     finalDistance = rightDistance
                     finalBlinker = Car.BLINKER_OFF
-                else:
-                    finalBlinker = Car.BLINKER_RIGHT
+                #else:
+                #    finalBlinker = Car.BLINKER_RIGHT
         else:
             finalLine = self.line
             finalBlinker = Car.BLINKER_OFF

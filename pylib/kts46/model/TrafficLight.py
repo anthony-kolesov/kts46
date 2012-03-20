@@ -59,15 +59,13 @@ class SimpleSemaphore(object):
             addTime = self.redDuration
         return self.lastSwitchTime + addTime
 
-    def getDescriptionData(self):
-        return {#'id': self.id,
-                'position': self.position,
-                'green': self.greenDuration,
-                'red': self.redDuration
-        }
 
-    def getStateData(self):
+    def getObjectData(self):
         return {
+            'id': self.id,
+            'position': self.position,
+            #'green': self.greenDuration,
+            #'red': self.redDuration,
             'state': self.state,
             'lastSwitchTime': kts46.utils.timedelta2str(self.lastSwitchTime)
         }
