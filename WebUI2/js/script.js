@@ -58,7 +58,7 @@
             for (tlid in road.trafficLights) {
                 if (road.trafficLights.hasOwnProperty(tlid) && tlid in model.trafficLightsStates) {
                     tl = road.trafficLights[tlid]
-                    if (model.trafficLightsStates[tlid].state == 'g') {
+                    if (model.trafficLightsStates[tlid] === 'g') {
                         p.stroke(0, 255, 0)
                         p.fill(0, 255, 0)
                     } else {
