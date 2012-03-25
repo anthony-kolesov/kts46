@@ -171,10 +171,14 @@ class Car(object):
             # Try other lines.
             if self.line > 0:
                 rightDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
+                #if rightDistance < self.model.params['safeDistance'] * 2:
+                #    rightDistance = None
             else:
                 rightDistance = None
             if self.line + 1 < self.road.lines[self.direction]:
                 leftDistance = self.tryOtherLine(ts, self.line + 1, distanceToTL)
+                #if leftDistance < self.model.params['safeDistance'] * 2:
+                #    leftDistance = None
             else:
                 leftDistance = None
 
@@ -326,6 +330,10 @@ class Car(object):
 
         lineDistance = self.getDistanceToLeadingCar(ts, lineNumber)
         if lineDistance is None: return -1
+
+        if lineDistance < self.model.params['safeDistance']:
+            return None
+
         # Ignore if after read light.
         if distanceToTL is not None and distanceToTL < lineDistance:
             return None
@@ -337,7 +345,7 @@ class Car(object):
         # After check for target line also try to check line after target for
         # other car that wants to change line into our target. We have a priority
         # if we are on the left, so check only if target line is on the right.
-        if lineNumber > 0:
+        if lineNumber < self.road.lines[self.direction] - 1:#  > 0:
             # Use here move simple calculations then for cars that are on nearest lines:
             # Car must be in rearSafeDistance from us to change line.
             nextLineLeader = self.model.getNearestCar(self.road, self.position, self.direction, lineNumber-1)
@@ -348,5 +356,5 @@ class Car(object):
             if (nextLineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
                 self.position - nextLineFollowing.position - self.length < self.model.params['safeDistanceRear']):
                 return None
-
+        
         return lineDistance

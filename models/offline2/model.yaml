@@ -1,8 +1,7 @@
 simulationParameters:
     duration: 90
-    stepDuration: 0.04
-    batchLength: 2250
-
+    stepDuration: 0.2
+    batchLength: 450
 
 modelParameters: 
     inputRate: 600
