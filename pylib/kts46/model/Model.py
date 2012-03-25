@@ -148,7 +148,6 @@ class Model(object):
 
     def getNearestTrafficLight(self, road, position, direction, line=0):
         "Get nearest traffic light to specified position in forward destination."
-        #return self.getNearestObjectInArray(self._lights, position, direction, line)
         return self._getNearest(road.getNearestStop, road, position, direction, line)
 
     def getNearestCar(self, road, position, direction, line=0):
@@ -185,34 +184,6 @@ class Model(object):
             return (nextCar, distanceToCar)
         else:
             return None
-
-
-    def getNearestObjectInArray(self, array, position, direction, line=0):
-        "Get nearest object in array to specified position in forward destination."
-        position += 0.1
-        current = None
-        current_pos = -1.0 # just to make sure :)
-        for i in array:
-
-            if hasattr(i, 'direction') and i.direction != direction:
-                continue
-
-            # Check if it is in our line and skip it if not.
-            # Objects that has not line attribute affect all lines,
-            # like traffic lights.
-            if hasattr(i, "line") and i.line != line:
-                continue
-
-            # Deleted cars already doesn't exists.
-            if isinstance(i, Car) and hasattr(i, "state") and i.state == Car.DELETED:
-                continue
-
-            pos = i.position
-            # >= is very important so car won't try to go through another car.
-            if pos >= position and ((current is None) or current_pos > pos):
-                current = i
-                current_pos = pos
-        return current
 
 
     def getFollowingCar(self, road, position, direction, line=0):
