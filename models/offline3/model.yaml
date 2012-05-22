@@ -1,0 +1,57 @@
+simulationParameters:
+    duration: 9000
+    stepDuration: 0.2
+    batchLength: 1000
+
+modelParameters: 
+    inputRate: 1200
+    safeDistance: 20
+    safeDistanceRear: 10
+    trafficLightStopDistance: 5
+    accelerationLimit: 2.0
+    brakingLimit: 6.5
+    comfortBrakingLimit: 4.5
+    minimalDistance: 3
+    speed: [14, 22]
+
+endpoints: 
+    "E_1":
+        coords: {x: 600, y: 300}
+    "W_1":
+        coords: {x: 0, y: 300}
+    "N_1":
+        coords: {x: 300, y: 0}
+    "S_1":
+        coords: {x: 300, y: 600}
+
+crossroads: 
+    "CR_1":
+        trafficLight: [20, 20]
+        coords: {x: 300, y: 300}
+
+roads:
+    "E_CR1":
+        points: [["CR_1", 1], ["E_1", 0]]
+        length: 300
+        lines: [2, 2]
+        width: 20
+    "W_CR1":
+        points: [["CR_1", 3], ["W_1", 0]]
+        length: 300
+        lines: [2, 2]
+        width: 20
+    "N_CR":
+        points: [["CR_1", 0], ["N_1", 0]]
+        length: 300
+        lines: [2, 2]
+        width: 20
+    "S_CR":
+        points: [["CR_1", 2], ["S_1", 0]]
+        length: 300
+        lines: [2, 2]
+        width: 20
+
+view:
+    size: {x: 600, y: 600}
+    scale: 1.3
+   
