@@ -66,6 +66,15 @@ class Model(object):
         timeStep = timedelta(milliseconds=milliseconds)
         newTime = self.time + timeStep
 
+        # Switch traffic lights.
+        for road in self.roads.itervalues():
+            for tl in road.trafficLights:
+                if tl.getNextSwitchTime() <= newTime:
+                    tl.switch(newTime)
+                #if tl.getNextSwitchTime() <= newTime:
+                #    if tl.isGreen()
+    
+
         # Add cars to enter points
         self.generateCars(newTime)
 
@@ -139,8 +148,9 @@ class Model(object):
                 speed = math.floor(random.random() * speedMultiplier) + speedAdder
                 self._lastCarId += 1
                 line = math.floor(random.random() * endpoint.road.getLinesForPoint(endpointId))
-                newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line)
-                newCar.direction = endpoint.direction
+		route = ('f', 'r', 'l', 'b')[ int(random.random() * 2) ]
+                newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line,
+			direction=endpoint.direction, route=route)
                 self._logger.debug('Created car: [speed: %f].', speed)
                 endpoint.enterQueue.append(newCar)
                 
@@ -222,7 +232,6 @@ class Model(object):
         lastCar = self.getNearestCar(endpoint.road, 0.0, endpoint.direction, line)
         #return lastCar is None or lastCar.position - lastCar.length > self.params['safeDistance']
         return lastCar is None or lastCar[1] > self.params['safeDistance']
-
 
     def getStateData(self):
         """Returns object data that represents current state of a model."""

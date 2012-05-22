@@ -191,7 +191,8 @@ for inputFilePath in inputFilePaths:
     ss = SimulationServer(cfg)
     statesFile = open(statesFilePath, "wb")
     carsFile = open(carsFilePath, "wb")
-    storage = JSONStateStorage(statesFile, carsFile, definition['simulationParameters']['batchLength'])
+    storage = JSONStateStorage(statesFile, carsFile,
+        definition['simulationParameters']['duration'] / definition['simulationParameters']['stepDuration'])
     job = OfflineJob(definition)
     ss.runSimulationJob(job, storage)
 

@@ -19,7 +19,7 @@ import logging
 import sys
 import json
 import yaml
-from kts46.mongodb import Storage
+#from kts46.mongodb import Storage
 
 
 class DatabaseServer:
@@ -28,7 +28,7 @@ class DatabaseServer:
         self._cfg = cfg
         self._log = logging.getLogger(cfg.get('loggers', 'DatabaseServer'))
         #self.storage = CouchDBStorage(cfg.get('couchdb', 'dbaddress'))
-        self.storage = Storage(cfg.get('mongodb','host'))
+        #self.storage = Storage(cfg.get('mongodb','host'))
 
 
     def getNewJobId(self, projectName):

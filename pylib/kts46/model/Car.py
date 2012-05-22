@@ -32,7 +32,7 @@ class Car(object):
 
 
     def __init__(self, model, road, id=None, speed=15, length=4.5, width=1.5, position=0,
-                line=0, direction=0):
+                line=0, direction=0, route=[]):
         """Initializes a new car object.
 
         Creates new car using given parameters. Speed is measured in m/s, length,
@@ -54,6 +54,7 @@ class Car(object):
         self.blinker = Car.BLINKER_OFF
         self.blinkerTime = 0.0
         self.direction = direction
+        self.route = route
 
 
     def getDescriptionData(self):
@@ -251,7 +252,17 @@ class Car(object):
             # Try next road if possible.
             nextCrossroad = self.road.getNextEndpoint(self.direction)
             if isinstance(nextCrossroad[0], Crossroad):
-                oppositeRoad = nextCrossroad[0].roads[ (nextCrossroad[1] + 2) % 4 ]
+                if self.route[0] == 'f':
+                    nextDirection = (nextCrossroad[1] + 2) % 4
+                elif self.route[0] == 'r':
+                    nextDirection = (nextCrossroad[1] - 1) % 4
+                elif self.route[0] == 'l':
+                    nextDirection = (nextCrossroad[1] + 1) % 4
+                elif self.route[0] == 'u':
+                    nextDirection = nextCrossroad[1]
+                nextRoad = nextCrossroad[0].roads[ nextDirection ]
+                oppositeRoad = nextRoad
+                #oppositeRoad = nextCrossroad[0].roads[ (nextCrossroad[1] + 2) % 4 ]
                 if oppositeRoad is not None:
                     self.newState['position'] = newPosition - self.road.length
                     self.newState['road'] = oppositeRoad

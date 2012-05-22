@@ -28,33 +28,60 @@ class SimpleSemaphore(object):
 
     __green_state = "g"
     __red_state = "r"
+    __yellow_state = "y"
+    __redyellow_state = "ry"
 
-    def __init__(self, id=None, position=0, greenDuration=5, redDuration=5, direction=0):
+    def __init__(self, id=None, position=0, greenDuration=5, redDuration=5, direction=0, state=None):
         """Creates a new simple semaphore."""
         self.id = str(id if (id is not None) else uuid4())
         self.position = position
         self.lastSwitchTime = timedelta()
         # Original state is random.
-        self.state = SimpleSemaphore.__red_state if random() > 0.5 else SimpleSemaphore.__green_state
-        self.greenDuration = 5
-        self.redDuration = 5
+        if state is not None:
+            self.state = state
+        else:
+            self.state = SimpleSemaphore.__red_state if random() > 0.5 else SimpleSemaphore.__green_state
+        self.greenDuration = greenDuration
+        self.redDuration = redDuration
         self.direction = direction
 
     def switch(self, currentTime):
         "Switches semaphore to the other state and records current time."
-        if self.state == SimpleSemaphore.__green_state:
+        if self.isGreen:
+            self.state = SimpleSemaphore.__yellow_state
+        elif self.isYellow:
             self.state = SimpleSemaphore.__red_state
-        else:
+        elif self.isRedYellow:
             self.state = SimpleSemaphore.__green_state
+        else:
+            self.state = SimpleSemaphore.__redyellow_state
         self.lastSwitchTime = currentTime
+
+    #def off(self, currentTime):
+    #    self.state = SimpleSemaphore.__red_state
+    #    self.lastSwitchTime = currentTime
+
+    #def on(self, currentTime):
+    #    self.state = SimpleSemaphore.__green_state
+    #    self.lastSwitchTime = currentTime
 
     @property
     def isGreen(self):
         return self.state == SimpleSemaphore.__green_state
 
+    @property
+    def isYellow(self):
+        return self.state == SimpleSemaphore.__yellow_state
+
+    @property
+    def isRedYellow(self):
+        return self.state == SimpleSemaphore.__redyellow_state
+
     def getNextSwitchTime(self):
         if self.isGreen:
             addTime = self.greenDuration
+        elif self.isYellow or self.isRedYellow:
+            addTime = timedelta(seconds=3)
         else:
             addTime = self.redDuration
         return self.lastSwitchTime + addTime
@@ -66,7 +93,7 @@ class SimpleSemaphore(object):
             'position': self.position,
             #'green': self.greenDuration,
             #'red': self.redDuration,
-            'state': self.state,
+            'state': SimpleSemaphore.__green_state if self.isGreen else SimpleSemaphore.__red_state,
             'lastSwitchTime': kts46.utils.timedelta2str(self.lastSwitchTime)
         }
 

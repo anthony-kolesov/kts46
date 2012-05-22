@@ -14,14 +14,15 @@
 
 
 import logging
-from kts46.mongodb import Storage
+#from kts46.mongodb import Storage
 from kts46.model.Model import Model
 
 class StatusServer:
     "A server that enables view of simulation status."
 
     def __init__(self, cfg):
-        self.storage = Storage(cfg.get('mongodb', 'host'))
+        #self.storage = Storage(cfg.get('mongodb', 'host'))
+        pass
 
     #def getJobsList(self, projectName):
     #    return self.storage[projectName].getJobsList()
@@ -61,10 +62,13 @@ class StatusServer:
         return r
 
     def getServerStatus(self):
-        projects = self.storage.getProjectNames()
+        #projects = self.storage.getProjectNames()
         results = []
-        for project in projects:
-            results.extend(self.getProjectStatus2(project))
+        #for project in projects:
+        #    results.extend(self.getProjectStatus2(project))
+        results.append({'project': 'Test project', 'name': 'Test job 1', 'done': 15000, 'totalSteps': 15000, 'basicStatistics': True, 'idleTimes': True, 'fullStatistics': True, 'throughput': True})
+        results.append({'project': 'Test project', 'name': 'Test job 2', 'done': 5000, 'totalSteps': 15000, 'basicStatistics': False, 'idleTimes': False, 'fullStatistics': False, 'throughput': False})
+        results.append({'project': 'Test project 2', 'name': 'Test job 3', 'done': 0, 'totalSteps': 1000, 'basicStatistics': False, 'idleTimes': False, 'fullStatistics': False, 'throughput': False})
         return results
 
     def getJobStatistics(self, projectName, jobName, includeIdleTimes=False):

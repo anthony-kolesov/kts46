@@ -47,10 +47,12 @@ class Road(object):
                 # Check if crossroad has traffic lights.
                 if point.trafficLight is not None:
                     greenDuration = point.trafficLight[ pointExitNumber % 2 ]
-                    redDuration = (greenDuration + 1 ) % 2
+                    redDuration = point.trafficLight[ (pointExitNumber + 1 ) % 2 ]
+                    tlState = 'g' if pointExitNumber % 2 == 0 else 'r'
                     tl = SimpleSemaphore(point.name + '_' + str(pointExitNumber),
                             greenDuration=greenDuration, redDuration=redDuration,
-                            position=self.length - 20, direction=(directionCnt+1)%2 )
+                            position=self.length - 20, direction=(directionCnt+1)%2,
+                            state=tlState )
                     self.trafficLights.add(tl)
                 directionCnt += 1
 
