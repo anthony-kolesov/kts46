@@ -168,6 +168,17 @@ class Car(object):
             distanceToLeadingCar = None
 
         # Does leading car restrains us?
+        if self.line > 0 and len(self.route) > 0 and self.route[0] == 'r':
+            leftDistance = self.tryOtherLine(ts, self.line - 1, distanceToTL)
+            if leftDistance is not None:
+                finalDistance = leftDistance
+                finalLine = self.line - 1
+                finalBlinker = Car.BLINKER_OFF
+            else:
+                finalDistance = distanceToLeadingCar
+                finalLine = self.line
+                finalBlinker = Car.BLINKER_OFF
+
         if self.road.lines[self.direction] > 1 and distanceToLeadingCar is not None and distanceToLeadingCar <= brakingDistance:
             # Try other lines.
             if self.line > 0:
@@ -252,7 +263,7 @@ class Car(object):
             # Try next road if possible.
             nextCrossroad = self.road.getNextEndpoint(self.direction)
             if isinstance(nextCrossroad[0], Crossroad):
-                if self.route[0] == 'f':
+                if len(self.route) == 0 or self.route[0] == 'f':
                     nextDirection = (nextCrossroad[1] + 2) % 4
                 elif self.route[0] == 'r':
                     nextDirection = (nextCrossroad[1] - 1) % 4
@@ -261,6 +272,10 @@ class Car(object):
                 elif self.route[0] == 'u':
                     nextDirection = nextCrossroad[1]
                 nextRoad = nextCrossroad[0].roads[ nextDirection ]
+
+                if len(self.route) > 0:
+                    del self.route[0]
+                
                 oppositeRoad = nextRoad
                 #oppositeRoad = nextCrossroad[0].roads[ (nextCrossroad[1] + 2) % 4 ]
                 if oppositeRoad is not None:
@@ -367,5 +382,21 @@ class Car(object):
             if (nextLineFollowing is not None and nextLineFollowing.blinker == Car.BLINKER_LEFT and
                 self.position - nextLineFollowing.position - self.length < self.model.params['safeDistanceRear']):
                 return None
-        
+       
+        # If attempt to overtake while turn is near.
+        if lineNumber > 0 and self.line < lineNumber and len(self.route) > 0 and self.route[0] == 'r':
+            overtakePosition = self.overtakeDistance(lineNumber)
+            if overtakePosition <= self.road.length:
+                return None
         return lineDistance
+
+    def overtakeDistance(self, lineNumber):
+        nextCar = self.model.getNearestCar(self.road, self.position, self.direction, lineNumber)
+        if nextCar is None:
+            return None
+        timeDelta = ( nextCar[0].position - self.position + self.model.params['safeDistanceRear'] ) / (
+                        self.desiredSpeed - nextCar[0].currentSpeed)
+        overtakePosition = self.position + timeDelta * self.desiredSpeed
+        return overtakePosition
+
+
