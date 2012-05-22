@@ -16,6 +16,7 @@
 
 import atexit
 import csv
+import datetime
 import glob
 import json
 import logging
@@ -216,7 +217,9 @@ for inputFilePath in inputFilePaths:
         storage = JSONStateStorage(statesFile, carsFile,
             definition['simulationParameters']['duration'] / definition['simulationParameters']['stepDuration'])
     job = OfflineJob(definition)
+    logging.info(datetime.datetime.now())
     ss.runSimulationJob(job, storage, ignore_batch=True)
+    logging.info(datetime.datetime.now())
 
     # Close files for writing and reopen for reading.
     if not options.no_out:
