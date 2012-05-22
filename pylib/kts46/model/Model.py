@@ -150,7 +150,7 @@ class Model(object):
                 line = math.floor(random.random() * endpoint.road.getLinesForPoint(endpointId))
 		route = ('f', 'r', 'l', 'b')[ int(random.random() * 2) ]
                 newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line,
-			direction=endpoint.direction, route=route)
+			direction=endpoint.direction, route=[route, ])
                 self._logger.debug('Created car: [speed: %f].', speed)
                 endpoint.enterQueue.append(newCar)
                 
