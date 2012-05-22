@@ -89,7 +89,10 @@ class Model(object):
                     car.prepareMove(timeStep)
                 else:
                     toRemove.append(car)
-            for car in toRemove: road.cars.remove(car)
+            for car in toRemove:
+                road.cars.remove(car)
+                delEndpoint = road.getNextEndpoint(car.direction)[0]
+                delEndpoint.exited += 1
 
         # Finalize movement of cars
         for road in self.roads.itervalues():
@@ -128,6 +131,7 @@ class Model(object):
                 endpoint.road.cars.append(car)
                 car.state = Car.ADDED
                 del endpoint.enterQueue[0]
+                endpoint.entered += 1
 
 
     def generateCars(self, newTime):
@@ -303,3 +307,8 @@ class Model(object):
         if pointName in self._endpoints:
             return self._endpoints[pointName]
         return self.crossroads[pointName]
+
+    @property
+    def endpoints(self):
+        return self._endpoints
+

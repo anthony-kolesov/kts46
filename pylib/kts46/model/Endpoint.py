@@ -25,8 +25,9 @@ class Endpoint(object):
         self.enterQueue = []
         self.lastGenerationTime = timedelta(0)
         self.road = None
-        self.direction = None 
-
+        self.direction = None
+        self.entered = 0
+        self.exited = 0
 
     def getDescriptionData(self):
         "Gets dictionary with parameters of endpoint."

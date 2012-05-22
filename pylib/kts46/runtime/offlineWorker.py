@@ -18,6 +18,7 @@ import atexit
 import csv
 import glob
 import json
+import logging
 import os
 import os.path
 import sys
@@ -47,6 +48,7 @@ def configureCmdOptions():
     cmdOpts.add_option('-o', '--out', action='store', dest='output',
         default='./',
         help="Directory to place output files. By default this is current working directory." )
+    cmdOpts.add_option('--no-out', action='store_true', dest='no_out', default=False)
 
     return cmdOpts.parse_args(sys.argv[1:])
 
@@ -109,6 +111,21 @@ class CSVStateStorage(object):
         pass
 
 
+class EmptyStorage:
+    def __init__(self, steps_total):
+        self.steps_done = 0
+        self.steps_total = steps_total
+    def add(self, time, data):
+        self.steps_done += 1
+        if ( self.steps_done % (self.steps_total / 20) == 0):
+            logging.info('%3.0f%%...' % (self.steps_done * 100.0 / self.steps_total))
+    def close(self):
+        pass
+    def repair(self, currentTime):
+        pass
+
+
+
 class JSONStateStorage:
     
     def __init__(self, statesFile, carsFile, totalSteps):
@@ -161,6 +178,7 @@ class JSONStateStorage:
     def repair(self, currentTime):
         pass
 
+logging.basicConfig(level=logging.INFO)
 cfg = SafeConfigParser()
 options, inputFilePaths = configureCmdOptions()
 
@@ -189,15 +207,20 @@ for inputFilePath in inputFilePaths:
 
     # Simulate
     ss = SimulationServer(cfg)
-    statesFile = open(statesFilePath, "wb")
-    carsFile = open(carsFilePath, "wb")
-    storage = JSONStateStorage(statesFile, carsFile,
-        definition['simulationParameters']['duration'] / definition['simulationParameters']['stepDuration'])
+
+    if options.no_out:
+        storage = EmptyStorage(int(definition['simulationParameters']['duration'] / definition['simulationParameters']['stepDuration']))
+    else:
+        statesFile = open(statesFilePath, "wb")
+        carsFile = open(carsFilePath, "wb")
+        storage = JSONStateStorage(statesFile, carsFile,
+            definition['simulationParameters']['duration'] / definition['simulationParameters']['stepDuration'])
     job = OfflineJob(definition)
-    ss.runSimulationJob(job, storage)
+    ss.runSimulationJob(job, storage, ignore_batch=True)
 
     # Close files for writing and reopen for reading.
-    statesFile.close(), carsFile.close()
+    if not options.no_out:
+        statesFile.close(), carsFile.close()
     #statesFile = open(statesFilePath, "rb")
     #carsFile = open(carsFilePath, "rb")
 

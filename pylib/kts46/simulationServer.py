@@ -27,7 +27,7 @@ class SimulationServer(object):
     def __init__(self, cfg=None):
         self.logger = logging.getLogger('kts46.SimulationServer')
 
-    def runSimulationJob(self, job, saver):
+    def runSimulationJob(self, job, saver, ignore_batch=False):
         """Runs simulation job.
 
         This function does all required stuff: gets initial state and definition,
@@ -46,7 +46,10 @@ class SimulationServer(object):
 
         step = job.definition['simulationParameters']['stepDuration']
         duration = job.definition['simulationParameters']['duration']
-        batchLength = job.definition['simulationParameters']['batchLength']
+        if ignore_batch:
+            batchLength = int(duration / step)
+        else:
+            batchLength = job.definition['simulationParameters']['batchLength']
 
         # Prepare infrastructure.
         saver.repair(t)
@@ -78,3 +81,7 @@ class SimulationServer(object):
         job.saveSimulationProgress(stepsCount)
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
+
+        for p in model.endpoints.itervalues():
+            logging.info('Name: {0}, entered: {1}, exited: {2}, left in enterQueue.'.format(p.name, p.entered, p.exited, len(p.enterQueue)))
+
