@@ -83,5 +83,5 @@ class SimulationServer(object):
         self.logger.debug('End time: {0}.'.format(t))
 
         for p in model.endpoints.itervalues():
-            logging.info('Name: {0}, entered: {1}, exited: {2}, left in enterQueue.'.format(p.name, p.entered, p.exited, len(p.enterQueue)))
+            logging.info('Name: {0}, entered: {1}, exited: {2}, left in enterQueue {3}.'.format(p.name, p.entered, p.exited, len(p.enterQueue)))
 
