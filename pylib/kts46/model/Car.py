@@ -386,13 +386,15 @@ class Car(object):
         # If attempt to overtake while turn is near.
         if lineNumber > 0 and self.line < lineNumber and len(self.route) > 0 and self.route[0] == 'r':
             overtakePosition = self.overtakeDistance(lineNumber)
-            if overtakePosition <= self.road.length:
+            if overtakePosition is None or overtakePosition <= self.road.length:
                 return None
         return lineDistance
 
     def overtakeDistance(self, lineNumber):
         nextCar = self.model.getNearestCar(self.road, self.position, self.direction, lineNumber)
         if nextCar is None:
+            return None
+        if self.desiredSpeed <= nextCar[0].currentSpeed:
             return None
         timeDelta = ( nextCar[0].position - self.position + self.model.params['safeDistanceRear'] ) / (
                         self.desiredSpeed - nextCar[0].currentSpeed)
