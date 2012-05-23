@@ -118,8 +118,8 @@ class EmptyStorage:
         self.steps_total = steps_total
     def add(self, time, data):
         self.steps_done += 1
-        if ( self.steps_done % (self.steps_total / 20) == 0):
-            logging.info('%3.0f%%...' % (self.steps_done * 100.0 / self.steps_total))
+        #if ( self.steps_done % (self.steps_total / 20) == 0):
+        #    logging.info('%3.0f%%...' % (self.steps_done * 100.0 / self.steps_total))
     def close(self):
         pass
     def repair(self, currentTime):

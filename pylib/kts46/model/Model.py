@@ -59,6 +59,7 @@ class Model(object):
         self.roads = {}
         self.view = {}
         self.simulationParameters = {}
+        self.move_times = []
 
 
     def run_step(self, milliseconds):
@@ -93,6 +94,7 @@ class Model(object):
                 road.cars.remove(car)
                 delEndpoint = road.getNextEndpoint(car.direction)[0]
                 delEndpoint.exited += 1
+                self.move_times.append((self.time - car.add_time).total_seconds())
 
         # Finalize movement of cars
         for road in self.roads.itervalues():
@@ -130,6 +132,7 @@ class Model(object):
             if addCar:
                 endpoint.road.cars.append(car)
                 car.state = Car.ADDED
+                car.add_time = self.time
                 del endpoint.enterQueue[0]
                 endpoint.entered += 1
 
@@ -152,12 +155,11 @@ class Model(object):
                 speed = math.floor(random.random() * speedMultiplier) + speedAdder
                 self._lastCarId += 1
                 line = math.floor(random.random() * endpoint.road.getLinesForPoint(endpointId))
-		route = ('f', 'r', 'l', 'b')[ int(random.random() * 2) ]
+                route = ('f', 'r', 'l', 'b')[ int(random.random() * 2) ]
                 newCar = Car(model=self, road=endpoint.road, id=self._lastCarId, speed=speed, line=line,
-			direction=endpoint.direction, route=[route, ])
+                direction=endpoint.direction, route=[route, ])
                 self._logger.debug('Created car: [speed: %f].', speed)
                 endpoint.enterQueue.append(newCar)
-                
 
 
     def getNearestTrafficLight(self, road, position, direction, line=0):

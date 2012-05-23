@@ -1,10 +1,10 @@
 simulationParameters:
-    duration: 300
+    duration: 600
     stepDuration: 0.2
     batchLength: 1000
 
 modelParameters: 
-    inputRate: 150
+    inputRate: 2400
     safeDistance: 20
     safeDistanceRear: 10
     trafficLightStopDistance: 5

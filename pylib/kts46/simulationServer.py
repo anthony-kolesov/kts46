@@ -82,6 +82,14 @@ class SimulationServer(object):
         saver.close()
         self.logger.debug('End time: {0}.'.format(t))
 
+        logging.info('InputRate: {0}, crossroad: {1}'.format(model.params['inputRate'], model.crossroads.values()[0].trafficLight))
         for p in model.endpoints.itervalues():
             logging.info('Name: {0}, entered: {1}, exited: {2}, left in enterQueue {3}.'.format(p.name, p.entered, p.exited, len(p.enterQueue)))
+        #cnt = 0
+        #sum_time = datetime.datetime()
+        #for t in model.move_times:
+        #    sum_time += t
+        import numpy
+        times_array = numpy.array(model.move_times)
+        logging.info('Average moveTime: {0}, stdev: {1}.'.format(numpy.average(times_array), numpy.std(times_array)))
 
